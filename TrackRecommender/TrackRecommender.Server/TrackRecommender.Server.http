@@ -1,0 +1,6 @@
+@TrackRecommender.Server_HostAddress = http://localhost:5219
+
+GET {{TrackRecommender.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
