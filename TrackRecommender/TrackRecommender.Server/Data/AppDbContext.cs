@@ -11,5 +11,10 @@ namespace TrackRecommender.Server.Data
         public DbSet<Trail> Trails { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<UserPreferences> UserPreferences { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+        }
     }
 }

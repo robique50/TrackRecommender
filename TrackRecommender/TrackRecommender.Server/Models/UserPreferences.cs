@@ -4,6 +4,8 @@
     {
         public int Id { get; set; }
         public int UserId { get; set; }
+        public User? User { get; set; }
+
         public List<string> PreferredTrailTypes { get; set; }
         public string PreferredDifficulty { get; set; }
         public List<string> PreferredTags { get; set; }

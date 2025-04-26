@@ -6,15 +6,14 @@ namespace TrackRecommender.Server.Models
         public string Username { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
-        public UserPreferences Preferences { get; set; }
+        public UserPreferences? Preferences { get; set; }
 
-        public User(int id, string username, string email, string password, UserPreferences preferences)
+        public User(int id, string username, string email, string password)
         {
             Id = id;
             Username = username;
             Email = email;
             Password = password;
-            Preferences = preferences;
         }
     }
 }
