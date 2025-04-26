@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\TrackRecommender",
+    "\\TrackRecommender\\TrackRecommender.Server",
+    "\\TrackRecommender\\TrackRecommender.Server\\Models"
+  ],
+  "SelectedNode": "\\TrackRecommender\\TrackRecommender.Server\\Models\\User.cs",
+  "PreviewInSolutionExplorer": false
+}
