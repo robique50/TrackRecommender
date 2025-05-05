@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "trackrecommender.client\\trackrecommender.client.esproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "TrackRecommender.Server\\TrackRecommender.Server.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
