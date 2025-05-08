@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TrackRecommender.Server.Models;
-using TrackRecommender.Server.Properties.Repositories.Interfaces;
+using TrackRecommender.Server.Repositories.Interfaces;
 
 namespace TrackRecommender.Server.Controllers
 {

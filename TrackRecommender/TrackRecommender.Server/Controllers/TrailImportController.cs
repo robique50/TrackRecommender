@@ -21,5 +21,12 @@ namespace TrackRecommender.Server.Controllers
             await _importService.ImportTrailsFromOverpassAsync(request.BoundingBox);
             return Ok("Import started");
         }
+
+        [HttpPost("import-all-regions")]
+        public async Task<IActionResult> ImportAllRegions()
+        {
+            await _importService.ImportTrailsFromAllRegionsAsync();
+            return Ok("Import for all regions started");
+        }
     }
 }

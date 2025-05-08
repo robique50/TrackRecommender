@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using TrackRecommender.Server.Models;
-using TrackRecommender.Server.Properties.Repositories.Interfaces;
+using TrackRecommender.Server.Repositories.Interfaces;
 using static TrackRecommender.Server.External.OpenStreetMap.OverpassModels;
 
 namespace TrackRecommender.Server.Services
@@ -9,39 +9,76 @@ namespace TrackRecommender.Server.Services
     public class TrailImportService
     {
         private readonly ITrailRepository _trailRepository;
+        private readonly IRegionRepository _regionRepository;
         private readonly HttpClient _httpClient;
 
-        public TrailImportService(ITrailRepository trailRepository, HttpClient httpClient)
+        public TrailImportService(ITrailRepository trailRepository, IRegionRepository regionRepository, HttpClient httpClient)
         {
             _trailRepository = trailRepository;
+            _regionRepository = regionRepository;
             _httpClient = httpClient;
         }
 
         public async Task ImportTrailsFromOverpassAsync(string regionBoundingBox)
         {
-            var overpassQuery = $@"
-        [out:json];
-        (
-          way[highway=path][""sac_scale""][name]({regionBoundingBox});
-          way[route=hiking][name]({regionBoundingBox});
-        );
-        out body;
-        >;
-        out skel qt;";
+            int maxRetries = 3;
+            int retryCount = 0;
 
-            var content = new StringContent(overpassQuery, Encoding.UTF8, "application/x-www-form-urlencoded");
-            var response = await _httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-
-            if (response.IsSuccessStatusCode)
+            while (retryCount < maxRetries)
             {
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                await ProcessTrailsDataAsync(jsonResponse);
+                try
+                {
+                    var overpassQuery = $@"
+            [out:json];
+            (
+              way[highway=path][""sac_scale""][name]({regionBoundingBox});
+              way[route=hiking][name]({regionBoundingBox});
+            );
+            out body;
+            >;
+            out skel qt;";
+
+                    using var httpClient = new HttpClient();
+                    httpClient.Timeout = TimeSpan.FromMinutes(2);
+
+                    var content = new StringContent(overpassQuery, Encoding.UTF8, "application/x-www-form-urlencoded");
+                    var response = await httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonResponse = await response.Content.ReadAsStringAsync();
+                        await ProcessTrailsDataAsync(jsonResponse);
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    retryCount++;
+                    if (retryCount >= maxRetries)
+                        throw new InvalidOperationException($"Import failed after {maxRetries} attempts: {ex.Message}", ex);
+
+                    await Task.Delay(5000 * retryCount);
+                }
             }
         }
-        private string DetermineRegionFromCoordinates(List<long> nodeIds, Dictionary<long, NodeCoordinates> nodesDict)
+
+        public async Task ImportTrailsFromAllRegionsAsync()
+        {
+            var regions = await _regionRepository.GetAllRegionsAsync();
+
+            foreach (var region in regions)
+            {
+                string boundingBox = region.GetBoundingBoxString();
+                await ImportTrailsFromOverpassAsync(boundingBox);
+
+                await Task.Delay(5000); 
+            }
+        }
+
+        private async Task<int> GetRegionIdFromCoordinates(List<long> nodeIds, Dictionary<long, NodeCoordinates> nodesDict)
         {
             if (!nodeIds.Any() || !nodeIds.All(nodeId => nodesDict.ContainsKey(nodeId)))
-                return "Other";
+                return await GetDefaultRegionIdAsync();
 
             double avgLat = 0;
             double avgLon = 0;
@@ -55,49 +92,68 @@ namespace TrackRecommender.Server.Services
             avgLat /= nodeIds.Count;
             avgLon /= nodeIds.Count;
 
-            var regions = new Dictionary<string, (double minLat, double maxLat, double minLon, double maxLon)>
-    {
-        { "Bucegi", (45.33, 45.53, 25.38, 25.60) },
-        { "Fagaras", (45.50, 45.70, 24.50, 25.20) },
-        { "Retezat", (45.30, 45.42, 22.70, 23.00) },
-        { "Piatra Craiului", (45.47, 45.58, 25.17, 25.35) },
-        { "Ceahlau", (46.92, 47.05, 25.85, 26.05) },
-        { "Apuseni", (46.30, 46.70, 22.50, 23.20) },
-        { "Rodnei", (47.45, 47.65, 24.65, 25.00) },
-        { "Ciucas", (45.48, 45.55, 25.90, 26.05) },
-        { "Postavaru", (45.55, 45.62, 25.52, 25.60) },
-        { "Calimani", (47.05, 47.20, 25.10, 25.35) },
-        { "Parang", (45.30, 45.40, 23.45, 23.70) },
-        { "Cozia", (45.28, 45.35, 24.28, 24.40) },
-        { "Iezer-Papusa", (45.45, 45.55, 24.90, 25.10) },
-        { "Harghita", (46.35, 46.50, 25.50, 25.75) },
-        { "Bihor", (46.50, 46.60, 22.60, 22.80) },
-        { "Cindrel", (45.50, 45.70, 23.70, 24.00) },
-        { "Baiului", (45.40, 45.50, 25.60, 25.75) },
-        { "Lotru", (45.35, 45.45, 23.95, 24.30) },
-        { "Macin", (45.15, 45.30, 28.15, 28.35) },
-        { "Gutai", (47.70, 47.80, 23.70, 23.90) },
-        { "Semenic", (45.15, 45.25, 22.00, 22.15) },
-        { "Poiana Rusca", (45.60, 45.75, 22.30, 22.55) },
-        { "Zarand", (46.10, 46.20, 22.20, 22.40) },
-        { "Vladeasa", (46.75, 46.90, 22.75, 22.90) },
-        { "Hasmas", (46.65, 46.75, 25.75, 25.90) },
-        { "Rarau-Giumalau", (47.45, 47.55, 25.50, 25.70) }
-    };
+            var regions = await _regionRepository.GetAllRegionsAsync();
 
             foreach (var region in regions)
             {
-                var (minLat, maxLat, minLon, maxLon) = region.Value;
-                if (avgLat >= minLat && avgLat <= maxLat && avgLon >= minLon && avgLon <= maxLon)
-                    return region.Key;
+                if (avgLat >= region.MinLat && avgLat <= region.MaxLat &&
+                    avgLon >= region.MinLon && avgLon <= region.MaxLon)
+                    return region.Id;
             }
 
-            return "Unknown";
+            return await GetUnknownRegionIdAsync();
+        }
+
+        private async Task<int> GetDefaultRegionIdAsync()
+        {
+            var defaultRegion = await _regionRepository.GetRegionByNameAsync("Other");
+            if (defaultRegion == null)
+            {
+                defaultRegion = new Region
+                (
+                    id : 0,
+                    name : "Other",
+                    description : "Default region for trails without a specific region",
+                    minLat : 43.5,
+                    maxLat : 48.2,
+                    minLon : 20.2,
+                    maxLon : 30.0
+                );
+                await _regionRepository.AddRegionAsync(defaultRegion);
+                await _regionRepository.SaveChangesAsync();
+            }
+            return defaultRegion.Id;
+        }
+
+        private async Task<int> GetUnknownRegionIdAsync()
+        {
+            var unknownRegion = await _regionRepository.GetRegionByNameAsync("Unknown");
+            if (unknownRegion == null)
+            {
+                unknownRegion = new Region
+                (
+                    id : 0,
+                    name : "Unknown",
+                    description : "Unknown region",
+                    minLat : 43.5,
+                    maxLat : 48.2,
+                    minLon : 20.2,
+                    maxLon : 30.0
+                );
+                await _regionRepository.AddRegionAsync(unknownRegion);
+                await _regionRepository.SaveChangesAsync();
+            }
+            return unknownRegion.Id;
         }
 
         private async Task ProcessTrailsDataAsync(string jsonData)
         {
             var osmData = JsonSerializer.Deserialize<OverpassResponse>(jsonData);
+
+            if (osmData == null || osmData.Elements == null)
+            {
+                throw new InvalidOperationException("Failed to deserialize OSM data or Elements collection is null");
+            }
 
             var nodesDict = osmData.Elements
                 .Where(e => e.Type == "node")
@@ -140,7 +196,7 @@ namespace TrackRecommender.Server.Services
                     };
                 }
 
-                string trailType = "Hiking"; 
+                string trailType = "Hiking";
                 if (element.Tags.TryGetValue("trail_visibility", out var visibility))
                 {
                     if (visibility == "excellent" || visibility == "good")
@@ -156,7 +212,8 @@ namespace TrackRecommender.Server.Services
                         trailType = "Mountain Trail";
                 }
 
-                string region = DetermineRegionFromCoordinates(element.Nodes, nodesDict);
+                // Obține ID-ul regiunii pe baza coordonatelor
+                int regionId = await GetRegionIdFromCoordinates(element.Nodes, nodesDict);
 
                 var relevantTags = new List<string>();
                 string[] usefulTagKeys = { "bicycle", "foot", "surface", "trail_visibility", "marked_trail" };
@@ -182,6 +239,10 @@ namespace TrackRecommender.Server.Services
                 };
 
                 double distance = CalculateDistance(element.Nodes, nodesDict);
+
+                if (distance < 0.5)
+                    continue;
+
                 double duration = EstimateDuration(distance, difficulty);
 
                 var trail = new Trail(
@@ -196,7 +257,7 @@ namespace TrackRecommender.Server.Services
                     endLocation: $"{nodesDict[element.Nodes.Last()].Lat:F6}, {nodesDict[element.Nodes.Last()].Lon:F6}",
                     geoJsonData: JsonSerializer.Serialize(geoJson),
                     tags: relevantTags,
-                    region: region
+                    regionId: regionId
                 );
 
                 bool trailExists = await _trailRepository.TrailExistsByNameAsync(trail.Name);
@@ -256,7 +317,7 @@ namespace TrackRecommender.Server.Services
                 "Advanced" => 1.5,
                 "Very Difficult" => 1.2,
                 "Extreme" => 1.0,
-                _ => 3.0 
+                _ => 3.0
             };
 
             return distance / speed;

@@ -2,9 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using TrackRecommender.Server.Data;
 using TrackRecommender.Server.Models;
-using TrackRecommender.Server.Properties.Repositories.Interfaces;
+using TrackRecommender.Server.Repositories.Interfaces;
 
-namespace TrackRecommender.Server.Properties.Repositories.Implementations
+namespace TrackRecommender.Server.Repositories.Implementations
 {
     public class TrailRepository : ITrailRepository
     {
@@ -20,7 +20,7 @@ namespace TrackRecommender.Server.Properties.Repositories.Implementations
             return await _context.Trails.ToListAsync();
         }
 
-        public async Task<Trail> GetTrailByIdAsync(int id)
+        public async Task<Trail?> GetTrailByIdAsync(int id)
         {
             return await _context.Trails.FindAsync(id);
         }

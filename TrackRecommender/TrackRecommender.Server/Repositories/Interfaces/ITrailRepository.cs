@@ -1,11 +1,11 @@
 ﻿using TrackRecommender.Server.Models;
 
-namespace TrackRecommender.Server.Properties.Repositories.Interfaces
+namespace TrackRecommender.Server.Repositories.Interfaces
 {
     public interface ITrailRepository
     {
         Task<List<Trail>> GetAllTrailsAsync();
-        Task<Trail> GetTrailByIdAsync(int id);
+        Task<Trail?> GetTrailByIdAsync(int id);
         Task<List<Trail>> GetTrailsByBoundingBoxAsync(double minLat, double minLng, double maxLat, double maxLng);
         Task<bool> TrailExistsByNameAsync(string name);
         Task AddTrailAsync(Trail trail);

@@ -13,10 +13,11 @@
         public string EndLocation { get; set; }
         public string GeoJsonData { get; set; }
         public List<string> Tags { get; set; }
-        public string Region { get; set; } 
+        public int RegionId { get; set; }
+        public Region? Region { get; set; }
 
         public Trail(int id, string name, string description, double distance, double duration, string difficulty,
-            string trailType, string startLocation, string endLocation, string geoJsonData, List<string> tags, string region)
+            string trailType, string startLocation, string endLocation, string geoJsonData, List<string> tags, int regionId)
         {
             Id = id;
             Name = name;
@@ -29,7 +30,7 @@
             EndLocation = endLocation;
             GeoJsonData = geoJsonData;
             Tags = tags;
-            Region = region;
+            RegionId = regionId;
         }
     }
 }
