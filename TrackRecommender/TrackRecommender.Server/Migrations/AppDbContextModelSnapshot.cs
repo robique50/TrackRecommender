@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using TrackRecommender.Server.Data;
 
 #nullable disable
 
@@ -29,22 +28,6 @@ namespace TrackRecommender.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("MaxLat")
-                        .HasColumnType("float");
-
-                    b.Property<double>("MaxLon")
-                        .HasColumnType("float");
-
-                    b.Property<double>("MinLat")
-                        .HasColumnType("float");
-
-                    b.Property<double>("MinLon")
-                        .HasColumnType("float");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -61,6 +44,10 @@ namespace TrackRecommender.Server.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -88,8 +75,8 @@ namespace TrackRecommender.Server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("RegionId")
-                        .HasColumnType("int");
+                    b.Property<string>("Network")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("StartLocation")
                         .IsRequired()
@@ -105,9 +92,22 @@ namespace TrackRecommender.Server.Migrations
 
                     b.HasKey("Id");
 
+                    b.ToTable("Trails");
+                });
+
+            modelBuilder.Entity("TrackRecommender.Server.Models.TrailRegion", b =>
+                {
+                    b.Property<int>("TrailId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RegionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TrailId", "RegionId");
+
                     b.HasIndex("RegionId");
 
-                    b.ToTable("Trails");
+                    b.ToTable("TrailRegions");
                 });
 
             modelBuilder.Entity("TrackRecommender.Server.Models.User", b =>
@@ -169,15 +169,23 @@ namespace TrackRecommender.Server.Migrations
                     b.ToTable("UserPreferences");
                 });
 
-            modelBuilder.Entity("TrackRecommender.Server.Models.Trail", b =>
+            modelBuilder.Entity("TrackRecommender.Server.Models.TrailRegion", b =>
                 {
                     b.HasOne("TrackRecommender.Server.Models.Region", "Region")
-                        .WithMany("Trails")
+                        .WithMany()
                         .HasForeignKey("RegionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TrackRecommender.Server.Models.Trail", "Trail")
+                        .WithMany()
+                        .HasForeignKey("TrailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Region");
+
+                    b.Navigation("Trail");
                 });
 
             modelBuilder.Entity("TrackRecommender.Server.Models.UserPreferences", b =>
@@ -189,11 +197,6 @@ namespace TrackRecommender.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("TrackRecommender.Server.Models.Region", b =>
-                {
-                    b.Navigation("Trails");
                 });
 
             modelBuilder.Entity("TrackRecommender.Server.Models.User", b =>

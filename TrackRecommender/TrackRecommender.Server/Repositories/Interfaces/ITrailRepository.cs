@@ -6,11 +6,23 @@ namespace TrackRecommender.Server.Repositories.Interfaces
     {
         Task<List<Trail>> GetAllTrailsAsync();
         Task<Trail?> GetTrailByIdAsync(int id);
-        Task<List<Trail>> GetTrailsByBoundingBoxAsync(double minLat, double minLng, double maxLat, double maxLng);
+        Task<List<Trail>> GetTrailsByNameAsync(string name);
         Task<bool> TrailExistsByNameAsync(string name);
         Task AddTrailAsync(Trail trail);
-        Task<List<Trail>> GetTrailsByRegionAsync(string region);
-        Task<List<Trail>> FilterTrailsAsync(string? region, string? difficulty, double? maxDistance);
-        Task SaveChangesAsync();
+        Task<List<Trail>> GetTrailsByRegionIdAsync(int regionId);
+        Task<List<Trail>> GetTrailsByRegionIdsAsync(List<int> regionIds);
+        Task AddTrailRegionAsync(int trailId, int regionId);
+        Task RemoveTrailRegionAsync(int trailId, int regionId);
+        Task<List<int>> GetRegionIdsForTrailAsync(int trailId);
+        Task<List<Trail>> FilterTrailsAsync(
+            List<int>? regionIds = null,
+            string? difficulty = null,
+            double? maxDistance = null,
+            string? category = null);
+
+        Task<bool> TrailExistsAsync(string name, string network, string geoJsonData);
+        Task UpdateTrailAsync(Trail trail);
+        Task DeleteTrailAsync(int trailId);
+        Task<int> SaveChangesAsync();
     }
 }

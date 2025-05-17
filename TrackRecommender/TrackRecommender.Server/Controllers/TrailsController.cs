@@ -31,19 +31,14 @@ namespace TrackRecommender.Server.Controllers
             return Ok(trail);
         }
 
-        [HttpGet("region/{region}")]
-        public async Task<ActionResult<IEnumerable<Trail>>> GetTrailsByRegion(string region)
-        {
-            return Ok(await _trailRepository.GetTrailsByRegionAsync(region));
-        }
 
-        [HttpGet("filter")]
-        public async Task<ActionResult<IEnumerable<Trail>>> FilterTrails(
-            [FromQuery] string? region = null,
-            [FromQuery] string? difficulty = null,
-            [FromQuery] double? maxDistance = null)
-        {
-            return Ok(await _trailRepository.FilterTrailsAsync(region, difficulty, maxDistance));
-        }
+        //[HttpGet("filter")]
+        //public async Task<ActionResult<IEnumerable<Trail>>> FilterTrails(
+        //    [FromQuery] int? regionId = null,
+        //    [FromQuery] string? difficulty = null,
+        //    [FromQuery] double? maxDistance = null)
+        //{
+        //    return Ok(await _trailRepository.FilterTrailsAsync(regionId, difficulty, maxDistance));
+        //}
     }
 }
