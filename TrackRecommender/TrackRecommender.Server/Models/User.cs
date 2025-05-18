@@ -12,19 +12,18 @@ namespace TrackRecommender.Server.Models
         public string Email { get; set; }
         [Required]
         public string PasswordHash { get; set; }
-        public string PasswordSalt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public string Role { get; set; } = "User";
         public UserPreferences? Preferences { get; set; }
-        public ICollection<UserTrailRating> TrailRatings { get; set; } = new List<UserTrailRating>();
+        public ICollection<UserTrailRating> TrailRatings { get; set; }
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
         public User()
         {
             Username = string.Empty;
             Email = string.Empty;
             PasswordHash = string.Empty;
-            PasswordSalt = string.Empty;
             CreatedAt = DateTime.UtcNow;
             TrailRatings = new List<UserTrailRating>();
         }
@@ -34,10 +33,28 @@ namespace TrackRecommender.Server.Models
             Username = username;
             Email = email;
             PasswordHash = string.Empty;
-            PasswordSalt = string.Empty;
             CreatedAt = DateTime.UtcNow;
             Role = "User";
             TrailRatings = new List<UserTrailRating>();
+        }
+
+        public void AddRefreshToken(string token, string ipAddress, DateTime expiryDate)
+        {
+            RefreshTokens.Add(new RefreshToken
+            {
+                Token = token,
+                ExpiryDate = expiryDate,
+                CreatedByIp = ipAddress
+            });
+        }
+        public void RevokeRefreshToken(string token, string ipAddress, string replacementToken)
+        {
+            var refreshToken = RefreshTokens.SingleOrDefault(r => r.Token == token && r.IsActive);
+            if (refreshToken == null) return;
+
+            refreshToken.RevokedAt = DateTime.UtcNow;
+            refreshToken.RevokedByIp = ipAddress;
+            refreshToken.ReplacedByToken = replacementToken;
         }
     }
 }

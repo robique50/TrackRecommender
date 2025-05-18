@@ -13,7 +13,6 @@ namespace TrackRecommender.Server.Models
         public double MaxDistance { get; set; }
         public double MaxDuration { get; set; }
         public List<string> PreferredCategories { get; set; }
-        [NotMapped]
         public List<int> PreferredRegionIds { get; set; }
         public int MinimumRating { get; set; }
 

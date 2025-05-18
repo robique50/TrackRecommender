@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
     public DbSet<TrailRegion> TrailRegions { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<UserPreferences> UserPreferences { get; set; }
+    public DbSet<UserTrailRating> UserTrailRatings { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +28,17 @@ public class AppDbContext : DbContext
             (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
             c => c == null ? 0 : c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
             c => c == null ? new List<string>() : c.ToList());
+
+        var intListConverter = new ValueConverter<List<int>, string>(
+            v => v == null || !v.Any() ? string.Empty : string.Join(";", v),
+            v => string.IsNullOrWhiteSpace(v) ? new List<int>() : v.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                                                               .Select(int.Parse)
+                                                               .ToList());
+
+        var intListComparer = new ValueComparer<List<int>>(
+            (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
+            c => c == null ? 0 : c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+            c => c == null ? new List<int>() : c.ToList());
 
         modelBuilder.Entity<Trail>(entity =>
         {
@@ -44,6 +57,11 @@ public class AppDbContext : DbContext
                             .HasForeignKey(tr => tr.TrailId),
                       j => j.HasKey(tr => new { tr.TrailId, tr.RegionId })
                   );
+
+            entity.HasMany(t => t.UserRatings)
+                  .WithOne(ur => ur.Trail)
+                  .HasForeignKey(ur => ur.TrailId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<UserPreferences>(entity =>
@@ -52,6 +70,48 @@ public class AppDbContext : DbContext
                 .WithOne(u => u.Preferences)
                 .HasForeignKey<UserPreferences>(up => up.UserId)
                 .IsRequired();
+
+            entity.Property(up => up.PreferredTrailTypes)
+                .HasConversion(stringListConverter)
+                .Metadata.SetValueComparer(stringListComparer);
+
+            entity.Property(up => up.PreferredTags)
+                .HasConversion(stringListConverter)
+                .Metadata.SetValueComparer(stringListComparer);
+
+            entity.Property(up => up.PreferredCategories)
+                .HasConversion(stringListConverter)
+                .Metadata.SetValueComparer(stringListComparer);
+
+            entity.Property(up => up.PreferredRegionIds)
+                .HasConversion(intListConverter)
+                .Metadata.SetValueComparer(intListComparer);
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasIndex(u => u.Username).IsUnique();
+            entity.HasIndex(u => u.Email).IsUnique();
+
+            entity.HasMany(u => u.TrailRatings)
+                  .WithOne(tr => tr.User)
+                  .HasForeignKey(tr => tr.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserTrailRating>(entity =>
+        {
+            entity.HasKey(ur => ur.Id);
+
+            entity.HasIndex(ur => new { ur.UserId, ur.TrailId }).IsUnique();
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasOne(rt => rt.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

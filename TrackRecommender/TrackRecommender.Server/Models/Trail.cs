@@ -18,6 +18,7 @@ namespace TrackRecommender.Server.Models
         public string Category { get; set; } 
         public string? Network { get; set; } 
         public virtual ICollection<Region> Regions { get; set; }
+        public virtual ICollection<UserTrailRating> UserRatings { get; set; } = new List<UserTrailRating>();
 
         [NotMapped]
         public List<int> RegionIds { get; set; }
