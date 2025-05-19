@@ -118,9 +118,23 @@ namespace TrackRecommender.Server.Controllers
         private string GetIpAddress()
         {
             if (Request.Headers.ContainsKey("X-Forwarded-For"))
-                return Request.Headers["X-Forwarded-For"];
+            {
+                var forwardedIp = Request.Headers["X-Forwarded-For"].ToString();
+                if (!string.IsNullOrEmpty(forwardedIp))
+                    return forwardedIp;
+            }
 
-            return HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "Unknown";
+            var ipAddress = HttpContext.Connection.RemoteIpAddress;
+
+            if (ipAddress != null)
+            {
+                if (ipAddress.IsIPv4MappedToIPv6)
+                    ipAddress = ipAddress.MapToIPv4();
+
+                return ipAddress.ToString();
+            }
+
+            return "Unknown";
         }
     }
 }

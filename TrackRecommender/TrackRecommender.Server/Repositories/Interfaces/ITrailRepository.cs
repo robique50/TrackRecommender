@@ -18,7 +18,10 @@ namespace TrackRecommender.Server.Repositories.Interfaces
             List<int>? regionIds = null,
             string? difficulty = null,
             double? maxDistance = null,
-            string? category = null);
+            string? category = null,
+            string? trailType = null,
+            double? maxDuration = null,
+            List<string>? tags = null);
 
         Task<bool> TrailExistsAsync(string name, string network, string geoJsonData);
         Task UpdateTrailAsync(Trail trail);

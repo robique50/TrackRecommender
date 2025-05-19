@@ -160,13 +160,17 @@ namespace TrackRecommender.Server.Repositories.Implementations
         }
 
         public async Task<List<Trail>> FilterTrailsAsync(
-            List<int>? regionIds = null,
-            string? difficulty = null,
-            double? maxDistance = null,
-            string? category = null)
+    List<int>? regionIds = null,
+    string? difficulty = null,
+    double? maxDistance = null,
+    string? category = null,
+    string? trailType = null,
+    double? maxDuration = null,
+    List<string>? tags = null)
         {
             IQueryable<Trail> query = _context.Trails
-                .Include(t => t.Regions);
+                .Include(t => t.Regions)
+                .AsNoTracking();
 
             if (regionIds != null && regionIds.Any())
             {
@@ -175,7 +179,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
 
             if (!string.IsNullOrWhiteSpace(difficulty))
             {
-                query = query.Where(t => EF.Functions.Like(t.Difficulty, $"%{difficulty}%"));
+                query = query.Where(t => t.Difficulty == difficulty);
             }
 
             if (maxDistance.HasValue && maxDistance.Value > 0)
@@ -188,7 +192,25 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 query = query.Where(t => t.Category == category);
             }
 
+            if (maxDuration.HasValue && maxDuration.Value > 0)
+            {
+                query = query.Where(t => t.Duration <= maxDuration.Value);
+            }
+
             var trails = await query.ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(trailType))
+            {
+                trails = trails.Where(t => t.TrailType.Contains(trailType, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            if (tags != null && tags.Any())
+            {
+                trails = trails.Where(t =>
+                    t.Tags.Any(tag => tags.Any(searchTag =>
+                        tag.Contains(searchTag, StringComparison.OrdinalIgnoreCase)))
+                ).ToList();
+            }
 
             foreach (var trail in trails)
             {

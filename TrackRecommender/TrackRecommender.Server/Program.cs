@@ -31,6 +31,7 @@ builder.Services.AddScoped<UserPreferencesMapper>(provider =>
     new UserPreferencesMapper(provider.GetRequiredService<IRegionRepository>()));
 builder.Services.AddScoped<IMapper<UserPreferences, UserPreferencesDto>>(provider =>
     provider.GetRequiredService<UserPreferencesMapper>());
+builder.Services.AddScoped<IMapper<Trail, TrailDto>, TrailMapper>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))
@@ -55,6 +56,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddControllers();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular", policy =>
+    {
+        policy.WithOrigins("https://localhost:54271")
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -106,6 +117,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAngular");
 
 app.UseAuthentication();
 app.UseAuthorization();

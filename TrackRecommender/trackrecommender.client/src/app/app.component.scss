@@ -1,1 +1,23 @@
-﻿
+﻿.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    background-color: #2196F3;
+    color: white;
+    padding: 10px 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 20px;
+  }
+  main {
+    flex: 1;
+    overflow: hidden;
+    display: flex; /* Adăugat pentru a permite copiilor să expandeze */
+    flex-direction: column; /* Sau row, în funcție de layout */
+    position: relative; /* Important pentru poziționare corectă */
+    height: calc(100vh - 50px); /* Înălțime calculată în funcție de header */
+  }
