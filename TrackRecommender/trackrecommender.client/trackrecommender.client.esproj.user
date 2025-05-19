@@ -7,7 +7,7 @@
   "type": "chrome",
   "request": "launch",
   "url": "https://localhost:54271",
-  "webRoot": "C:\\Users\\lungu\\OneDrive\\Desktop\\TrackRecommender\\TrackRecommender\\trackrecommender.client"
+  "webRoot": "C:\\Users\\lungu\\Desktop\\TrackRecommender\\TrackRecommender\\trackrecommender.client"
 }</LaunchJsonTarget>
   </PropertyGroup>
 </Project>
