@@ -3,12 +3,13 @@ import { AppComponent } from './app/app.component';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './app/interceptors/auth.interceptor';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { routes } from './app/routes/app.routes';
+import { TokenStorageService } from './app/services/token-storage/token-storage.service';
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
+    provideRouter(routes),
+    TokenStorageService
   ]
-}).catch(err => console.error(err));
+}).catch(err => console.error('Error bootstrapping app:', err));

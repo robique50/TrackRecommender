@@ -1,89 +1,147 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, tap, switchMap } from 'rxjs/operators';
 import { LoginRequest, RegisterRequest, AuthResponse, UserProfile } from '../../models/auth.models';
+import { TokenStorageService } from '../token-storage/token-storage.service';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly TOKEN_KEY = 'access_token';
-  
   private currentUserSubject = new BehaviorSubject<UserProfile | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
-  
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.hasValidToken());
-  public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-  constructor(private http: HttpClient) {
-    this.loadUserState();
+  constructor(
+    private http: HttpClient,
+    private tokenStorage: TokenStorageService,
+    private router: Router
+  ) {
+    this.checkAuthState();
+  }
+
+  private checkAuthState(): void {
+    if (this.tokenStorage.hasValidToken()) {
+      this.validateToken();
+    }
+  }
+
+  private validateToken(): void {
+    this.getUserProfile().subscribe({
+      next: (profile) => {
+        this.tokenStorage.setAuthenticated(true);
+        this.currentUserSubject.next(profile);
+      },
+      error: (error) => {
+        if (error instanceof HttpErrorResponse && error.status === 401) {
+          this.refreshToken().subscribe({
+            next: () => {
+              this.getUserProfile().subscribe({
+                next: (profile) => {
+                  this.tokenStorage.setAuthenticated(true);
+                  this.currentUserSubject.next(profile);
+                },
+                error: () => {
+                  this.tokenStorage.setAuthenticated(false);
+
+                  if (!window.location.pathname.includes('/login') &&
+                    !window.location.pathname.includes('/register')) {
+                    this.router.navigate(['/login']);
+                  }
+                }
+              });
+            },
+            error: () => {
+              this.tokenStorage.setAuthenticated(false);
+
+              if (!window.location.pathname.includes('/login') &&
+                !window.location.pathname.includes('/register')) {
+                this.router.navigate(['/login']);
+              }
+            }
+          });
+        } else {
+          this.tokenStorage.setAuthenticated(false);
+
+          if (!window.location.pathname.includes('/login') &&
+            !window.location.pathname.includes('/register')) {
+            this.router.navigate(['/login']);
+          }
+        }
+      }
+    });
   }
 
   public login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`/api/auth/login`, credentials, { withCredentials: true })
       .pipe(
         tap(response => {
-          localStorage.setItem(this.TOKEN_KEY, response.accessToken);
-          this.isAuthenticatedSubject.next(true);
+          const rememberMe = credentials.rememberMe || false;
+          this.tokenStorage.saveToken(response.accessToken, rememberMe);
           this.getUserProfile().subscribe();
         }),
         catchError(this.handleError)
       );
   }
 
-  register(userData: RegisterRequest): Observable<any> {
+  public register(userData: RegisterRequest): Observable<any> {
     return this.http.post(`/api/auth/register`, userData)
       .pipe(
         catchError(this.handleError)
       );
   }
 
-  logout(): Observable<any> {
+  public logout(): Observable<any> {
     return this.http.post(`/api/auth/logout`, {}, { withCredentials: true })
       .pipe(
         tap(() => {
-          localStorage.removeItem(this.TOKEN_KEY);
-          this.currentUserSubject.next(null);
-          this.isAuthenticatedSubject.next(false);
+          this.clearUserSession();
         }),
-        catchError(this.handleError)
+        catchError((error) => {
+          this.clearUserSession();
+          return throwError(() => this.handleError(error));
+        })
       );
   }
 
-  refreshToken(): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`api/auth/refresh-token`, {}, { withCredentials: true })
+  private clearUserSession(): void {
+    this.currentUserSubject.next(null);
+    this.tokenStorage.clearTokens();
+    this.tokenStorage.redirectToLogin();
+  }
+
+  public refreshToken(): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(
+      `/api/auth/refresh-token`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      tap(response => {
+        const rememberMe = localStorage.getItem('remember_me') === 'true';
+        this.tokenStorage.saveToken(response.accessToken, rememberMe);
+      }),
+      catchError(error => {
+        return throwError(() => this.handleError(error));
+      })
+    );
+  }
+
+  public getUserProfile(): Observable<UserProfile> {
+    return this.http.get<UserProfile>(`/api/user/profile`)
       .pipe(
-        tap(response => {
-          localStorage.setItem(this.TOKEN_KEY, response.accessToken);
-          this.isAuthenticatedSubject.next(true);
+        tap(profile => {
+          this.currentUserSubject.next(profile);
         }),
-        catchError(this.handleError)
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error));
+        })
       );
-  }
-
-  getUserProfile(): Observable<UserProfile> {
-    return this.http.get<UserProfile>(`api/user/profile`)
-      .pipe(
-        tap(profile => this.currentUserSubject.next(profile)),
-        catchError(this.handleError)
-      );
-  }
-
-  private loadUserState(): void {
-    if (this.hasValidToken()) {
-      this.getUserProfile().subscribe();
-    }
-  }
-
-  private hasValidToken(): boolean {
-    const token = localStorage.getItem(this.TOKEN_KEY);
-    return !!token;
   }
 
   private handleError(error: HttpErrorResponse) {
     let errorMessage = 'An unexpected error occurred';
-    
+
     if (error.error instanceof ErrorEvent) {
       errorMessage = `Error: ${error.error.message}`;
     } else {
@@ -95,7 +153,7 @@ export class AuthService {
         errorMessage = 'Invalid input data';
       }
     }
-    
+
     return throwError(() => errorMessage);
   }
 }

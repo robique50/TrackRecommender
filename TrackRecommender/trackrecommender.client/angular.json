@@ -69,10 +69,12 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "trackrecommender.client:build:production"
+              "buildTarget": "trackrecommender.client:build:production",
+              "ssl": true
             },
             "development": {
-              "buildTarget": "trackrecommender.client:build:development"
+              "buildTarget": "trackrecommender.client:build:development",
+              "ssl": true
             }
           },
           "defaultConfiguration": "development",

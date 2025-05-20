@@ -109,7 +109,7 @@ namespace TrackRecommender.Server.Controllers
             {
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(7),
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Secure = Request.IsHttps
             };
             Response.Cookies.Append("refreshToken", token, cookieOptions);

@@ -1,65 +1,44 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpRequest, HttpHandlerFn, HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { TokenStorageService } from '../services/token-storage/token-storage.service';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError, BehaviorSubject, filter, take } from 'rxjs';
-import { AuthService } from '../services/auth/auth.service';
+import { Router } from '@angular/router';
 
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
-  const token = localStorage.getItem('access_token');
-  
-  let isRefreshing = false;
-  const refreshTokenSubject = new BehaviorSubject<string | null>(null);
-  
+export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<any> => {
+  const tokenStorage = inject(TokenStorageService);
+  const router = inject(Router);
+
+  if (req.url.includes('/api/auth/login') ||
+    req.url.includes('/api/auth/register') ||
+    req.url.includes('/api/auth/refresh-token')) {
+    return next(req);
+  }
+
+  const token = tokenStorage.getToken();
+
   if (token) {
-    req = req.clone({
+    const authReq = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
       }
     });
-  }
-  
-  return next(req).pipe(
-    catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
-        if (!isRefreshing) {
-          isRefreshing = true;
-          refreshTokenSubject.next(null);
-          
-          return authService.refreshToken().pipe(
-            switchMap((response) => {
-              isRefreshing = false;
-              refreshTokenSubject.next(response.accessToken);
-              
-              const clonedRequest = req.clone({
-                setHeaders: {
-                  Authorization: `Bearer ${response.accessToken}`
-                }
-              });
-              
-              return next(clonedRequest);
-            }),
-            catchError((err) => {
-              isRefreshing = false;
-              authService.logout().subscribe();
-              return throwError(() => err);
-            })
-          );
-        } else {
-          return refreshTokenSubject.pipe(
-            filter(token => token !== null),
-            take(1),
-            switchMap(token => {
-              const clonedRequest = req.clone({
-                setHeaders: {
-                  Authorization: `Bearer ${token}`
-                }
-              });
-              return next(clonedRequest);
-            })
-          );
+
+    return next(authReq).pipe(
+      catchError((error) => {
+        if (error instanceof HttpErrorResponse && error.status === 401) {
+          tokenStorage.setAuthenticated(false);
+
+          if (!window.location.pathname.includes('/login') &&
+            !window.location.pathname.includes('/register')) {
+            router.navigate(['/login']);
+          }
         }
-      }
-      return throwError(() => error);
-    })
-  );
+
+        return throwError(() => error);
+      })
+    );
+  }
+
+  return next(req);
 };

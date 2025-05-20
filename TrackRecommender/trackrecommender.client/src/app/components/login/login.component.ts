@@ -1,33 +1,42 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
+import { TokenStorageService } from '../../services/token-storage/token-storage.service';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss'],
+  styleUrl: './login.component.scss',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule]
 })
-export class LoginComponent {
-  loginForm: FormGroup;
-  isLoading = false;
-  error: string | null = null;
+export class LoginComponent implements OnInit {
+  public loginForm: FormGroup;
+  public isLoading = false;
+  public error: string | null = null;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private tokenStorage: TokenStorageService,
     private router: Router
   ) {
     this.loginForm = this.fb.group({
-      username: new FormControl('', [Validators.required]),
-      password: new FormControl('', [Validators.required])
+      username: ['', [Validators.required]],
+      password: ['', [Validators.required]],
+      rememberMe: [false]
     });
   }
 
-  protected onSubmit() {
+  ngOnInit(): void {
+    if (this.tokenStorage.isAuthenticated()) {
+      this.router.navigate(['/map']);
+    }
+  }
+
+  public onSubmit() {
     if (this.loginForm.invalid) {
       return;
     }
@@ -47,5 +56,5 @@ export class LoginComponent {
     });
   }
 
-  public get f() { return this.loginForm.controls; }
+  get f() { return this.loginForm.controls; }
 }

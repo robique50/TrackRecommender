@@ -21,10 +21,12 @@ namespace TrackRecommender.Server.Controllers
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
+            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
             var userId = GetCurrentUserId();
             if (userId == null)
+            {
                 return Unauthorized(new { message = "User not authenticated" });
-
+            }
             try
             {
                 var profile = await _userService.GetUserProfileAsync(userId.Value);

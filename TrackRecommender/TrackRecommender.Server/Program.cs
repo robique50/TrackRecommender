@@ -63,7 +63,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("https://localhost:54271")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -117,6 +118,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.Use(async (context, next) =>
+    {
+        context.Response.Headers.Remove("Strict-Transport-Security");
+        await next();
+    });
+}
 
 app.UseCors("AllowAngular");
 

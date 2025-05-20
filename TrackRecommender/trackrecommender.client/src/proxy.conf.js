@@ -11,9 +11,10 @@ const PROXY_CONFIG = [
       "/api/mapdata",     
       "/api/trails",       
     ],
-    target: "http://localhost:5219",
+    target: "https://localhost:7219",
     secure: false,
     changeOrigin: true,
+    logLevel: "debug"
   }
 ]
 
