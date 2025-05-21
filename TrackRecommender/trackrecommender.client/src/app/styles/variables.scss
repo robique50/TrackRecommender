@@ -1,74 +1,126 @@
 :root {
-  /* Base colors - Light Mode */
-  --primary: #2E7D32;
-  --primary-light: #4CAF50;
-  --primary-dark: #1B5E20;
-  --secondary: #1E88E5;
-  --tertiary: #795548;
-  
-  /* Neutral colors */
+  // Base colors - Mountain Theme 
+  --primary: #2E5D32;
+  --primary-light: #4A8C50; 
+  --primary-dark: #1B3E20;
+  --secondary: #1E5285; 
+  --tertiary: #7D5D3B;
+
+  // Additional nature colors
+  --mountain-gray: #8D9CA6; 
+  --sky-blue: #6FB1FC; 
+  --forest-dark: #263A29; 
+  --sunset-orange: #E67E22; 
+  --alpine-meadow: #88B04B;
+
+  // Neutral colors 
   --white: #FFFFFF;
   --gray-100: #F5F5F5;
   --gray-200: #E0E0E0;
   --gray-500: #9E9E9E;
   --gray-800: #424242;
   --gray-900: #212121;
-  
-  /* Semantic colors */
-  --success: #66BB6A;
-  --warning: #FFC107;
-  --alert: #FF9800;
-  --danger: #F44336;
-  
-  /* Accent colors */
-  --accent: #00BCD4;
-  --focus: #3F51B5;
-  
-  /* Colors for UI elements */
+
+  // Semantic colors - trail difficulty 
+  --trail-easy: #66BB6A;
+  --trail-moderate: #FFC107;
+  --trail-difficult: #FF9800;
+  --trail-expert: #F44336;
+
+  // UI Elements
   --background: var(--white);
   --card-background: var(--white);
   --text-primary: var(--gray-900);
   --text-secondary: var(--gray-800);
   --text-tertiary: var(--gray-500);
-  --border-color: var(--gray-200);
+  --border-color: #CAD9C5; 
   --navbar-bg: var(--primary);
   --navbar-text: var(--white);
-  
-  /* Font sizes */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  
-  /* Spacing */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  
-  /* Border radius */
+  --input-bg: var(--gray-100);
+  --error-color: #e53e3e;
+  --success-color: #38a169;
+
+  // Typography 
+  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+  --font-size-xs: 0.75rem; // 12px
+  --font-size-sm: 0.875rem; // 14px
+  --font-size-base: 1rem; // 16px
+  --font-size-lg: 1.125rem; // 18px
+  --font-size-xl: 1.25rem; // 20px 
+  --font-size-2xl: 1.5rem; // 24px 
+  --font-size-3xl: 1.875rem; // 30px 
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-loose: 1.75;
+
+  // Spacing - use these consistently across the app
+  --space-1: 0.25rem; // 4px 
+  --space-2: 0.5rem; // 8px 
+  --space-3: 0.75rem; // 12px 
+  --space-4: 1rem; // 16px 
+  --space-5: 1.25rem; // 20px 
+  --space-6: 1.5rem; // 24px 
+  --space-8: 2rem; // 32px 
+  --space-10: 2.5rem; // 40px 
+  --space-12: 3rem; // 48px 
+  --space-16: 4rem; // 64px
+
+  // Component sizes
+  --input-height: 2.75rem; // 44px 
+  --input-padding: var(--space-3);
+  --button-height: 2.75rem; // 44px 
+  --button-padding: var(--space-4) var(--space-6);
+  --form-width-sm: 20rem; // 320px 
+  --form-width-md: 24rem; // 384px 
+  --form-width-lg: 28rem; // 448px 
+  --form-max-width: 30rem; // 480px 
+  --header-height: 4rem; // 64px
+
+  // Shadows 
+  --shadow-sm: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 0.625rem 0.9375rem rgba(0, 0, 0, 0.1);
+
+  // Border radius 
   --radius-sm: 0.125rem;
   --radius-md: 0.25rem;
   --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
   --radius-full: 9999px;
+
+  // Transition timing 
+  --transition-fast: 150ms;
+  --transition-normal: 250ms;
+  --transition-slow: 350ms;
+
+  // Trail-specific gradients
+  --gradient-forest: linear-gradient(135deg, #2c3e50 0%, var(--primary-light) 100%);
+  --gradient-header: linear-gradient(to right, var(--primary), var(--primary-light));
+  --gradient-sunset: linear-gradient(to right, #F27121, #E94057);
+  --gradient-mountain: linear-gradient(to bottom, #757F9A, #D7DDE8);
+
+  // Z-index layers 
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
 }
 
-/* Dark Mode */
+// Dark Mode 
 .dark-mode {
   --primary: #4CAF50;
   --primary-light: #81C784;
   --primary-dark: #388E3C;
-  
-  /* Reverse neutral colors  */
+
+  // Reverse neutral colors
   --background: #121212;
   --card-background: #1E1E1E;
   --text-primary: #F5F5F5;
@@ -77,9 +129,10 @@
   --border-color: #333333;
   --navbar-bg: #1B5E20;
   --navbar-text: #FFFFFF;
-  
-  /* Adjusts for shadows in dark mode */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.25);
+  --input-bg: #2d2d2d;
+
+  // Adjusts for shadows in dark mode 
+  --shadow-sm: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 0.625rem 0.9375rem rgba(0, 0, 0, 0.25);
 }
