@@ -4,13 +4,14 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl, A
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
 import { TokenStorageService } from '../../services/token-storage/token-storage.service';
+import { AuthNavbarComponent } from '../auth-navbar/auth-navbar.component';
 
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule]
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthNavbarComponent]
 })
 export class RegisterComponent implements OnInit {
   registerForm: FormGroup;

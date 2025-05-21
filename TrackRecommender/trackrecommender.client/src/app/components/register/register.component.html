@@ -1,3 +1,5 @@
+<app-auth-navbar></app-auth-navbar>
+
 <div class="auth-container">
   <div class="auth-card-wrapper">
     <div class="auth-card">
@@ -38,7 +40,6 @@
                  formControlName="password"
                  [ngClass]="{'invalid': f['password'].invalid && f['password'].touched}">
           <div class="password-requirements" *ngIf="f['password'].touched">
-            <p>Password must contain:</p>
             <ul>
               <li [ngClass]="{'valid': hasMinLength()}">At least 8 characters</li>
               <li [ngClass]="{'valid': hasUpperCase()}">Uppercase letter</li>

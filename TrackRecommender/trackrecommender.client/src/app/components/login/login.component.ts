@@ -4,13 +4,14 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
 import { TokenStorageService } from '../../services/token-storage/token-storage.service';
+import { AuthNavbarComponent } from '../auth-navbar/auth-navbar.component';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule]
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthNavbarComponent]
 })
 export class LoginComponent implements OnInit {
   public loginForm: FormGroup;
@@ -32,7 +33,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.tokenStorage.isAuthenticated()) {
-      this.router.navigate(['/map']);
+      this.router.navigate(['/dashboard']);
     }
   }
 
@@ -47,7 +48,7 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.loginForm.value).subscribe({
       next: () => {
         this.isLoading = false;
-        this.router.navigate(['/map']);
+        this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.isLoading = false;

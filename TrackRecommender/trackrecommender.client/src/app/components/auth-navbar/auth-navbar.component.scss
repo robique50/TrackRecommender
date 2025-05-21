@@ -1,0 +1,64 @@
+.auth-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--space-6);
+  background: var(--auth-header-gradient, linear-gradient(to right, #2E5D32, #4A8C50));
+  color: var(--white, #FFFFFF);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: 48px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.logo-container {
+  a {
+    text-decoration: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-weight: bold;
+    font-size: 18px;
+  }
+}
+
+.auth-links {
+  display: flex;
+  gap: 24px;
+  margin-right: 16px;
+
+  a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 4px 0;
+    position: relative;
+    font-size: 16px;
+
+    &:after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: 0;
+      left: 0;
+      background-color: white;
+      transition: width 0.3s ease;
+    }
+
+    &:hover:after,
+    &.active:after {
+      width: 100%;
+    }
+  }
+}

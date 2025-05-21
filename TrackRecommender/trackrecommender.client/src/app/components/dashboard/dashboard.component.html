@@ -1,0 +1,29 @@
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <h1>Welcome to TrackRecommender</h1>
+    <p *ngIf="userProfile">Hello, {{userProfile.username}}!</p>
+  </header>
+  
+  <div class="dashboard-content">
+    <div class="dashboard-stats">
+    </div>
+    
+    <div class="quick-actions">
+      <div class="action-card" routerLink="/map">
+        <div class="action-icon">🗺️</div>
+        <div class="action-title">Explore Map</div>
+        <div class="action-description">Discover trails on the interactive map</div>
+      </div>
+      <div class="action-card" routerLink="/profile">
+        <div class="action-icon">👤</div>
+        <div class="action-title">My Profile</div>
+        <div class="action-description">Update your preferences</div>
+      </div>
+      <div class="action-card" routerLink="/recommended">
+        <div class="action-icon">⭐</div>
+        <div class="action-title">Recommended Trails</div>
+        <div class="action-description">Trails matching your preferences</div>
+      </div>
+    </div>
+  </div>
+</div>
