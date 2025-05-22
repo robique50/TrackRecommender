@@ -1,2 +1,62 @@
 <app-main-navbar></app-main-navbar>
- <div id="map"></div>
+
+<div class="map-container">
+  <div id="map" class="map-view"></div>
+
+  <div class="map-sidebar" [class.collapsed]="false">
+    <div class="sidebar-header">
+      <h3>Trails in View</h3>
+      <span class="trail-count">{{ visibleTrails.length }} trails</span>
+    </div>
+
+    <div class="sidebar-content">
+      <div class="loading-state" *ngIf="isLoadingTrails">
+        <div class="loading-spinner"></div>
+        <p>Loading trails...</p>
+      </div>
+
+      <div class="trails-list" *ngIf="!isLoadingTrails">
+        <div class="trail-item"
+             *ngFor="let trail of visibleTrails; trackBy: trackByTrailId"
+             [class.selected]="selectedTrail?.id === trail.id"
+             (click)="selectTrailFromSidebar(trail)">
+
+          <div class="trail-header">
+            <h4 class="trail-name">{{ trail.name }}</h4>
+            <div class="trail-meta">
+              <span class="difficulty-badge"
+                    [style.background-color]="getDifficultyColor(trail.difficulty)">
+                {{ trail.difficulty }}
+              </span>
+            </div>
+          </div>
+
+          <div class="trail-stats">
+            <div class="stat">
+              <span class="stat-icon">📏</span>
+              <span class="stat-value">{{ trail.distance }} km</span>
+            </div>
+            <div class="stat">
+              <span class="stat-icon">⏱️</span>
+              <span class="stat-value">{{ formatDuration(trail.duration) }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-icon">📍</span>
+              <span class="stat-value">{{ trail.category }}</span>
+            </div>
+          </div>
+
+          <div class="trail-description" *ngIf="trail.description">
+            <p>{{ trail.description | slice:0:100 }}{{ trail.description.length > 100 ? '...' : '' }}</p>
+          </div>
+        </div>
+
+        <div class="empty-trails" *ngIf="visibleTrails.length === 0">
+          <div class="empty-icon">🗺️</div>
+          <h4>No trails in this area</h4>
+          <p>Try zooming out or moving the map to see more trails.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
