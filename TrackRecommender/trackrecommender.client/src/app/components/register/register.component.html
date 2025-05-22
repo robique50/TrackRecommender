@@ -1,82 +1,83 @@
 <app-auth-navbar></app-auth-navbar>
 
 <div class="auth-container">
-  <div class="auth-card">
-    <div class="auth-header">
-      <h2>Create a new account</h2>
-      <p>Register to explore mountain trails</p>
-    </div>
-
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input id="username"
-               type="text"
-               formControlName="username"
-               [ngClass]="{'invalid': f['username'].invalid && f['username'].touched}">
-        <span class="error-message" *ngIf="f['username'].invalid && f['username'].touched">
-          <span *ngIf="f['username'].errors?.['required']">Username is required</span>
-          <span *ngIf="f['username'].errors?.['minlength']">Username must be at least 3 characters</span>
-        </span>
+  <div class="auth-card-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2>Create a new account</h2>
+        <p>Register to explore mountain trails</p>
       </div>
 
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input id="email"
-               type="email"
-               formControlName="email"
-               [ngClass]="{'invalid': f['email'].invalid && f['email'].touched}">
-        <span class="error-message" *ngIf="f['email'].invalid && f['email'].touched">
-          <span *ngIf="f['email'].errors?.['required']">Email is required</span>
-          <span *ngIf="f['email'].errors?.['email']">Please enter a valid email</span>
-        </span>
-      </div>
-
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input id="password"
-               type="password"
-               formControlName="password"
-               [ngClass]="{'invalid': f['password'].invalid && f['password'].touched}">
-        <div class="password-requirements" *ngIf="f['password'].touched">
-          <p>Password must contain:</p>
-          <ul>
-            <li [ngClass]="{'valid': hasMinLength()}">At least 8 characters</li>
-            <li [ngClass]="{'valid': hasUpperCase()}">At least one uppercase letter</li>
-            <li [ngClass]="{'valid': hasLowerCase()}">At least one lowercase letter</li>
-            <li [ngClass]="{'valid': hasDigit()}">At least one number</li>
-            <li [ngClass]="{'valid': hasSpecialChar()}">At least one special character</li>
-          </ul>
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input id="username"
+                 type="text"
+                 formControlName="username"
+                 [ngClass]="{'invalid': f['username'].invalid && f['username'].touched}">
+          <span class="error-message" *ngIf="f['username'].invalid && f['username'].touched">
+            <span *ngIf="f['username'].errors?.['required']">Username is required</span>
+            <span *ngIf="f['username'].errors?.['minlength']">Username must be at least 3 characters</span>
+          </span>
         </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email"
+                 type="email"
+                 formControlName="email"
+                 [ngClass]="{'invalid': f['email'].invalid && f['email'].touched}">
+          <span class="error-message" *ngIf="f['email'].invalid && f['email'].touched">
+            <span *ngIf="f['email'].errors?.['required']">Email is required</span>
+            <span *ngIf="f['email'].errors?.['email']">Please enter a valid email</span>
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password"
+                 type="password"
+                 formControlName="password"
+                 [ngClass]="{'invalid': f['password'].invalid && f['password'].touched}">
+          <div class="password-requirements" *ngIf="f['password'].touched">
+            <ul>
+              <li [ngClass]="{'valid': hasMinLength()}">At least 8 characters</li>
+              <li [ngClass]="{'valid': hasUpperCase()}">Uppercase letter</li>
+              <li [ngClass]="{'valid': hasLowerCase()}">Lowercase letter</li>
+              <li [ngClass]="{'valid': hasDigit()}">Number</li>
+              <li [ngClass]="{'valid': hasSpecialChar()}">Special character</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input id="confirmPassword"
+                 type="password"
+                 formControlName="confirmPassword"
+                 [ngClass]="{'invalid': f['confirmPassword'].invalid && f['confirmPassword'].touched}">
+          <span class="error-message" *ngIf="f['confirmPassword'].errors?.['mismatch'] && f['confirmPassword'].touched">
+            Passwords do not match
+          </span>
+        </div>
+
+        <div class="auth-error" *ngIf="error">
+          {{ error }}
+        </div>
+
+        <div class="auth-success" *ngIf="success">
+          Registration successful! You will be redirected to the login page.
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="registerForm.invalid || isLoading">
+          <span *ngIf="!isLoading">Register</span>
+          <span *ngIf="isLoading" class="loading-spinner"></span>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p>Already have an account? <a routerLink="/login">Log in</a></p>
       </div>
-
-      <div class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
-        <input id="confirmPassword"
-               type="password"
-               formControlName="confirmPassword"
-               [ngClass]="{'invalid': f['confirmPassword'].invalid && f['confirmPassword'].touched}">
-        <span class="error-message" *ngIf="f['confirmPassword'].errors?.['mismatch'] && f['confirmPassword'].touched">
-          Passwords do not match
-        </span>
-      </div>
-
-      <div class="auth-error" *ngIf="error">
-        {{ error }}
-      </div>
-
-      <div class="auth-success" *ngIf="success">
-        Registration successful! You will be redirected to the login page.
-      </div>
-
-      <button type="submit" class="btn-primary" [disabled]="registerForm.invalid || isLoading">
-        <span *ngIf="!isLoading">Register</span>
-        <span *ngIf="isLoading" class="loading-spinner"></span>
-      </button>
-    </form>
-
-    <div class="auth-footer">
-      <p>Already have an account? <a routerLink="/login">Log in</a></p>
     </div>
   </div>
 </div>

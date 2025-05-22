@@ -21,10 +21,12 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<ITrailRepository, TrailRepository>();
 builder.Services.AddScoped<IRegionRepository, RegionRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 
 builder.Services.AddScoped<TrailImportService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<ReviewService>();
 
 builder.Services.AddScoped<IMapper<User, UserProfileDto>, UserMapper>();
 builder.Services.AddScoped<UserPreferencesMapper>(provider =>
@@ -32,6 +34,7 @@ builder.Services.AddScoped<UserPreferencesMapper>(provider =>
 builder.Services.AddScoped<IMapper<UserPreferences, UserPreferencesDto>>(provider =>
     provider.GetRequiredService<UserPreferencesMapper>());
 builder.Services.AddScoped<IMapper<Trail, TrailDto>, TrailMapper>();
+builder.Services.AddScoped<ReviewMapper>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))

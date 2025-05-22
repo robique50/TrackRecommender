@@ -12,9 +12,10 @@ namespace TrackRecommender.Server.Models
         public int TrailId { get; set; }
         public Trail Trail { get; set; } = null!;
 
-        [Range(1, 10)]
+        [Range(1, 5)]
         public int Rating { get; set; }
 
+        [StringLength(1000)]
         public string? Comment { get; set; }
 
         public bool HasCompleted { get; set; }
