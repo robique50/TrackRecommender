@@ -5,6 +5,7 @@ import { LoginComponent } from '../components/login/login.component';
 import { DashboardComponent } from '../components/dashboard/dashboard.component';
 import { AuthGuard } from '../guards/auth.guard';
 import { ProfileComponent } from '../components/profile/profile.component';
+import { MyReviewsComponent } from '../components/my-reviews/my-reviews.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'register', pathMatch: 'full' },
@@ -12,5 +13,6 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
+  { path: 'my-reviews', component: MyReviewsComponent, canActivate: [AuthGuard] },
   { path: 'map', component: MapComponent, canActivate: [AuthGuard] },
 ];

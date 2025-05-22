@@ -1,0 +1,96 @@
+<app-main-navbar></app-main-navbar>
+
+<div class="reviews-container">
+  <div class="reviews-content-wrapper">
+    <div class="reviews-header">
+      <h1>My Reviews</h1>
+      <p>Reviews you've written for trails</p>
+    </div>
+
+    <div class="reviews-stats" *ngIf="reviews.length > 0">
+      <div class="stat-item">
+        <span class="stat-number">{{ reviews.length }}</span>
+        <span class="stat-label">Total Reviews</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ averageRating | number:'1.1-1' }}</span>
+        <span class="stat-label">Average Rating</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ completedCount }}</span>
+        <span class="stat-label">Trails Completed</span>
+      </div>
+    </div>
+
+    <div class="reviews-list" *ngIf="!isLoading">
+      <div class="review-card" *ngFor="let review of reviews; trackBy: trackByReviewId">
+        <div class="review-header">
+          <div class="trail-info">
+            <h3 class="trail-name">{{ review.trailName }}</h3>
+            <div class="review-meta">
+              <div class="rating-display">
+                <span class="star"
+                      *ngFor="let star of getStarArray(review.rating); let i = index"
+                      [class.filled]="star">★</span>
+                <span class="rating-text">{{ review.rating }}/5</span>
+              </div>
+              <span class="review-date">{{ review.ratedAt | date:'MMM d, yyyy' }}</span>
+            </div>
+          </div>
+          <div class="review-actions">
+            <button class="btn-secondary" (click)="viewTrail(review.trailId)">
+              View Trail
+            </button>
+            <button class="btn-danger" (click)="deleteReview(review)" [disabled]="isDeletingReview === review.id">
+              <span *ngIf="isDeletingReview !== review.id">Delete</span>
+              <span *ngIf="isDeletingReview === review.id" class="loading-spinner"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="review-content" *ngIf="review.comment">
+          <p class="review-comment">{{ review.comment }}</p>
+        </div>
+
+        <div class="review-details">
+          <div class="detail-item" *ngIf="review.hasCompleted">
+            <span class="detail-icon">✅</span>
+            <span class="detail-text">Completed</span>
+            <span class="detail-value" *ngIf="review.completedAt">
+              on {{ review.completedAt | date:'MMM d, yyyy' }}
+            </span>
+          </div>
+
+          <div class="detail-item" *ngIf="review.actualDuration">
+            <span class="detail-icon">⏱️</span>
+            <span class="detail-text">Duration:</span>
+            <span class="detail-value">{{ formatDuration(review.actualDuration) }}</span>
+          </div>
+
+          <div class="detail-item" *ngIf="review.perceivedDifficulty">
+            <span class="detail-icon">🏔️</span>
+            <span class="detail-text">Felt:</span>
+            <span class="detail-value"
+                  [style.color]="getDifficultyColor(review.perceivedDifficulty)">
+              {{ review.perceivedDifficulty }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!isLoading && reviews.length === 0">
+      <div class="empty-icon">⭐</div>
+      <h3>No Reviews Yet</h3>
+      <p>You haven't written any trail reviews yet. Start exploring trails and share your experiences!</p>
+      <button class="btn-primary" routerLink="/trails">
+        Explore Trails
+      </button>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loading-spinner"></div>
+      <p>Loading your reviews...</p>
+    </div>
+  </div>
+</div>
