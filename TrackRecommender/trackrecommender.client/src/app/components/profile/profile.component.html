@@ -1,0 +1,81 @@
+<app-main-navbar></app-main-navbar>
+
+<div class="profile-container">
+  <div class="profile-content-wrapper">
+    <div class="profile-header">
+      <div class="profile-avatar">
+        <span class="avatar-initial">{{ getInitial() }}</span>
+      </div>
+      <div class="profile-info">
+        <h1>{{ userProfile?.username }}</h1>
+        <p class="profile-role">{{ userProfile?.role }}</p>
+      </div>
+    </div>
+
+    <div class="profile-content">
+      <div class="profile-card">
+        <h2>👤 Profile Information</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Username:</label>
+            <span>{{ userProfile?.username }}</span>
+          </div>
+          <div class="info-item">
+            <label>Email:</label>
+            <span>{{ userProfile?.email }}</span>
+          </div>
+          <div class="info-item">
+            <label>Member since:</label>
+            <span>{{ userProfile?.createdAt | date:'dd MMMM yyyy' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Last login:</label>
+            <span>{{ userProfile?.lastLoginAt | date:'dd MMMM yyyy, HH:mm' }}</span>
+          </div>
+          <div class="info-item">
+            <label>Preferences configured:</label>
+            <span class="status-badge" [ngClass]="userProfile?.hasPreferences ? 'active' : 'inactive'">
+              {{ userProfile?.hasPreferences ? 'Yes' : 'No' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-actions">
+        <h2>⚡ Quick Actions</h2>
+        <div class="action-buttons">
+          <button class="btn-primary" [routerLink]="['/preferences']">
+            <span class="btn-icon">⚙️</span>
+            {{ userProfile?.hasPreferences ? 'Edit Preferences' : 'Configure Preferences' }}
+          </button>
+          <button class="btn-secondary" [routerLink]="['/my-reviews']">
+            <span class="btn-icon">⭐</span>
+            My Reviews
+          </button>
+          <button class="btn-secondary" [routerLink]="['/dashboard']">
+            <span class="btn-icon">🏠</span>
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+
+      <div class="profile-stats" *ngIf="false">
+        <h2>📊 Statistics</h2>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number">0</span>
+            <span class="stat-label">Trails Rated</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">0</span>
+            <span class="stat-label">Favorite Trails</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">0</span>
+            <span class="stat-label">Reviews Given</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

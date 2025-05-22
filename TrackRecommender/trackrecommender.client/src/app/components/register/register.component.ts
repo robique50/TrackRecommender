@@ -54,7 +54,7 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.tokenStorage.hasValidToken()) {
-      this.router.navigate(['/map']);
+      this.router.navigate(['/dashboard']);
     }
   }
   

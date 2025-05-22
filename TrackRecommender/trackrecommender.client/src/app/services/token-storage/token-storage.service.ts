@@ -82,11 +82,11 @@ export class TokenStorageService {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.EXPIRATION_KEY);
     localStorage.removeItem(this.AUTH_STATE_KEY);
+    localStorage.removeItem(this.REMEMBER_ME_KEY);
 
     sessionStorage.removeItem(this.TOKEN_KEY);
     sessionStorage.removeItem(this.EXPIRATION_KEY);
     sessionStorage.removeItem(this.AUTH_STATE_KEY);
-
   }
 
   public redirectToLogin(): void {

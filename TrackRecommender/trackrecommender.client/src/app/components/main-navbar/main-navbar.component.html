@@ -1,0 +1,45 @@
+<nav class="auth-navbar">
+  <div class="logo-container">
+    <a [routerLink]="['/dashboard']">
+      <span class="logo-text">TrackRecommender</span>
+    </a>
+  </div>
+
+  <div class="nav-center">
+    <div class="nav-links">
+      <a [routerLink]="['/dashboard']" routerLinkActive="active">Dashboard</a>
+      <a [routerLink]="['/map']" routerLinkActive="active">Map</a>
+      <a [routerLink]="['/trails']" routerLinkActive="active">Trails</a>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    <div class="user-menu">
+      <button class="user-btn" (click)="toggleUserMenu()">
+        <span class="user-initial">{{ userInitial }}</span>
+        <span class="user-name">{{ userName }}</span>
+        <span class="dropdown-arrow" [class.open]="isUserMenuOpen">▼</span>
+      </button>
+
+      <div class="user-dropdown" *ngIf="isUserMenuOpen">
+        <a [routerLink]="['/profile']" (click)="closeUserMenu()">
+          <span class="menu-icon">👤</span>
+          My profile
+        </a>
+        <a [routerLink]="['/my-reviews']" (click)="closeUserMenu()">
+          <span class="menu-icon">⭐</span>
+          My reviews
+        </a>
+        <a [routerLink]="['/preferences']" (click)="closeUserMenu()">
+          <span class="menu-icon">⚙️</span>
+          Preferences
+        </a>
+        <div class="dropdown-divider"></div>
+        <button class="logout-btn" (click)="logout()">
+          <span class="menu-icon">🚪</span>
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>

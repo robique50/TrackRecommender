@@ -12,6 +12,7 @@
   right: 0;
   bottom: 0;
   overflow: hidden;
+
   &:before {
     content: '';
     position: absolute;
@@ -25,6 +26,7 @@
     z-index: -1;
     opacity: 0.7;
   }
+
   &:after {
     content: '';
     position: absolute;
@@ -40,84 +42,11 @@
   }
 }
 
-// Nori stilizați
-.clouds {
-  position: absolute;
-  top: 60px;
-  right: 0;
-  width: 300px;
-  height: 100px;
-  z-index: -3;
-  opacity: 0.5;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%236FB1FC' fill-opacity='0.1' d='M0,96L34.3,106.7C68.6,117,137,139,206,133.3C274.3,128,343,96,411,101.3C480,107,549,149,617,144C685.7,139,754,85,823,69.3C891.4,53,960,75,1029,112C1097.1,149,1166,203,1234,202.7C1302.9,203,1371,149,1406,122.7L1440,96L1440,0L1405.7,0C1371.4,0,1303,0,1234,0C1165.7,0,1097,0,1029,0C960,0,891,0,823,0C754.3,0,686,0,617,0C548.6,0,480,0,411,0C342.9,0,274,0,206,0C137.1,0,69,0,34,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
-  background-size: cover;
-  background-position: center;
-}
-
-// Efectul de particule strălucitoare
-@keyframes sparkle {
-  0%, 100% {
-    opacity: 0.3;
-  }
-
-  50% {
-    opacity: 0.8;
-  }
-}
-
-.sparkles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: -1;
-
-  .sparkle {
-    position: absolute;
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.7);
-    box-shadow: 0 0 3px 1px rgba(255, 255, 255, 0.3);
-
-    &:nth-child(1) {
-      top: 10%;
-      left: 20%;
-      animation: sparkle 3s infinite;
-    }
-
-    &:nth-child(2) {
-      top: 20%;
-      left: 40%;
-      animation: sparkle 4s infinite 0.5s;
-    }
-
-    &:nth-child(3) {
-      top: 15%;
-      left: 70%;
-      animation: sparkle 3.5s infinite 1s;
-    }
-
-    &:nth-child(4) {
-      top: 30%;
-      left: 85%;
-      animation: sparkle 4.5s infinite 0.7s;
-    }
-
-    &:nth-child(5) {
-      top: 40%;
-      left: 30%;
-      animation: sparkle 3.7s infinite 1.2s;
-    }
-  }
-}
-
 .auth-card-wrapper {
   position: relative;
   width: 100%;
-  max-width: 350px;
+  max-width: 350px; // Same as login
+  min-width: 350px; // Force consistent width
   padding: 1rem;
   border-radius: 12px;
   background: linear-gradient(135deg, #2c3e50 0%, #4a8c50 100%);
@@ -157,7 +86,7 @@
   background-color: white;
 
   .form-group {
-    margin-bottom: 12px;
+    margin-bottom: 10px; // Reduced from 12px
 
     label {
       display: block;
@@ -202,11 +131,13 @@
 
   .password-requirements {
     margin-top: 4px;
-    padding: 6px;
+    padding: 4px 6px; // Reduced padding
     background-color: #f5f5f5;
-    border-radius: 6px;
-    border-left: 3px solid #2E5D32;
-    font-size: 12px;
+    border-radius: 4px; // Smaller border radius
+    border-left: 2px solid #2E5D32; // Thinner border
+    font-size: 10px; // Smaller font
+    max-width: 100%; // Prevent overflow
+    box-sizing: border-box;
 
     ul {
       display: flex;
@@ -214,21 +145,25 @@
       padding-left: 0;
       margin: 0;
       list-style: none;
+      gap: 1px; // Smaller gap
     }
 
     li {
       position: relative;
-      padding-left: 14px;
-      margin-bottom: 2px;
-      width: 50%;
+      padding-left: 10px; // Reduced padding more
+      margin-bottom: 1px; // Reduced margin
+      width: calc(50% - 0.5px); // Account for smaller gap
       box-sizing: border-box;
       color: #9E9E9E;
+      font-size: 9px; // Even smaller font for requirements
+      line-height: 1.2; // Tighter line height
 
       &:before {
         content: "○";
         position: absolute;
         left: 0;
         color: #E0E0E0;
+        font-size: 8px; // Smaller icon
       }
 
       &.valid {
@@ -243,22 +178,22 @@
   }
 
   .auth-error {
-    margin-bottom: 12px;
-    padding: 8px 10px;
+    margin-bottom: 10px; // Reduced margin
+    padding: 6px 8px; // Reduced padding
     background-color: #fed7d7;
     border-left: 3px solid #e53e3e;
     border-radius: 4px;
-    font-size: 13px;
+    font-size: 12px; // Smaller font
     color: #c53030;
   }
 
   .auth-success {
-    margin-bottom: 12px;
-    padding: 8px 10px;
+    margin-bottom: 10px; // Reduced margin
+    padding: 6px 8px; // Reduced padding
     background-color: #c6f6d5;
     border-left: 3px solid #38a169;
     border-radius: 4px;
-    font-size: 13px;
+    font-size: 12px; // Smaller font
     color: #2f855a;
   }
 
@@ -272,7 +207,7 @@
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    margin-top: 6px;
+    margin-top: 4px; // Reduced margin
 
     &:hover:not(:disabled) {
       background-color: #1B3E20;
@@ -328,10 +263,12 @@
 @media (max-width: 640px) {
   .auth-card-wrapper {
     max-width: 100%;
+    min-width: auto; // Remove min-width on mobile
     padding: 0.5rem;
   }
 
   .password-requirements li {
     width: 100%;
+    font-size: 10px; // Slightly larger on mobile
   }
 }

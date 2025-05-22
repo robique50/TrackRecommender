@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
 import * as L from 'leaflet';
 import { TrailService } from '../../services/trail/trail.service';
+import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 
 
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule, MainNavbarComponent],
   templateUrl: './map.component.html',
   styleUrl: './map.component.scss'
 })

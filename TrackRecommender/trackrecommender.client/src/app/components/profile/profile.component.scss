@@ -1,0 +1,239 @@
+.profile-container {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding-top: 80px; 
+  overflow-y: auto; 
+  overflow-x: hidden; 
+}
+
+.profile-content-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 32px;
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2E5D32, #4A8C50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .avatar-initial {
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+    }
+  }
+
+  .profile-info {
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: #2E5D32;
+    }
+
+    .profile-role {
+      margin: 0;
+      font-size: 16px;
+      color: #666;
+      text-transform: capitalize;
+    }
+  }
+}
+
+.profile-content {
+  display: grid;
+  gap: 24px;
+}
+
+.profile-card, .profile-actions {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  h2 {
+    margin: 0 0 20px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #2E5D32;
+  }
+}
+
+.info-grid {
+  display: grid;
+  gap: 16px;
+
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    label {
+      font-weight: 500;
+      color: #4a5568;
+      flex: 1;
+    }
+
+    span {
+      flex: 1;
+      text-align: right;
+      color: #2d3748;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-block;
+      min-width: auto;
+      width: auto;
+      flex: none;
+
+      &.active {
+        background-color: #c6f6d5;
+        color: #2f855a;
+      }
+
+      &.inactive {
+        background-color: #fed7d7;
+        color: #c53030;
+      }
+    }
+  }
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .btn-primary, .btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+
+    .btn-icon {
+      font-size: 18px;
+    }
+  }
+
+  .btn-primary {
+    background-color: #2E5D32;
+    color: white;
+
+    &:hover {
+      background-color: #1B3E20;
+      transform: translateY(-1px);
+    }
+  }
+
+  .btn-secondary {
+    background-color: #f8f9fa;
+    color: #2E5D32;
+    border: 2px solid #CAD9C5;
+
+    &:hover {
+      background-color: #e9ecef;
+      border-color: #4A8C50;
+    }
+  }
+}
+
+.profile-stats {
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+
+    .stat-item {
+      text-align: center;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border: 2px solid #CAD9C5;
+
+      .stat-number {
+        display: block;
+        font-size: 32px;
+        font-weight: bold;
+        color: #2E5D32;
+        margin-bottom: 8px;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #666;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-content-wrapper {
+    padding: 16px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+    padding: 24px;
+
+    .profile-avatar {
+      width: 60px;
+      height: 60px;
+
+      .avatar-initial {
+        font-size: 24px;
+      }
+    }
+
+    .profile-info h1 {
+      font-size: 24px;
+    }
+  }
+
+  .info-grid .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+
+    span {
+      text-align: left;
+    }
+  }
+
+  .profile-stats .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

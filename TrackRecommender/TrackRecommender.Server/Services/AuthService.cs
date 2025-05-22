@@ -32,7 +32,8 @@ namespace TrackRecommender.Server.Services.Implementations
             if (!VerifyPasswordHash(loginDto.Password, user.PasswordHash))
                 return null;
 
-            user.LastLoginAt = DateTime.UtcNow;
+            var romaniaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("GTB Standard Time");
+            user.LastLoginAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, romaniaTimeZone);
 
             var jwtToken = GenerateJwtToken(user);
             var refreshToken = GenerateRefreshToken(ipAddress);

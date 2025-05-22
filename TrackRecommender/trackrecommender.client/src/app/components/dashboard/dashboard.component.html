@@ -1,13 +1,15 @@
+<app-main-navbar></app-main-navbar>
+
 <div class="dashboard-container">
   <header class="dashboard-header">
     <h1>Welcome to TrackRecommender</h1>
     <p *ngIf="userProfile">Hello, {{userProfile.username}}!</p>
   </header>
-  
+
   <div class="dashboard-content">
     <div class="dashboard-stats">
     </div>
-    
+
     <div class="quick-actions">
       <div class="action-card" routerLink="/map">
         <div class="action-icon">🗺️</div>
