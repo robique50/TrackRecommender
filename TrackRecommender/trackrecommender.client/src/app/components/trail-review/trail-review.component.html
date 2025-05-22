@@ -1,0 +1,97 @@
+<div class="review-container">
+  <div class="review-header">
+    <h2>Review Trail: {{ trailName }}</h2>
+    <button class="close-btn" (click)="cancel()">×</button>
+  </div>
+
+  <div *ngIf="isLoading" class="review-loading">
+    <div class="loading-spinner"></div>
+    <p>Checking if you can add a review...</p>
+  </div>
+
+  <div *ngIf="!isLoading && error" class="review-error">
+    {{ error }}
+    <button class="btn-primary" (click)="cancel()">Close</button>
+  </div>
+
+  <form *ngIf="!isLoading && !error" [formGroup]="reviewForm" (ngSubmit)="onSubmit()" class="review-form">
+    <div class="rating-section">
+      <label>How would you rate this trail?</label>
+      <div class="star-rating">
+        <button type="button"
+                *ngFor="let star of getStarArray()"
+                [class.active]="reviewForm.get('rating')?.value >= star"
+                (click)="reviewForm.get('rating')?.setValue(star)">
+          ★
+        </button>
+      </div>
+      <div class="error-message" *ngIf="reviewForm.get('rating')?.invalid && reviewForm.get('rating')?.touched">
+        Please rate this trail.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="comment">Your Review (optional)</label>
+      <textarea id="comment"
+                formControlName="comment"
+                rows="4"
+                placeholder="Share your experience on this trail..."></textarea>
+      <div class="char-count" [class.warn]="reviewForm.get('comment')?.value?.length > 900">
+        {{ reviewForm.get('comment')?.value?.length || 0 }}/1000
+      </div>
+    </div>
+
+    <div class="completion-section">
+      <div class="checkbox-group">
+        <input type="checkbox" id="hasCompleted" formControlName="hasCompleted">
+        <label for="hasCompleted">I've completed this trail</label>
+      </div>
+
+      <div class="form-group" *ngIf="reviewForm.get('hasCompleted')?.value">
+        <label for="completedAt">When did you complete it?</label>
+        <input type="date" id="completedAt" formControlName="completedAt">
+        <div class="error-message" *ngIf="reviewForm.get('completedAt')?.invalid && reviewForm.get('completedAt')?.touched">
+          <span *ngIf="reviewForm.get('completedAt')?.errors?.['futureDate']">
+            Completion date cannot be in the future.
+          </span>
+          <span *ngIf="reviewForm.get('completedAt')?.errors?.['tooOldDate']">
+            Completion date cannot be older than 5 years.
+          </span>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="reviewForm.get('hasCompleted')?.value">
+        <label for="actualDuration">How long did it take you? (hours)</label>
+        <input type="number"
+               id="actualDuration"
+               formControlName="actualDuration"
+               step="0.1"
+               min="0.1"
+               max="48">
+        <div class="error-message" *ngIf="reviewForm.get('actualDuration')?.invalid && reviewForm.get('actualDuration')?.touched">
+          Duration must be between 0.1 and 48 hours.
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="reviewForm.get('hasCompleted')?.value">
+        <label for="perceivedDifficulty">How difficult did you find it?</label>
+        <select id="perceivedDifficulty" formControlName="perceivedDifficulty">
+          <option value="">Select difficulty</option>
+          <option value="Easy">Easy</option>
+          <option value="Moderate">Moderate</option>
+          <option value="Difficult">Difficult</option>
+          <option value="Very Difficult">Very Difficult</option>
+          <option value="Expert">Expert</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="review-actions">
+      <button type="button" class="btn-cancel" (click)="cancel()">Cancel</button>
+      <button type="submit" class="btn-submit" [disabled]="reviewForm.invalid || isSubmitting">
+        <span *ngIf="!isSubmitting">Submit Review</span>
+        <span *ngIf="isSubmitting" class="loading-spinner"></span>
+      </button>
+    </div>
+  </form>
+</div>

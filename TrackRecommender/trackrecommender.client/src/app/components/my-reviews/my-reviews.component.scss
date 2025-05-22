@@ -176,6 +176,15 @@
       color: #333;
       font-weight: 600;
     }
+    &.not-completed {
+      .detail-text {
+        color: #dc3545; 
+      }
+
+      .detail-icon {
+        color: #dc3545;
+      }
+    }
   }
 }
 

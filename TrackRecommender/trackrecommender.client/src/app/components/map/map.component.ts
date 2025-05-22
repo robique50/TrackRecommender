@@ -7,11 +7,12 @@ import { ReviewService } from '../../services/review/review.service';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
+import { TrailReviewComponent } from '../trail-review/trail-review.component';
 
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [CommonModule, MainNavbarComponent],
+  imports: [CommonModule, MainNavbarComponent, TrailReviewComponent],
   templateUrl: './map.component.html',
   styleUrl: './map.component.scss'
 })
@@ -24,6 +25,7 @@ export class MapComponent implements OnInit, OnDestroy {
   visibleTrails: any[] = [];
   selectedTrail: any = null;
   isLoadingTrails = true;
+  showReviewPanel = false;
 
   constructor(
     private trailService: TrailService,
@@ -283,5 +285,18 @@ export class MapComponent implements OnInit, OnDestroy {
 
   trackByTrailId(index: number, trail: any): number {
     return trail.id;
+  }
+
+  openReviewPanel(): void {
+    this.showReviewPanel = true;
+  }
+
+  closeReviewPanel(): void {
+    this.showReviewPanel = false;
+  }
+
+  onReviewSubmitted(review: any): void {
+    this.closeReviewPanel();
+    this.loadTrails();
   }
 }

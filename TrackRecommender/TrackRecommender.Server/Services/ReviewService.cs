@@ -67,6 +67,9 @@ namespace TrackRecommender.Server.Services.Implementations
             {
                 if (createReviewDto.CompletedAt.Value > DateTime.UtcNow)
                     throw new ArgumentException("Completion date cannot be in the future");
+                var minAllowedDate = DateTime.UtcNow.AddYears(-5);
+                if (createReviewDto.CompletedAt.Value < minAllowedDate)
+                    throw new ArgumentException("Completion date cannot be older than 5 years");
             }
 
             var review = _reviewMapper.MapCreateDtoToEntity(createReviewDto, userId, trailId);

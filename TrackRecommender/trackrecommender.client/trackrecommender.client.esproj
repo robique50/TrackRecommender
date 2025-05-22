@@ -8,6 +8,7 @@
     <BuildOutputFolder>$(MSBuildProjectDirectory)\dist\trackrecommender.client\browser\</BuildOutputFolder>
   </PropertyGroup>
   <ItemGroup>
+    <Folder Include="src\app\services\weather\" />
     <Folder Include="src\app\services\review\" />
   </ItemGroup>
   <ProjectExtensions>

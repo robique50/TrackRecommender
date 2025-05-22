@@ -3,6 +3,15 @@
 <div class="map-container">
   <div id="map" class="map-view"></div>
 
+  <app-trail-review
+    *ngIf="showReviewPanel && selectedTrail"
+    [trailId]="selectedTrail.id"
+    [trailName]="selectedTrail.name"
+    [difficulty]="selectedTrail.difficulty"
+    (reviewSubmitted)="onReviewSubmitted($event)"
+    (cancelled)="closeReviewPanel()">
+  </app-trail-review>
+
   <div class="map-sidebar" [class.collapsed]="false">
     <div class="sidebar-header">
       <h3>Trails in View</h3>
@@ -48,6 +57,12 @@
 
           <div class="trail-description" *ngIf="trail.description">
             <p>{{ trail.description | slice:0:100 }}{{ trail.description.length > 100 ? '...' : '' }}</p>
+          </div>
+
+          <div class="trail-actions" *ngIf="selectedTrail?.id === trail.id">
+            <button class="btn-review" (click)="openReviewPanel(); $event.stopPropagation()">
+              <span class="btn-icon">⭐</span> Add a review
+            </button>
           </div>
         </div>
 

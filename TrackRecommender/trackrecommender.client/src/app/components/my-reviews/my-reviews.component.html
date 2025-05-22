@@ -1,12 +1,10 @@
 <app-main-navbar></app-main-navbar>
-
 <div class="reviews-container">
   <div class="reviews-content-wrapper">
     <div class="reviews-header">
       <h1>My Reviews</h1>
       <p>Reviews you've written for trails</p>
     </div>
-
     <div class="reviews-stats" *ngIf="reviews.length > 0">
       <div class="stat-item">
         <span class="stat-number">{{ reviews.length }}</span>
@@ -21,7 +19,6 @@
         <span class="stat-label">Trails Completed</span>
       </div>
     </div>
-
     <div class="reviews-list" *ngIf="!isLoading">
       <div class="review-card" *ngFor="let review of reviews; trackBy: trackByReviewId">
         <div class="review-header">
@@ -47,12 +44,15 @@
             </button>
           </div>
         </div>
-
         <div class="review-content" *ngIf="review.comment">
           <p class="review-comment">{{ review.comment }}</p>
         </div>
-
         <div class="review-details">
+          <div class="detail-item not-completed" *ngIf="!review.hasCompleted">
+            <span class="detail-icon">❌</span>
+            <span class="detail-text">Not Completed</span>
+          </div>
+
           <div class="detail-item" *ngIf="review.hasCompleted">
             <span class="detail-icon">✅</span>
             <span class="detail-text">Completed</span>
@@ -60,13 +60,11 @@
               on {{ review.completedAt | date:'MMM d, yyyy' }}
             </span>
           </div>
-
           <div class="detail-item" *ngIf="review.actualDuration">
             <span class="detail-icon">⏱️</span>
             <span class="detail-text">Duration:</span>
             <span class="detail-value">{{ formatDuration(review.actualDuration) }}</span>
           </div>
-
           <div class="detail-item" *ngIf="review.perceivedDifficulty">
             <span class="detail-icon">🏔️</span>
             <span class="detail-text">Felt:</span>
@@ -78,7 +76,6 @@
         </div>
       </div>
     </div>
-
     <div class="empty-state" *ngIf="!isLoading && reviews.length === 0">
       <div class="empty-icon">⭐</div>
       <h3>No Reviews Yet</h3>
@@ -87,7 +84,6 @@
         Explore Trails
       </button>
     </div>
-
     <div class="loading-state" *ngIf="isLoading">
       <div class="loading-spinner"></div>
       <p>Loading your reviews...</p>

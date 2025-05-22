@@ -18,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ITrailRepository, TrailRepository>();
 builder.Services.AddScoped<IRegionRepository, RegionRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -27,6 +28,7 @@ builder.Services.AddScoped<TrailImportService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ReviewService>();
+builder.Services.AddScoped<WeatherService>();
 
 builder.Services.AddScoped<IMapper<User, UserProfileDto>, UserMapper>();
 builder.Services.AddScoped<UserPreferencesMapper>(provider =>

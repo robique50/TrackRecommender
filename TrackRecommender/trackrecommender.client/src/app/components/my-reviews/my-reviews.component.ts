@@ -8,7 +8,7 @@ import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 @Component({
   selector: 'app-my-reviews',
   templateUrl: './my-reviews.component.html',
-  styleUrls: ['./my-reviews.component.scss'],
+  styleUrl: './my-reviews.component.scss',
   standalone: true,
   imports: [CommonModule, RouterModule, MainNavbarComponent]
 })

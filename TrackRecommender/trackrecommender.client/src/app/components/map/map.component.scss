@@ -270,3 +270,33 @@
     background: transparent !important;
   }
 }
+
+.trail-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+
+  .btn-review {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background-color: #2E5D32;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: #1B3E20;
+      transform: translateY(-1px);
+    }
+
+    .btn-icon {
+      font-size: 16px;
+    }
+  }
+}
