@@ -11,8 +11,16 @@ export const routes: Routes = [
   { path: '', redirectTo: 'register', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
-  { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [AuthGuard],
+  },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
-  { path: 'my-reviews', component: MyReviewsComponent, canActivate: [AuthGuard] },
+  {
+    path: 'my-reviews',
+    component: MyReviewsComponent,
+    canActivate: [AuthGuard],
+  },
   { path: 'map', component: MapComponent, canActivate: [AuthGuard] },
 ];

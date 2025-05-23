@@ -1,15 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { TrailReview, CreateReviewRequest, TrailRatingStats, CanReviewResponse } from '../../models/review.models';
+import {
+  TrailReview,
+  CreateReviewRequest,
+  TrailRatingStats,
+  CanReviewResponse,
+} from '../../models/review.models';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ReviewService {
   private readonly baseUrl = '/api/reviews';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   public getMyReviews(): Observable<TrailReview[]> {
     return this.http.get<TrailReview[]>(`${this.baseUrl}/my-reviews`);
@@ -25,15 +30,25 @@ export class ReviewService {
   }
 
   public getTrailRatingStats(trailId: number): Observable<TrailRatingStats> {
-    return this.http.get<TrailRatingStats>(`${this.baseUrl}/trail/${trailId}/stats`);
+    return this.http.get<TrailRatingStats>(
+      `${this.baseUrl}/trail/${trailId}/stats`,
+    );
   }
 
-  public createReview(trailId: number, review: CreateReviewRequest): Observable<TrailReview> {
-    return this.http.post<TrailReview>(`${this.baseUrl}/trail/${trailId}`, review);
+  public createReview(
+    trailId: number,
+    review: CreateReviewRequest,
+  ): Observable<TrailReview> {
+    return this.http.post<TrailReview>(
+      `${this.baseUrl}/trail/${trailId}`,
+      review,
+    );
   }
 
   public getMyTrailReview(trailId: number): Observable<TrailReview> {
-    return this.http.get<TrailReview>(`${this.baseUrl}/trail/${trailId}/my-review`);
+    return this.http.get<TrailReview>(
+      `${this.baseUrl}/trail/${trailId}/my-review`,
+    );
   }
 
   public deleteReview(reviewId: number): Observable<any> {
@@ -41,21 +56,31 @@ export class ReviewService {
   }
 
   public canReviewTrail(trailId: number): Observable<CanReviewResponse> {
-    return this.http.get<CanReviewResponse>(`${this.baseUrl}/trail/${trailId}/can-review`);
+    return this.http.get<CanReviewResponse>(
+      `${this.baseUrl}/trail/${trailId}/can-review`,
+    );
   }
 
   public getStarArray(rating: number): boolean[] {
-    return Array(5).fill(false).map((_, index) => index < rating);
+    return Array(5)
+      .fill(false)
+      .map((_, index) => index < rating);
   }
 
   public getDifficultyColor(difficulty?: string): string {
     switch (difficulty?.toLowerCase()) {
-      case 'easy': return '#4CAF50';
-      case 'moderate': return '#FFC107';
-      case 'difficult': return '#FF9800';
-      case 'very difficult': return '#F44336';
-      case 'expert': return '#9C27B0';
-      default: return '#9E9E9E';
+      case 'easy':
+        return '#4CAF50';
+      case 'moderate':
+        return '#FFC107';
+      case 'difficult':
+        return '#FF9800';
+      case 'very difficult':
+        return '#F44336';
+      case 'expert':
+        return '#9C27B0';
+      default:
+        return '#9E9E9E';
     }
   }
 

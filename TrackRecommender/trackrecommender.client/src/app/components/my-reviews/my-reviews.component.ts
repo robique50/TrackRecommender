@@ -10,7 +10,7 @@ import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
   templateUrl: './my-reviews.component.html',
   styleUrl: './my-reviews.component.scss',
   standalone: true,
-  imports: [CommonModule, RouterModule, MainNavbarComponent]
+  imports: [CommonModule, RouterModule, MainNavbarComponent],
 })
 export class MyReviewsComponent implements OnInit {
   reviews: TrailReview[] = [];
@@ -20,8 +20,8 @@ export class MyReviewsComponent implements OnInit {
 
   constructor(
     private reviewService: ReviewService,
-    private router: Router
-  ) { }
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.loadMyReviews();
@@ -34,7 +34,7 @@ export class MyReviewsComponent implements OnInit {
   }
 
   get completedCount(): number {
-    return this.reviews.filter(review => review.hasCompleted).length;
+    return this.reviews.filter((review) => review.hasCompleted).length;
   }
 
   private loadMyReviews(): void {
@@ -50,12 +50,16 @@ export class MyReviewsComponent implements OnInit {
         console.error('Error loading reviews:', error);
         this.error = 'Failed to load your reviews. Please try again.';
         this.isLoading = false;
-      }
+      },
     });
   }
 
   deleteReview(review: TrailReview): void {
-    if (!confirm(`Are you sure you want to delete your review for "${review.trailName}"?`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete your review for "${review.trailName}"?`,
+      )
+    ) {
       return;
     }
 
@@ -63,14 +67,14 @@ export class MyReviewsComponent implements OnInit {
 
     this.reviewService.deleteReview(review.id).subscribe({
       next: () => {
-        this.reviews = this.reviews.filter(r => r.id !== review.id);
+        this.reviews = this.reviews.filter((r) => r.id !== review.id);
         this.isDeletingReview = null;
       },
       error: (error) => {
         console.error('Error deleting review:', error);
         this.error = 'Failed to delete review. Please try again.';
         this.isDeletingReview = null;
-      }
+      },
     });
   }
 

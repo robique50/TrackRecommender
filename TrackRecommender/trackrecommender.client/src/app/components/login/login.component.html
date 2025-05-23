@@ -11,29 +11,43 @@
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
         <div class="form-group">
           <label for="username">Username</label>
-          <input id="username"
-                 type="text"
-                 formControlName="username"
-                 [ngClass]="{'invalid': f['username'].invalid && f['username'].touched}">
-          <span class="error-message" *ngIf="f['username'].invalid && f['username'].touched">
+          <input
+            id="username"
+            type="text"
+            formControlName="username"
+            [ngClass]="{
+              invalid: f['username'].invalid && f['username'].touched,
+            }"
+          />
+          <span
+            class="error-message"
+            *ngIf="f['username'].invalid && f['username'].touched"
+          >
             Username is required
           </span>
         </div>
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input id="password"
-                 type="password"
-                 formControlName="password"
-                 [ngClass]="{'invalid': f['password'].invalid && f['password'].touched}">
-          <span class="error-message" *ngIf="f['password'].invalid && f['password'].touched">
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            [ngClass]="{
+              invalid: f['password'].invalid && f['password'].touched,
+            }"
+          />
+          <span
+            class="error-message"
+            *ngIf="f['password'].invalid && f['password'].touched"
+          >
             Password is required
           </span>
         </div>
 
         <div class="form-group remember-me">
           <label>
-            <input type="checkbox" formControlName="rememberMe">
+            <input type="checkbox" formControlName="rememberMe" />
             Remember me
           </label>
         </div>
@@ -42,7 +56,11 @@
           {{ error }}
         </div>
 
-        <button type="submit" class="btn-primary" [disabled]="loginForm.invalid || isLoading">
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="loginForm.invalid || isLoading"
+        >
           <span *ngIf="!isLoading">Log in</span>
           <span *ngIf="isLoading" class="loading-spinner"></span>
         </button>

@@ -14,7 +14,7 @@ import { TrailReviewComponent } from '../trail-review/trail-review.component';
   standalone: true,
   imports: [CommonModule, MainNavbarComponent, TrailReviewComponent],
   templateUrl: './map.component.html',
-  styleUrl: './map.component.scss'
+  styleUrl: './map.component.scss',
 })
 export class MapComponent implements OnInit, OnDestroy {
   private map!: L.Map;
@@ -29,8 +29,8 @@ export class MapComponent implements OnInit, OnDestroy {
 
   constructor(
     private trailService: TrailService,
-    private reviewService: ReviewService
-  ) { }
+    private reviewService: ReviewService,
+  ) {}
 
   ngOnInit(): void {
     this.initMap();
@@ -43,18 +43,16 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   private setupDebounce(): void {
-    this.updateSubject
-      .pipe(debounceTime(300))
-      .subscribe(() => {
-        this.updateVisibleTrails();
-      });
+    this.updateSubject.pipe(debounceTime(300)).subscribe(() => {
+      this.updateVisibleTrails();
+    });
   }
 
   private initMap(): void {
     this.map = L.map('map').setView([45.9443, 25.0094], 7);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+      attribution: '© OpenStreetMap contributors',
     }).addTo(this.map);
 
     this.markerClusterGroup = L.markerClusterGroup({
@@ -63,7 +61,7 @@ export class MapComponent implements OnInit, OnDestroy {
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
-      iconCreateFunction: (cluster) => this.createClusterIcon(cluster)
+      iconCreateFunction: (cluster) => this.createClusterIcon(cluster),
     });
 
     this.map.addLayer(this.markerClusterGroup);
@@ -77,7 +75,10 @@ export class MapComponent implements OnInit, OnDestroy {
     });
 
     this.map.on('click', (e) => {
-      if ((e as any).originalEvent.target === this.map.getContainer().querySelector('.leaflet-map-pane')) {
+      if (
+        (e as any).originalEvent.target ===
+        this.map.getContainer().querySelector('.leaflet-map-pane')
+      ) {
         this.clearTrailSelection();
       }
     });
@@ -85,17 +86,19 @@ export class MapComponent implements OnInit, OnDestroy {
 
   private createClusterIcon(cluster: L.MarkerCluster): L.DivIcon {
     const markers = cluster.getAllChildMarkers();
-    const difficulties = markers.map(marker => (marker as any).trailData?.difficulty);
+    const difficulties = markers.map(
+      (marker) => (marker as any).trailData?.difficulty,
+    );
 
     const difficultyCount: { [key: string]: number } = {};
-    difficulties.forEach(diff => {
+    difficulties.forEach((diff) => {
       if (diff) {
         difficultyCount[diff] = (difficultyCount[diff] || 0) + 1;
       }
     });
 
     const predominantDifficulty = Object.keys(difficultyCount).reduce((a, b) =>
-      difficultyCount[a] > difficultyCount[b] ? a : b
+      difficultyCount[a] > difficultyCount[b] ? a : b,
     );
 
     const color = this.getTrailColor(predominantDifficulty);
@@ -117,7 +120,7 @@ export class MapComponent implements OnInit, OnDestroy {
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       ">${count}</div>`,
       className: 'custom-cluster-icon',
-      iconSize: L.point(40, 40, true)
+      iconSize: L.point(40, 40, true),
     });
   }
 
@@ -135,7 +138,7 @@ export class MapComponent implements OnInit, OnDestroy {
       "></div>`,
       className: 'custom-trail-icon',
       iconSize: L.point(16, 16, true),
-      iconAnchor: L.point(8, 8, true)
+      iconAnchor: L.point(8, 8, true),
     });
   }
 
@@ -152,14 +155,14 @@ export class MapComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error loading trails:', error);
         this.isLoadingTrails = false;
-      }
+      },
     });
   }
 
   private addTrailsToMap(): void {
     this.markerClusterGroup.clearLayers();
 
-    this.trails.forEach(trail => {
+    this.trails.forEach((trail) => {
       try {
         const geoJson = JSON.parse(trail.geoJsonData);
 
@@ -167,7 +170,7 @@ export class MapComponent implements OnInit, OnDestroy {
         const startLatLng = L.latLng(startCoordinates[1], startCoordinates[0]);
 
         const marker = L.marker(startLatLng, {
-          icon: this.createTrailIcon(trail.difficulty)
+          icon: this.createTrailIcon(trail.difficulty),
         });
 
         (marker as any).trailData = trail;
@@ -177,7 +180,6 @@ export class MapComponent implements OnInit, OnDestroy {
         });
 
         this.markerClusterGroup.addLayer(marker);
-
       } catch (error) {
         console.error(`Error processing trail ${trail.id}:`, error);
       }
@@ -187,7 +189,7 @@ export class MapComponent implements OnInit, OnDestroy {
   private updateVisibleTrails(): void {
     const bounds = this.map.getBounds();
 
-    this.visibleTrails = this.trails.filter(trail => {
+    this.visibleTrails = this.trails.filter((trail) => {
       try {
         const geoJson = JSON.parse(trail.geoJsonData);
         const startCoordinates = geoJson.coordinates[0];
@@ -209,8 +211,8 @@ export class MapComponent implements OnInit, OnDestroy {
           color: '#FF1744',
           weight: 4,
           opacity: 0.9,
-          dashArray: '5, 5'
-        }
+          dashArray: '5, 5',
+        },
       });
 
       (highlightLayer as any).isTrailHighlight = true;
@@ -222,7 +224,7 @@ export class MapComponent implements OnInit, OnDestroy {
       if (bounds.isValid()) {
         this.map.fitBounds(bounds, {
           padding: [20, 20],
-          maxZoom: 10
+          maxZoom: 10,
         });
       }
     } catch (error) {
@@ -239,7 +241,7 @@ export class MapComponent implements OnInit, OnDestroy {
       }
     });
 
-    layersToRemove.forEach(layer => {
+    layersToRemove.forEach((layer) => {
       this.map.removeLayer(layer);
     });
 
@@ -266,12 +268,18 @@ export class MapComponent implements OnInit, OnDestroy {
 
   private getTrailColor(difficulty: string): string {
     switch (difficulty?.toLowerCase()) {
-      case 'easy': return '#4CAF50';
-      case 'moderate': return '#FFC107';
-      case 'difficult': return '#FF9800';
-      case 'very difficult': return '#F44336';
-      case 'expert': return '#9C27B0';
-      default: return '#2196F3';
+      case 'easy':
+        return '#4CAF50';
+      case 'moderate':
+        return '#FFC107';
+      case 'difficult':
+        return '#FF9800';
+      case 'very difficult':
+        return '#F44336';
+      case 'expert':
+        return '#9C27B0';
+      default:
+        return '#2196F3';
     }
   }
 

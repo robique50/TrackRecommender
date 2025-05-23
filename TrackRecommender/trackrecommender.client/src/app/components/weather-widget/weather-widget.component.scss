@@ -22,19 +22,19 @@
     input {
       flex: 1;
       padding: 10px 12px;
-      border: 1px solid #CAD9C5;
+      border: 1px solid #cad9c5;
       border-right: none;
       border-radius: 6px 0 0 6px;
       font-size: 14px;
 
       &:focus {
         outline: none;
-        border-color: #2E5D32;
+        border-color: #2e5d32;
       }
     }
 
     .btn-search {
-      background-color: #2E5D32;
+      background-color: #2e5d32;
       color: white;
       border: none;
       border-radius: 0 6px 6px 0;
@@ -43,7 +43,7 @@
       font-weight: 500;
 
       &:hover {
-        background-color: #1B3E20;
+        background-color: #1b3e20;
       }
     }
   }
@@ -55,16 +55,16 @@
       gap: 8px;
       padding: 10px 16px;
       background-color: #f8f9fa;
-      border: 1px solid #CAD9C5;
+      border: 1px solid #cad9c5;
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
       font-weight: 500;
-      color: #2E5D32;
+      color: #2e5d32;
 
       &:hover {
         background-color: #e9ecef;
-        border-color: #4A8C50;
+        border-color: #4a8c50;
       }
 
       .location-icon {
@@ -86,7 +86,7 @@
     width: 36px;
     height: 36px;
     border: 3px solid rgba(46, 93, 50, 0.2);
-    border-top-color: #2E5D32;
+    border-top-color: #2e5d32;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -121,7 +121,7 @@
   h3 {
     margin: 0;
     font-size: 20px;
-    color: #2E5D32;
+    color: #2e5d32;
   }
 }
 
@@ -195,7 +195,7 @@
     margin: 0 0 12px 0;
     font-size: 16px;
     font-weight: 600;
-    color: #2E5D32;
+    color: #2e5d32;
     text-align: center;
   }
 
@@ -289,7 +289,7 @@
     }
 
     &::-webkit-scrollbar-thumb {
-      background-color: #CAD9C5;
+      background-color: #cad9c5;
       border-radius: 4px;
     }
   }

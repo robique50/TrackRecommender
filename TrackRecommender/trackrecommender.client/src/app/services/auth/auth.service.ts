@@ -2,12 +2,17 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, tap, switchMap } from 'rxjs/operators';
-import { LoginRequest, RegisterRequest, AuthResponse, UserProfile } from '../../models/auth.models';
+import {
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+  UserProfile,
+} from '../../models/auth.models';
 import { TokenStorageService } from '../token-storage/token-storage.service';
 import { Router } from '@angular/router';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<UserProfile | null>(null);
@@ -16,7 +21,7 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private tokenStorage: TokenStorageService,
-    private router: Router
+    private router: Router,
   ) {
     this.checkAuthState();
   }
@@ -45,55 +50,64 @@ export class AuthService {
                 error: () => {
                   this.tokenStorage.setAuthenticated(false);
 
-                  if (!window.location.pathname.includes('/login') &&
-                    !window.location.pathname.includes('/register')) {
+                  if (
+                    !window.location.pathname.includes('/login') &&
+                    !window.location.pathname.includes('/register')
+                  ) {
                     this.router.navigate(['/login']);
                   }
-                }
+                },
               });
             },
             error: () => {
               this.tokenStorage.setAuthenticated(false);
 
-              if (!window.location.pathname.includes('/login') &&
-                !window.location.pathname.includes('/register')) {
+              if (
+                !window.location.pathname.includes('/login') &&
+                !window.location.pathname.includes('/register')
+              ) {
                 this.router.navigate(['/login']);
               }
-            }
+            },
           });
         } else {
           this.tokenStorage.setAuthenticated(false);
 
-          if (!window.location.pathname.includes('/login') &&
-            !window.location.pathname.includes('/register')) {
+          if (
+            !window.location.pathname.includes('/login') &&
+            !window.location.pathname.includes('/register')
+          ) {
             this.router.navigate(['/login']);
           }
         }
-      }
+      },
     });
   }
 
   public login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`/api/auth/login`, credentials, { withCredentials: true })
+    return this.http
+      .post<AuthResponse>(`/api/auth/login`, credentials, {
+        withCredentials: true,
+      })
       .pipe(
-        tap(response => {
+        tap((response) => {
           const rememberMe = credentials.rememberMe || false;
           this.tokenStorage.saveToken(response.accessToken, rememberMe);
           this.getUserProfile().subscribe();
         }),
-        catchError(this.handleError)
+        catchError(this.handleError),
       );
   }
 
   public register(userData: RegisterRequest): Observable<any> {
-    return this.http.post(`/api/auth/register`, userData)
-      .pipe(
-        catchError(this.handleError)
-      );
+    return this.http
+      .post(`/api/auth/register`, userData)
+      .pipe(catchError(this.handleError));
   }
 
   public logout(): Observable<any> {
-    return this.http.post(`/api/auth/logout`, {}, { withCredentials: true })
+    return this.http
+      .post(`/api/auth/logout`, {}, { withCredentials: true })
       .pipe(
         tap(() => {
           this.clearUserSession();
@@ -101,7 +115,7 @@ export class AuthService {
         catchError((error) => {
           this.clearUserSession();
           return throwError(() => this.handleError(error));
-        })
+        }),
       );
   }
 
@@ -112,31 +126,32 @@ export class AuthService {
   }
 
   public refreshToken(): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(
-      `/api/auth/refresh-token`,
-      {},
-      { withCredentials: true }
-    ).pipe(
-      tap(response => {
-        const rememberMe = localStorage.getItem('remember_me') === 'true';
-        this.tokenStorage.saveToken(response.accessToken, rememberMe);
-      }),
-      catchError(error => {
-        return throwError(() => this.handleError(error));
-      })
-    );
+    return this.http
+      .post<AuthResponse>(
+        `/api/auth/refresh-token`,
+        {},
+        { withCredentials: true },
+      )
+      .pipe(
+        tap((response) => {
+          const rememberMe = localStorage.getItem('remember_me') === 'true';
+          this.tokenStorage.saveToken(response.accessToken, rememberMe);
+        }),
+        catchError((error) => {
+          return throwError(() => this.handleError(error));
+        }),
+      );
   }
 
   public getUserProfile(): Observable<UserProfile> {
-    return this.http.get<UserProfile>(`/api/user/profile`)
-      .pipe(
-        tap(profile => {
-          this.currentUserSubject.next(profile);
-        }),
-        catchError((error: HttpErrorResponse) => {
-          return throwError(() => this.handleError(error));
-        })
-      );
+    return this.http.get<UserProfile>(`/api/user/profile`).pipe(
+      tap((profile) => {
+        this.currentUserSubject.next(profile);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        return throwError(() => this.handleError(error));
+      }),
+    );
   }
 
   private handleError(error: HttpErrorResponse) {

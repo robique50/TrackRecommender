@@ -41,3 +41,11 @@ export interface WeatherResponse {
   current: WeatherCurrent;
   daily: WeatherDaily[];
 }
+
+export interface ForecastDay {
+  name: string;
+  iconUrl: string;
+  tempMax: number;
+  tempMin: number;
+  condition: string;
+}

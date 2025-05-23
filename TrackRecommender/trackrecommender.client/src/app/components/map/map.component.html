@@ -9,7 +9,8 @@
     [trailName]="selectedTrail.name"
     [difficulty]="selectedTrail.difficulty"
     (reviewSubmitted)="onReviewSubmitted($event)"
-    (cancelled)="closeReviewPanel()">
+    (cancelled)="closeReviewPanel()"
+  >
   </app-trail-review>
 
   <div class="map-sidebar" [class.collapsed]="false">
@@ -25,16 +26,19 @@
       </div>
 
       <div class="trails-list" *ngIf="!isLoadingTrails">
-        <div class="trail-item"
-             *ngFor="let trail of visibleTrails; trackBy: trackByTrailId"
-             [class.selected]="selectedTrail?.id === trail.id"
-             (click)="selectTrailFromSidebar(trail)">
-
+        <div
+          class="trail-item"
+          *ngFor="let trail of visibleTrails; trackBy: trackByTrailId"
+          [class.selected]="selectedTrail?.id === trail.id"
+          (click)="selectTrailFromSidebar(trail)"
+        >
           <div class="trail-header">
             <h4 class="trail-name">{{ trail.name }}</h4>
             <div class="trail-meta">
-              <span class="difficulty-badge"
-                    [style.background-color]="getDifficultyColor(trail.difficulty)">
+              <span
+                class="difficulty-badge"
+                [style.background-color]="getDifficultyColor(trail.difficulty)"
+              >
                 {{ trail.difficulty }}
               </span>
             </div>
@@ -47,7 +51,9 @@
             </div>
             <div class="stat">
               <span class="stat-icon">⏱️</span>
-              <span class="stat-value">{{ formatDuration(trail.duration) }}</span>
+              <span class="stat-value">{{
+                formatDuration(trail.duration)
+              }}</span>
             </div>
             <div class="stat">
               <span class="stat-icon">📍</span>
@@ -56,11 +62,17 @@
           </div>
 
           <div class="trail-description" *ngIf="trail.description">
-            <p>{{ trail.description | slice:0:100 }}{{ trail.description.length > 100 ? '...' : '' }}</p>
+            <p>
+              {{ trail.description | slice: 0 : 100
+              }}{{ trail.description.length > 100 ? "..." : "" }}
+            </p>
           </div>
 
           <div class="trail-actions" *ngIf="selectedTrail?.id === trail.id">
-            <button class="btn-review" (click)="openReviewPanel(); $event.stopPropagation()">
+            <button
+              class="btn-review"
+              (click)="openReviewPanel(); $event.stopPropagation()"
+            >
               <span class="btn-icon">⭐</span> Add a review
             </button>
           </div>

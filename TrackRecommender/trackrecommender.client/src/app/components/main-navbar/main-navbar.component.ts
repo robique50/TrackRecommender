@@ -10,20 +10,20 @@ import { UserProfile } from '../../models/auth.models';
   templateUrl: './main-navbar.component.html',
   styleUrl: './main-navbar.component.scss',
   standalone: true,
-  imports: [CommonModule, RouterModule]
+  imports: [CommonModule, RouterModule],
 })
-export class MainNavbarComponent implements OnInit,OnDestroy {
+export class MainNavbarComponent implements OnInit, OnDestroy {
   userProfile: UserProfile | null = null;
   isUserMenuOpen = false;
   private userSubscription?: Subscription;
 
   constructor(
     private authService: AuthService,
-    private router: Router
-  ) { }
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
-    this.userSubscription = this.authService.currentUser$.subscribe(user => {
+    this.userSubscription = this.authService.currentUser$.subscribe((user) => {
       this.userProfile = user;
     });
   }
@@ -58,7 +58,7 @@ export class MainNavbarComponent implements OnInit,OnDestroy {
       error: (error) => {
         console.error('Logout error:', error);
         this.router.navigate(['/login']);
-      }
+      },
     });
     this.closeUserMenu();
   }

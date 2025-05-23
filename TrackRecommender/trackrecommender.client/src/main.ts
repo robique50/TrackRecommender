@@ -10,6 +10,6 @@ bootstrapApplication(AppComponent, {
   providers: [
     provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter(routes),
-    TokenStorageService
-  ]
-}).catch(err => console.error('Error bootstrapping app:', err));
+    TokenStorageService,
+  ],
+}).catch((err) => console.error('Error bootstrapping app:', err));

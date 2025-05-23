@@ -10,21 +10,21 @@ import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, MainNavbarComponent]
+  imports: [CommonModule, RouterModule, MainNavbarComponent],
 })
 export class ProfileComponent implements OnInit {
   userProfile: UserProfile | null = null;
   isLoading = true;
   error: string | null = null;
 
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
     this.loadUserProfile();
   }
 
   private loadUserProfile(): void {
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.subscribe((user) => {
       if (user) {
         this.userProfile = user;
         this.isLoading = false;
@@ -43,20 +43,20 @@ export class ProfileComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading user profile:', error);
-        this.error = "We couldn't load the profile. Please try again.";
+        this.error = 'Nu am putut încărca profilul. Te rugăm încearcă din nou.';
         this.isLoading = false;
-      }
+      },
     });
   }
 
-  protected getInitial(): string {
-  if (!this.userProfile?.username) {
-    return '?';
+  getInitial(): string {
+    if (!this.userProfile?.username) {
+      return '?';
+    }
+    return this.userProfile.username.charAt(0).toUpperCase();
   }
-  return this.userProfile.username.charAt(0).toUpperCase();
-}
 
-  protected refreshProfile(): void {
+  refreshProfile(): void {
     this.isLoading = true;
     this.error = null;
     this.fetchUserProfile();

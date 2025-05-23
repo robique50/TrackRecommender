@@ -14,7 +14,7 @@
   overflow: hidden;
 
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     bottom: 0;
     left: 0;
@@ -28,7 +28,7 @@
   }
 
   &:after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: 0;
     left: 0;
@@ -64,7 +64,7 @@
 .auth-header {
   padding: 12px 16px;
   text-align: center;
-  background: linear-gradient(to right, #2E5D32, #4A8C50);
+  background: linear-gradient(to right, #2e5d32, #4a8c50);
   color: white;
 
   h2 {
@@ -92,7 +92,7 @@
       margin-bottom: 4px;
       font-size: 14px;
       font-weight: 500;
-      color: #2E5D32;
+      color: #2e5d32;
     }
 
     input[type="text"],
@@ -103,13 +103,13 @@
       height: 36px;
       padding: 0 10px;
       font-size: 14px;
-      border: 1px solid #CAD9C5;
+      border: 1px solid #cad9c5;
       border-radius: 6px;
       background-color: #f8f9fa;
 
       &:focus {
         outline: none;
-        border-color: #4A8C50;
+        border-color: #4a8c50;
         box-shadow: 0 0 0 3px rgba(74, 140, 80, 0.2);
         background-color: white;
       }
@@ -130,11 +130,11 @@
 
   .password-requirements {
     margin-top: 4px;
-    padding: 6px 8px; 
+    padding: 6px 8px;
     background-color: #f8f9fa;
     border-radius: 4px;
-    border-left: 2px solid #2E5D32;
-    font-size: 12px; 
+    border-left: 2px solid #2e5d32;
+    font-size: 12px;
     max-width: 100%;
     box-sizing: border-box;
     overflow: hidden;
@@ -142,7 +142,7 @@
     ul {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 3px 6px; 
+      gap: 3px 6px;
       padding: 0;
       margin: 0;
       list-style: none;
@@ -152,8 +152,8 @@
       position: relative;
       padding-left: 12px;
       color: #666;
-      font-size: 12px; 
-      line-height: 1.3; 
+      font-size: 12px;
+      line-height: 1.3;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -167,11 +167,11 @@
       }
 
       &.valid {
-        color: #2E5D32;
+        color: #2e5d32;
 
         &:before {
           content: "✓";
-          color: #2E5D32;
+          color: #2e5d32;
         }
       }
     }
@@ -203,14 +203,14 @@
     font-size: 15px;
     font-weight: 600;
     color: white;
-    background-color: #2E5D32;
+    background-color: #2e5d32;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     margin-top: 6px;
 
     &:hover:not(:disabled) {
-      background-color: #1B3E20;
+      background-color: #1b3e20;
     }
 
     &:disabled {
@@ -242,12 +242,12 @@
     margin: 0;
 
     a {
-      color: #2E5D32;
+      color: #2e5d32;
       text-decoration: none;
       font-weight: 600;
 
       &:hover {
-        color: #1B3E20;
+        color: #1b3e20;
         text-decoration: underline;
       }
     }

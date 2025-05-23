@@ -3,7 +3,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 var(--space-6, 24px);
-  background: linear-gradient(to right, #2E5D32, #4A8C50);
+  background: linear-gradient(to right, #2e5d32, #4a8c50);
   color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: fixed;
@@ -125,12 +125,13 @@
       overflow: hidden;
       z-index: 1001;
 
-      a, .logout-btn {
+      a,
+      .logout-btn {
         display: flex;
         align-items: center;
         gap: 12px;
         padding: 12px 16px;
-        color: #2E5D32;
+        color: #2e5d32;
         text-decoration: none;
         font-size: 14px;
         font-weight: 500;

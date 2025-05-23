@@ -45,11 +45,15 @@ namespace TrackRecommender.Server.Services.Implementations
                     return cachedResponse;
                 }
 
-                // Doar un singur request către API-ul care funcționează
                 var currentWeatherUrl = $"{_baseUrl}/weather?lat={roundedLat}&lon={roundedLon}&units=metric&appid={_apiKey}";
                 var currentResponse = await _httpClient.GetAsync(currentWeatherUrl);
                 currentResponse.EnsureSuccessStatusCode();
                 var currentData = await JsonDocument.ParseAsync(await currentResponse.Content.ReadAsStreamAsync());
+
+                var forecastUrl = $"{_baseUrl}/forecast?lat={roundedLat}&lon={roundedLon}&units=metric&appid={_apiKey}";
+                var forecastResponse = await _httpClient.GetAsync(forecastUrl);
+                forecastResponse.EnsureSuccessStatusCode();
+                var forecastData = await JsonDocument.ParseAsync(await forecastResponse.Content.ReadAsStreamAsync());
 
                 var response = new WeatherResponseDto
                 {
@@ -70,16 +74,78 @@ namespace TrackRecommender.Server.Services.Implementations
                         Weather = JsonSerializer.Deserialize<List<WeatherConditionDto>>(
                             currentData.RootElement.GetProperty("weather").GetRawText()) ?? new List<WeatherConditionDto>()
                     },
-                    Daily = new List<WeatherDailyDto>()
+                    Daily = ProcessForecastToDaily(forecastData)
                 };
 
                 _memoryCache.Set(cacheKey, response, _cacheDuration);
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Weather API error: {ex.Message}");
                 return null;
             }
+        }
+
+        private List<WeatherDailyDto> ProcessForecastToDaily(JsonDocument forecastData)
+        {
+            var dailyForecasts = new Dictionary<string, WeatherDailyAggregation>();
+
+            foreach (var forecast in forecastData.RootElement.GetProperty("list").EnumerateArray())
+            {
+                var dt = forecast.GetProperty("dt").GetInt64();
+                var dateTime = DateTimeOffset.FromUnixTimeSeconds(dt);
+                var dateKey = dateTime.ToString("yyyy-MM-dd");
+
+                if (!dailyForecasts.ContainsKey(dateKey))
+                {
+                    dailyForecasts[dateKey] = new WeatherDailyAggregation
+                    {
+                        Date = dateTime.Date,
+                        Dt = dt,
+                        Temps = new List<double>(),
+                        Humidities = new List<int>(),
+                        WindSpeeds = new List<double>(),
+                        WeatherConditions = new List<WeatherConditionDto>()
+                    };
+                }
+
+                var main = forecast.GetProperty("main");
+                dailyForecasts[dateKey].Temps.Add(main.GetProperty("temp").GetDouble());
+                dailyForecasts[dateKey].Humidities.Add(main.GetProperty("humidity").GetInt32());
+                dailyForecasts[dateKey].WindSpeeds.Add(forecast.GetProperty("wind").GetProperty("speed").GetDouble());
+
+                if (dailyForecasts[dateKey].WeatherConditions.Count == 0)
+                {
+                    var weather = JsonSerializer.Deserialize<List<WeatherConditionDto>>(
+                        forecast.GetProperty("weather").GetRawText());
+                    if (weather != null && weather.Count > 0)
+                    {
+                        dailyForecasts[dateKey].WeatherConditions.Add(weather[0]);
+                    }
+                }
+            }
+
+            var result = new List<WeatherDailyDto>();
+            foreach (var daily in dailyForecasts.Values.OrderBy(d => d.Date).Take(5))
+            {
+                result.Add(new WeatherDailyDto
+                {
+                    Dt = daily.Dt,
+                    Temp = new WeatherTempDto
+                    {
+                        Min = daily.Temps.Min(),
+                        Max = daily.Temps.Max(),
+                        Day = daily.Temps.Average(),
+                        Night = daily.Temps.Take(daily.Temps.Count / 2).Average()
+                    },
+                    Humidity = (int)daily.Humidities.Average(),
+                    WindSpeed = daily.WindSpeeds.Average(),
+                    Weather = daily.WeatherConditions
+                });
+            }
+
+            return result;
         }
 
         public async Task<WeatherResponseDto?> GetWeatherByLocationNameAsync(string locationName)
@@ -132,8 +198,9 @@ namespace TrackRecommender.Server.Services.Implementations
 
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Weather location error: {ex.Message}");
                 return null;
             }
         }

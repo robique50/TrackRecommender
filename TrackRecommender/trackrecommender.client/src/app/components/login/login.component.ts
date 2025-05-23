@@ -1,6 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
 import { TokenStorageService } from '../../services/token-storage/token-storage.service';
@@ -11,7 +16,12 @@ import { AuthNavbarComponent } from '../auth-navbar/auth-navbar.component';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthNavbarComponent]
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterModule,
+    AuthNavbarComponent,
+  ],
 })
 export class LoginComponent implements OnInit {
   public loginForm: FormGroup;
@@ -22,12 +32,12 @@ export class LoginComponent implements OnInit {
     private fb: FormBuilder,
     private authService: AuthService,
     private tokenStorage: TokenStorageService,
-    private router: Router
+    private router: Router,
   ) {
     this.loginForm = this.fb.group({
       username: ['', [Validators.required]],
       password: ['', [Validators.required]],
-      rememberMe: [false]
+      rememberMe: [false],
     });
   }
 
@@ -53,9 +63,11 @@ export class LoginComponent implements OnInit {
       error: (err) => {
         this.isLoading = false;
         this.error = err;
-      }
+      },
     });
   }
 
-  get f() { return this.loginForm.controls; }
+  get f() {
+    return this.loginForm.controls;
+  }
 }

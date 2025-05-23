@@ -1,42 +1,44 @@
 :root {
   // Base colors - Mountain Theme
-  --primary: #2E5D32;
-  --primary-light: #4A8C50;
-  --primary-dark: #1B3E20;
-  --secondary: #1E5285;
-  --tertiary: #7D5D3B;
+  --primary: #2e5d32;
+  --primary-light: #4a8c50;
+  --primary-dark: #1b3e20;
+  --secondary: #1e5285;
+  --tertiary: #7d5d3b;
   // Additional nature colors
-  --mountain-gray: #8D9CA6;
-  --sky-blue: #6FB1FC;
-  --forest-dark: #263A29;
-  --sunset-orange: #E67E22;
-  --alpine-meadow: #88B04B;
+  --mountain-gray: #8d9ca6;
+  --sky-blue: #6fb1fc;
+  --forest-dark: #263a29;
+  --sunset-orange: #e67e22;
+  --alpine-meadow: #88b04b;
   // Neutral colors
-  --white: #FFFFFF;
-  --gray-100: #F5F5F5;
-  --gray-200: #E0E0E0;
-  --gray-500: #9E9E9E;
+  --white: #ffffff;
+  --gray-100: #f5f5f5;
+  --gray-200: #e0e0e0;
+  --gray-500: #9e9e9e;
   --gray-800: #424242;
   --gray-900: #212121;
   // Semantic colors - trail difficulty
-  --trail-easy: #66BB6A;
-  --trail-moderate: #FFC107;
-  --trail-difficult: #FF9800;
-  --trail-expert: #F44336;
+  --trail-easy: #66bb6a;
+  --trail-moderate: #ffc107;
+  --trail-difficult: #ff9800;
+  --trail-expert: #f44336;
   // UI Elements
   --background: var(--white);
   --card-background: var(--white);
   --text-primary: var(--gray-900);
   --text-secondary: var(--gray-800);
   --text-tertiary: var(--gray-500);
-  --border-color: #CAD9C5;
+  --border-color: #cad9c5;
   --navbar-bg: var(--primary);
   --navbar-text: var(--white);
   --input-bg: var(--gray-100);
   --error-color: #e53e3e;
   --success-color: #38a169;
   // Typography
-  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+  --font-family:
+    "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Oxygen, Ubuntu,
+    Cantarell, "Open Sans", sans-serif;
   --font-size-xs: 0.75rem; // 12px
   --font-size-sm: 0.875rem; // 14px
   --font-size-base: 1rem; // 16px
@@ -101,13 +103,33 @@
   --transition-normal: 250ms;
   --transition-slow: 350ms;
   // Trail-specific gradients
-  --gradient-forest: linear-gradient(135deg, #2c3e50 0%, var(--primary-light) 100%);
-  --gradient-header: linear-gradient(to right, var(--primary), var(--primary-light));
-  --gradient-sunset: linear-gradient(to right, #F27121, #E94057);
-  --gradient-mountain: linear-gradient(to bottom, #757F9A, #D7DDE8);
-  --auth-gradient: linear-gradient(135deg, var(--forest-dark) 0%, var(--primary) 100%);
-  --auth-header-gradient: linear-gradient(to right, var(--primary-dark), var(--primary));
-  --auth-bg-gradient: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
+  --gradient-forest: linear-gradient(
+    135deg,
+    #2c3e50 0%,
+    var(--primary-light) 100%
+  );
+  --gradient-header: linear-gradient(
+    to right,
+    var(--primary),
+    var(--primary-light)
+  );
+  --gradient-sunset: linear-gradient(to right, #f27121, #e94057);
+  --gradient-mountain: linear-gradient(to bottom, #757f9a, #d7dde8);
+  --auth-gradient: linear-gradient(
+    135deg,
+    var(--forest-dark) 0%,
+    var(--primary) 100%
+  );
+  --auth-header-gradient: linear-gradient(
+    to right,
+    var(--primary-dark),
+    var(--primary)
+  );
+  --auth-bg-gradient: linear-gradient(
+    135deg,
+    var(--gray-100) 0%,
+    var(--gray-200) 100%
+  );
   // Z-index layers
   --z-index-dropdown: 1000;
   --z-index-sticky: 1020;
@@ -120,22 +142,26 @@
 
 // Dark Mode
 .dark-mode {
-  --primary: #4CAF50;
-  --primary-light: #81C784;
-  --primary-dark: #388E3C;
+  --primary: #4caf50;
+  --primary-light: #81c784;
+  --primary-dark: #388e3c;
   // Reverse neutral colors
   --background: #121212;
-  --card-background: #1E1E1E;
-  --text-primary: #F5F5F5;
-  --text-secondary: #E0E0E0;
-  --text-tertiary: #BDBDBD;
+  --card-background: #1e1e1e;
+  --text-primary: #f5f5f5;
+  --text-secondary: #e0e0e0;
+  --text-tertiary: #bdbdbd;
   --border-color: #333333;
-  --navbar-bg: #1B5E20;
-  --navbar-text: #FFFFFF;
+  --navbar-bg: #1b5e20;
+  --navbar-text: #ffffff;
   --input-bg: #2d2d2d;
   // Dark mode auth gradients
-  --auth-gradient: linear-gradient(135deg, #1A2A1D 0%, var(--primary-dark) 100%);
-  --auth-header-gradient: linear-gradient(to right, #1A2A1D, var(--primary));
+  --auth-gradient: linear-gradient(
+    135deg,
+    #1a2a1d 0%,
+    var(--primary-dark) 100%
+  );
+  --auth-header-gradient: linear-gradient(to right, #1a2a1d, var(--primary));
   // Adjusts for shadows in dark mode
   --shadow-sm: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.15);
   --shadow-md: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.2);

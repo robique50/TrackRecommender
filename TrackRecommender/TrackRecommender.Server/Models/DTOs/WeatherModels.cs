@@ -49,4 +49,14 @@
         public string Description { get; set; } = string.Empty;
         public string Icon { get; set; } = string.Empty;
     }
+
+    class WeatherDailyAggregation
+    {
+        public DateTime Date { get; set; }
+        public long Dt { get; set; }
+        public List<double> Temps { get; set; } = new List<double>();
+        public List<int> Humidities { get; set; } = new List<int>();
+        public List<double> WindSpeeds { get; set; } = new List<double>();
+        public List<WeatherConditionDto> WeatherConditions { get; set; } = new List<WeatherConditionDto>();
+    }
 }

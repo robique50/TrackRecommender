@@ -7,11 +7,10 @@ import { AuthService } from './services/auth/auth.service';
   templateUrl: './app.component.html',
   standalone: true,
   imports: [RouterOutlet],
-  styleUrl: './app.component.scss'
+  styleUrl: './app.component.scss',
 })
 export class AppComponent {
   title = 'trackrecommender.client';
-  
-  constructor(private authService: AuthService) {
-  }
+
+  constructor(private authService: AuthService) {}
 }

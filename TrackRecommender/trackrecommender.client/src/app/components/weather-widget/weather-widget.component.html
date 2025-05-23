@@ -1,11 +1,15 @@
 <div class="weather-widget">
   <div class="search-section">
     <div class="search-form">
-      <input type="text"
-             [(ngModel)]="locationQuery"
-             placeholder="Search for a location..."
-             (keyup.enter)="searchLocationWeather()">
-      <button class="btn-search" (click)="searchLocationWeather()">Search</button>
+      <input
+        type="text"
+        [(ngModel)]="locationQuery"
+        placeholder="Search for a location..."
+        (keyup.enter)="searchLocationWeather()"
+      />
+      <button class="btn-search" (click)="searchLocationWeather()">
+        Search
+      </button>
     </div>
 
     <div class="location-button" *ngIf="currentLocationEnabled">
@@ -34,10 +38,12 @@
     <div class="current-weather">
       <div class="weather-main">
         <div class="temp-icon">
-          <span class="temperature">{{ weatherData.current.temp | number:'1.0-0' }}°C</span>
-          <img [src]="getWeatherIconUrl(weatherData.current.weather[0].icon)" alt="Weather icon">
+          <span class="temperature"
+            >{{ weatherData.current.temp | number: "1.0-0" }}°C</span
+          >
+          <img [src]="getWeatherIconUrl()" alt="Weather icon" />
         </div>
-        <div class="weather-desc">{{ weatherData.current.weather[0].description }}</div>
+        <div class="weather-desc">{{ getWeatherDescription() }}</div>
       </div>
 
       <div class="weather-details">
@@ -49,7 +55,9 @@
         <div class="detail-item">
           <span class="detail-icon">💨</span>
           <span class="detail-label">Wind:</span>
-          <span class="detail-value">{{ weatherData.current.windSpeed }} km/h</span>
+          <span class="detail-value"
+            >{{ weatherData.current.windSpeed }} km/h</span
+          >
         </div>
         <div class="detail-item">
           <span class="detail-icon">☁️</span>
@@ -59,15 +67,18 @@
       </div>
     </div>
 
-    <div class="weather-forecast" *ngIf="weatherData.daily?.length">
+    <div
+      class="weather-forecast"
+      *ngIf="weatherData.daily && weatherData.daily.length > 0"
+    >
       <h4>5-Day Forecast</h4>
       <div class="forecast-container">
         <div class="forecast-item" *ngFor="let day of weatherData.daily">
           <div class="forecast-day">{{ formatDay(day.dt) }}</div>
-          <img [src]="getWeatherIconUrl(day.weather[0].icon)" alt="Weather icon">
+          <img [src]="getDailyWeatherIconUrl(day)" alt="Weather icon" />
           <div class="forecast-temp">
-            <span class="temp-max">{{ day.temp.max | number:'1.0-0' }}°</span>
-            <span class="temp-min">{{ day.temp.min | number:'1.0-0' }}°</span>
+            <span class="temp-max">{{ day.temp.max | number: "1.0-0" }}°</span>
+            <span class="temp-min">{{ day.temp.min | number: "1.0-0" }}°</span>
           </div>
         </div>
       </div>
