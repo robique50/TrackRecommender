@@ -1,11 +1,17 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
 import { TrailService } from '../../services/trail/trail.service';
 import { ReviewService } from '../../services/review/review.service';
-import { Subject } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { Subject, BehaviorSubject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { TrailReviewComponent } from '../trail-review/trail-review.component';
 
@@ -20,32 +26,84 @@ export class MapComponent implements OnInit, OnDestroy {
   private map!: L.Map;
   private markerClusterGroup!: L.MarkerClusterGroup;
   private updateSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
+
+  private trailsCache$ = new BehaviorSubject<any[]>([]);
+  private lastFetchTime: number = 0;
+  private readonly CACHE_DURATION = 5 * 60 * 1000;
+
+  private activeTrailLayer: L.GeoJSON | null = null;
+  private selectedMarkerId: number | null = null;
 
   trails: any[] = [];
   visibleTrails: any[] = [];
   selectedTrail: any = null;
-  isLoadingTrails = true;
+  isLoadingTrails = false;
   showReviewPanel = false;
+
+  @ViewChild('trailsList') trailsListElement!: ElementRef;
 
   constructor(
     private trailService: TrailService,
-    private reviewService: ReviewService,
+    private reviewService: ReviewService
   ) {}
 
   ngOnInit(): void {
     this.initMap();
-    this.loadTrails();
+    this.loadTrailsWithCache();
     this.setupDebounce();
+    this.setupCacheSubscription();
   }
 
   ngOnDestroy(): void {
     this.updateSubject.complete();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private setupCacheSubscription(): void {
+    this.trailsCache$.pipe(takeUntil(this.destroy$)).subscribe((trails) => {
+      if (trails.length > 0) {
+        this.trails = trails;
+        this.addTrailsToMap();
+        this.updateVisibleTrails();
+      }
+    });
+  }
+
+  private loadTrailsWithCache(forceRefresh: boolean = false): void {
+    const currentTime = Date.now();
+    const cachedTrails = this.trailsCache$.value;
+
+    if (
+      !forceRefresh &&
+      cachedTrails.length > 0 &&
+      currentTime - this.lastFetchTime < this.CACHE_DURATION
+    ) {
+      return;
+    }
+
+    this.isLoadingTrails = true;
+
+    this.trailService.getTrails().subscribe({
+      next: (trails) => {
+        this.lastFetchTime = currentTime;
+        this.trailsCache$.next(trails);
+        this.isLoadingTrails = false;
+      },
+      error: (error) => {
+        console.error('Error loading trails:', error);
+        this.isLoadingTrails = false;
+      },
+    });
   }
 
   private setupDebounce(): void {
-    this.updateSubject.pipe(debounceTime(300)).subscribe(() => {
-      this.updateVisibleTrails();
-    });
+    this.updateSubject
+      .pipe(debounceTime(300), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.updateVisibleTrails();
+      });
   }
 
   private initMap(): void {
@@ -74,11 +132,20 @@ export class MapComponent implements OnInit, OnDestroy {
       this.updateSubject.next();
     });
 
-    this.map.on('click', (e) => {
+    this.map.on('click', (e: L.LeafletMouseEvent) => {
+      const target = e.originalEvent.target as HTMLElement;
       if (
-        (e as any).originalEvent.target ===
-        this.map.getContainer().querySelector('.leaflet-map-pane')
+        target.classList.contains('leaflet-container') ||
+        target.closest('.leaflet-tile-pane') ||
+        (target.closest('.leaflet-overlay-pane') &&
+          !target.closest('.leaflet-marker-icon'))
       ) {
+        this.clearTrailSelection();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
         this.clearTrailSelection();
       }
     });
@@ -87,7 +154,7 @@ export class MapComponent implements OnInit, OnDestroy {
   private createClusterIcon(cluster: L.MarkerCluster): L.DivIcon {
     const markers = cluster.getAllChildMarkers();
     const difficulties = markers.map(
-      (marker) => (marker as any).trailData?.difficulty,
+      (marker) => (marker as any).trailData?.difficulty
     );
 
     const difficultyCount: { [key: string]: number } = {};
@@ -98,7 +165,7 @@ export class MapComponent implements OnInit, OnDestroy {
     });
 
     const predominantDifficulty = Object.keys(difficultyCount).reduce((a, b) =>
-      difficultyCount[a] > difficultyCount[b] ? a : b,
+      difficultyCount[a] > difficultyCount[b] ? a : b
     );
 
     const color = this.getTrailColor(predominantDifficulty);
@@ -124,38 +191,27 @@ export class MapComponent implements OnInit, OnDestroy {
     });
   }
 
-  private createTrailIcon(difficulty: string): L.DivIcon {
+  private createTrailIcon(
+    difficulty: string,
+    isSelected: boolean = false
+  ): L.DivIcon {
     const color = this.getTrailColor(difficulty);
+    const size = isSelected ? 20 : 16;
+    const borderWidth = isSelected ? 3 : 2;
 
     return L.divIcon({
       html: `<div style="
         background-color: ${color};
-        width: 16px;
-        height: 16px;
+        width: ${size}px;
+        height: ${size}px;
         border-radius: 50%;
-        border: 2px solid white;
+        border: ${borderWidth}px solid white;
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        ${isSelected ? 'animation: pulse 2s infinite;' : ''}
       "></div>`,
       className: 'custom-trail-icon',
-      iconSize: L.point(16, 16, true),
-      iconAnchor: L.point(8, 8, true),
-    });
-  }
-
-  private loadTrails(): void {
-    this.isLoadingTrails = true;
-
-    this.trailService.getTrails().subscribe({
-      next: (trails) => {
-        this.trails = trails;
-        this.addTrailsToMap();
-        this.updateVisibleTrails();
-        this.isLoadingTrails = false;
-      },
-      error: (error) => {
-        console.error('Error loading trails:', error);
-        this.isLoadingTrails = false;
-      },
+      iconSize: L.point(size, size, true),
+      iconAnchor: L.point(size / 2, size / 2, true),
     });
   }
 
@@ -165,7 +221,6 @@ export class MapComponent implements OnInit, OnDestroy {
     this.trails.forEach((trail) => {
       try {
         const geoJson = JSON.parse(trail.geoJsonData);
-
         const startCoordinates = geoJson.coordinates[0];
         const startLatLng = L.latLng(startCoordinates[1], startCoordinates[0]);
 
@@ -174,6 +229,7 @@ export class MapComponent implements OnInit, OnDestroy {
         });
 
         (marker as any).trailData = trail;
+        (marker as any).trailId = trail.id;
 
         marker.on('click', () => {
           this.onTrailClick(trail);
@@ -202,6 +258,11 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   private onTrailClick(trail: any): void {
+    if (this.selectedTrail?.id === trail.id) {
+      this.clearTrailSelection();
+      return;
+    }
+
     this.clearTrailSelection();
 
     try {
@@ -209,43 +270,68 @@ export class MapComponent implements OnInit, OnDestroy {
       const highlightLayer = L.geoJSON(geoJson, {
         style: {
           color: '#FF1744',
-          weight: 4,
+          weight: 5,
           opacity: 0.9,
-          dashArray: '5, 5',
         },
       });
 
-      (highlightLayer as any).isTrailHighlight = true;
+      this.activeTrailLayer = highlightLayer;
       highlightLayer.addTo(this.map);
 
       this.selectedTrail = trail;
+      this.selectedMarkerId = trail.id;
+
+      this.updateMarkerIcon(trail.id, true);
 
       const bounds = highlightLayer.getBounds();
       if (bounds.isValid()) {
         this.map.fitBounds(bounds, {
-          padding: [20, 20],
-          maxZoom: 10,
+          padding: [50, 50],
+          maxZoom: 13,
         });
       }
+
+      this.scrollToSelectedTrail();
     } catch (error) {
       console.error('Error highlighting trail:', error);
     }
   }
 
-  private clearTrailSelection(): void {
-    const layersToRemove: L.Layer[] = [];
-
-    this.map.eachLayer((layer) => {
-      if (layer instanceof L.GeoJSON && (layer as any).isTrailHighlight) {
-        layersToRemove.push(layer);
+  private updateMarkerIcon(trailId: number, isSelected: boolean): void {
+    this.markerClusterGroup.eachLayer((layer) => {
+      if ((layer as any).trailId === trailId) {
+        const marker = layer as L.Marker;
+        const trailData = (marker as any).trailData;
+        marker.setIcon(this.createTrailIcon(trailData.difficulty, isSelected));
       }
     });
+  }
 
-    layersToRemove.forEach((layer) => {
-      this.map.removeLayer(layer);
-    });
+  private clearTrailSelection(): void {
+    if (this.activeTrailLayer) {
+      this.map.removeLayer(this.activeTrailLayer);
+      this.activeTrailLayer = null;
+    }
+
+    if (this.selectedMarkerId) {
+      this.updateMarkerIcon(this.selectedMarkerId, false);
+      this.selectedMarkerId = null;
+    }
 
     this.selectedTrail = null;
+    this.showReviewPanel = false;
+  }
+
+  private scrollToSelectedTrail(): void {
+    setTimeout(() => {
+      const selectedElement = document.querySelector('.trail-item.selected');
+      if (selectedElement) {
+        selectedElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }, 100);
   }
 
   clearSelection(): void {
@@ -255,13 +341,16 @@ export class MapComponent implements OnInit, OnDestroy {
   selectTrailFromSidebar(trail: any): void {
     this.markerClusterGroup.eachLayer((layer) => {
       if ((layer as any).trailData?.id === trail.id) {
-        this.onTrailClick(trail);
-
         const marker = layer as L.Marker;
         const markerLatLng = marker.getLatLng();
-        if (!this.map.getBounds().contains(markerLatLng)) {
-          this.map.setView(markerLatLng, Math.max(this.map.getZoom(), 12));
-        }
+
+        this.map.setView(markerLatLng, Math.max(this.map.getZoom(), 12), {
+          animate: true,
+        });
+
+        setTimeout(() => {
+          this.onTrailClick(trail);
+        }, 500);
       }
     });
   }
@@ -305,6 +394,13 @@ export class MapComponent implements OnInit, OnDestroy {
 
   onReviewSubmitted(review: any): void {
     this.closeReviewPanel();
-    this.loadTrails();
+    if (this.selectedTrail) {
+      this.selectedTrail.hasReview = true;
+      this.selectedTrail.userRating = review.rating;
+    }
+  }
+
+  refreshTrails(): void {
+    this.loadTrailsWithCache(true);
   }
 }

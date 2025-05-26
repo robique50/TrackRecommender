@@ -1,7 +1,17 @@
 <app-main-navbar></app-main-navbar>
 
 <div class="map-container">
-  <div id="map" class="map-view"></div>
+  <div id="map" class="map-view">
+    <div
+      class="map-loading-overlay"
+      *ngIf="isLoadingTrails && trails.length === 0"
+    >
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Loading trails...</p>
+      </div>
+    </div>
+  </div>
 
   <app-trail-review
     *ngIf="showReviewPanel && selectedTrail"
@@ -16,16 +26,30 @@
   <div class="map-sidebar" [class.collapsed]="false">
     <div class="sidebar-header">
       <h3>Trails in View</h3>
-      <span class="trail-count">{{ visibleTrails.length }} trails</span>
+      <div class="header-info">
+        <span class="trail-count">{{ visibleTrails.length }} trails</span>
+        <button
+          class="refresh-btn"
+          (click)="refreshTrails()"
+          [disabled]="isLoadingTrails"
+          title="Refresh trails"
+        >
+          <span [class.rotating]="isLoadingTrails">↻</span>
+        </button>
+      </div>
     </div>
 
     <div class="sidebar-content">
-      <div class="loading-state" *ngIf="isLoadingTrails">
+      <div class="loading-state" *ngIf="isLoadingTrails && trails.length > 0">
         <div class="loading-spinner"></div>
-        <p>Loading trails...</p>
+        <p>Updating trails...</p>
       </div>
 
-      <div class="trails-list" *ngIf="!isLoadingTrails">
+      <div
+        class="trails-list"
+        #trailsList
+        *ngIf="!isLoadingTrails || trails.length > 0"
+      >
         <div
           class="trail-item"
           *ngFor="let trail of visibleTrails; trackBy: trackByTrailId"
@@ -51,9 +75,9 @@
             </div>
             <div class="stat">
               <span class="stat-icon">⏱️</span>
-              <span class="stat-value">{{
-                formatDuration(trail.duration)
-              }}</span>
+              <span class="stat-value">
+                {{ formatDuration(trail.duration) }}
+              </span>
             </div>
             <div class="stat">
               <span class="stat-icon">📍</span>
@@ -63,22 +87,34 @@
 
           <div class="trail-description" *ngIf="trail.description">
             <p>
-              {{ trail.description | slice: 0 : 100
+              {{ trail.description | slice : 0 : 100
               }}{{ trail.description.length > 100 ? "..." : "" }}
             </p>
           </div>
 
           <div class="trail-actions" *ngIf="selectedTrail?.id === trail.id">
             <button
+              class="btn-secondary"
+              (click)="clearSelection(); $event.stopPropagation()"
+              title="Clear selection"
+            >
+              <span class="btn-icon">✕</span> Clear
+            </button>
+            <button
               class="btn-review"
               (click)="openReviewPanel(); $event.stopPropagation()"
+              [disabled]="trail.hasReview"
             >
-              <span class="btn-icon">⭐</span> Add a review
+              <span class="btn-icon">⭐</span>
+              {{ trail.hasReview ? "Reviewed" : "Add Review" }}
             </button>
           </div>
         </div>
 
-        <div class="empty-trails" *ngIf="visibleTrails.length === 0">
+        <div
+          class="empty-trails"
+          *ngIf="visibleTrails.length === 0 && !isLoadingTrails"
+        >
           <div class="empty-icon">🗺️</div>
           <h4>No trails in this area</h4>
           <p>Try zooming out or moving the map to see more trails.</p>

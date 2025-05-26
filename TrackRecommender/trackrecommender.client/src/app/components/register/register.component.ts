@@ -36,7 +36,7 @@ export class RegisterComponent implements OnInit {
     private fb: FormBuilder,
     private authService: AuthService,
     private tokenStorage: TokenStorageService,
-    private router: Router,
+    private router: Router
   ) {
     this.registerForm = this.fb.group({
       username: new FormControl('', [
@@ -48,7 +48,7 @@ export class RegisterComponent implements OnInit {
         Validators.required,
         Validators.minLength(8),
         Validators.pattern(
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,}$/,
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,}$/
         ),
       ]),
       confirmPassword: new FormControl('', [Validators.required]),
@@ -58,7 +58,7 @@ export class RegisterComponent implements OnInit {
   }
 
   private passwordMatchValidator(
-    control: AbstractControl,
+    control: AbstractControl
   ): ValidationErrors | null {
     const password = control.get('password')?.value;
     const confirmPassword = control.get('confirmPassword')?.value;

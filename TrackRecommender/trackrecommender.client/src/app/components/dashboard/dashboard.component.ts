@@ -11,14 +11,7 @@ import { AuthService } from '../../services/auth/auth.service';
 import { UserProfile } from '../../models/auth.models';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { WeatherWidgetComponent } from '../weather-widget/weather-widget.component';
-
-interface ForecastDay {
-  name: string;
-  iconUrl: string;
-  tempMax: number;
-  tempMin: number;
-  condition: string;
-}
+import { ForecastDay } from '../../models/weather.models';
 
 @Component({
   selector: 'app-dashboard',

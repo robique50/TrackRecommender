@@ -300,3 +300,214 @@
     }
   }
 }
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 23, 68, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 23, 68, 0);
+  }
+}
+
+.trail-item {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.selected {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background-color: #2196f3;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .trail-name {
+      color: #1976d2;
+    }
+  }
+
+  &:hover:not(.selected) {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.map-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+
+  .loading-content {
+    text-align: center;
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #2e5d32;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    p {
+      font-size: 16px;
+      color: #2e5d32;
+      margin: 0;
+    }
+  }
+}
+
+.trails-list {
+  scroll-behavior: smooth;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+
+    &:hover {
+      background: #555;
+    }
+  }
+}
+
+.trail-actions {
+  animation: fadeIn 0.3s ease-out;
+  display: flex;
+  gap: 8px;
+
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background-color: #f5f5f5;
+    color: #666;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: #e0e0e0;
+      border-color: #bbb;
+    }
+
+    .btn-icon {
+      font-size: 12px;
+    }
+  }
+
+  .btn-review {
+    position: relative;
+    overflow: hidden;
+
+    &:disabled {
+      background-color: #e0e0e0;
+      color: #999;
+      cursor: not-allowed;
+
+      &:hover {
+        transform: none;
+        background-color: #e0e0e0;
+      }
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.5);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    &:active:not(:disabled)::after {
+      width: 300px;
+      height: 300px;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.marker-tooltip {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .trail-item {
+    &.selected {
+      &::before {
+        width: 3px;
+      }
+    }
+  }
+
+  .map-sidebar {
+    &.swipe-closing {
+      transition: transform 0.3s ease-out;
+      transform: translateX(100%);
+    }
+  }
+}
