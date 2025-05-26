@@ -6,6 +6,7 @@ import { DashboardComponent } from '../components/dashboard/dashboard.component'
 import { AuthGuard } from '../guards/auth.guard';
 import { ProfileComponent } from '../components/profile/profile.component';
 import { MyReviewsComponent } from '../components/my-reviews/my-reviews.component';
+import { TrailsComponent } from '../components/trails/trails.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'register', pathMatch: 'full' },
@@ -23,4 +24,5 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
   { path: 'map', component: MapComponent, canActivate: [AuthGuard] },
+  { path: 'trails', component: TrailsComponent, canActivate: [AuthGuard] },
 ];

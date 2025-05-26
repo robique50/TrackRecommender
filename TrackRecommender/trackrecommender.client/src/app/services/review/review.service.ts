@@ -6,7 +6,7 @@ import {
   CreateReviewRequest,
   TrailRatingStats,
   CanReviewResponse,
-} from '../../models/review.models';
+} from '../../models/review.model';
 
 @Injectable({
   providedIn: 'root',

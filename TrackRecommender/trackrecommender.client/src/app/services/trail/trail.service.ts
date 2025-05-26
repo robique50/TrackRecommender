@@ -95,7 +95,6 @@ export class TrailService {
     const cacheKey = 'recommended_trails';
 
     if (!forceRefresh && this.isCacheValid(cacheKey)) {
-      console.log('Returning cached recommended trails');
       return of(this.trailsCache.get(cacheKey)!.data);
     }
 

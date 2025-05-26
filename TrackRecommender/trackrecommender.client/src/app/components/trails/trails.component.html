@@ -1,0 +1,152 @@
+<app-main-navbar></app-main-navbar>
+
+<div class="trails-page">
+  <div class="trails-container">
+    <div *ngIf="isLoading && trails.length === 0" class="loading-state">
+      <p>Loading trails...</p>
+      <div class="loading-spinner"></div>
+    </div>
+
+    <div *ngIf="error && !isLoading" class="error-state">
+      <h3>Error at loading trails</h3>
+      <p>{{ error }}</p>
+      <button class="retry-button" (click)="refreshTrails()">
+        Try again
+      </button>
+    </div>
+
+    <div *ngIf="!error" class="trails-grid">
+      <div *ngFor="let trail of trails; trackBy: trackByTrailId"
+           class="trail-card"
+           (click)="onTrailClick(trail)">
+        <div class="card-header" [ngClass]="getGradientClass(trail.difficulty)">
+          <svg class="pattern-svg">
+            <defs>
+              <pattern [id]="
+                  'pattern-' + trail.category.toLowerCase() + '-' + trail.id
+                "
+                       patternUnits="userSpaceOnUse"
+                       [attr.width]="getPatternWidth(trail.category)"
+                       [attr.height]="getPatternHeight(trail.category)">
+                <circle *ngIf="trail.category === 'International'"
+                        cx="10"
+                        cy="10"
+                        r="1.5"
+                        fill="rgba(255,255,255,0.2)" />
+
+                <rect *ngIf="trail.category === 'National'"
+                      x="0"
+                      y="0"
+                      width="4"
+                      height="4"
+                      fill="rgba(255,255,255,0.1)" />
+
+                <path *ngIf="trail.category === 'Regional'"
+                      d="M0,12 L12,0 L24,12 L12,24 Z"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.15)"
+                      stroke-width="1" />
+
+                <path *ngIf="trail.category === 'Local'"
+                      d="M0,10 L10,0"
+                      stroke="rgba(255,255,255,0.1)"
+                      stroke-width="1" />
+              </pattern>
+            </defs>
+            <rect width="100%"
+                  height="100%"
+                  [attr.fill]="
+                'url(#pattern-' +
+                trail.category.toLowerCase() +
+                '-' +
+                trail.id +
+                ')'
+              " />
+          </svg>
+
+          <div class="gradient-overlay">
+            <div class="trail-info">
+              <span class="trail-emoji">
+                {{
+                getTrailTypeIcon(trail.trailType)
+                }}
+              </span>
+              <span class="category-badge">{{ trail.category }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-content">
+          <h3 class="trail-title">{{ trail.name }}</h3>
+
+          <div class="difficulty-wrapper">
+            <span class="difficulty-badge"
+                  [ngClass]="getDifficultyClass(trail.difficulty)">
+              {{ trail.difficulty }}
+            </span>
+          </div>
+
+          <div class="stats-section">
+            <div class="stat-row">
+              <svg class="stat-icon"
+                   fill="none"
+                   stroke="currentColor"
+                   viewBox="0 0 24 24">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+              <span>{{ trail.distance }} km</span>
+            </div>
+
+            <div class="stat-row">
+              <svg class="stat-icon"
+                   fill="none"
+                   stroke="currentColor"
+                   viewBox="0 0 24 24">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span>{{ trail.duration }}h</span>
+            </div>
+
+            <div class="stat-row">
+              <svg class="stat-icon"
+                   fill="none"
+                   stroke="currentColor"
+                   viewBox="0 0 24 24">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              <span class="location-text">
+                {{
+                trail.regionNames.join(", ")
+                }}
+              </span>
+            </div>
+          </div>
+
+          <div class="rating-footer">
+            <div class="rating-info">
+              <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+              </svg>
+              <span class="rating-number">4.5</span>
+              <span class="rating-count">(23)</span>
+            </div>
+            <button class="details-btn">Vezi detalii →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
-import { UserProfile } from '../../models/auth.models';
+import { UserProfile } from '../../models/auth.model';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 
 @Component({

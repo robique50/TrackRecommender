@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { WeatherResponse } from '../../models/weather.models';
+import { WeatherResponse } from '../../models/weather.model';
 import { WeatherService } from '../../services/weather/weather.service';
 
 @Component({

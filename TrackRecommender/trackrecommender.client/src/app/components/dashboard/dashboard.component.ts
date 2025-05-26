@@ -8,10 +8,10 @@ import {
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
-import { UserProfile } from '../../models/auth.models';
+import { UserProfile } from '../../models/auth.model';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { WeatherWidgetComponent } from '../weather-widget/weather-widget.component';
-import { ForecastDay } from '../../models/weather.models';
+import { ForecastDay } from '../../models/weather.model';
 
 @Component({
   selector: 'app-dashboard',

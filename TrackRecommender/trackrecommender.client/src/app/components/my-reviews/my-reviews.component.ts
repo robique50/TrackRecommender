@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ReviewService } from '../../services/review/review.service';
-import { TrailReview } from '../../models/review.models';
+import { TrailReview } from '../../models/review.model';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 
 @Component({

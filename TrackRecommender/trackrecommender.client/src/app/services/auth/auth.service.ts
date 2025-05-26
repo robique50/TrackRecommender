@@ -7,7 +7,7 @@ import {
   RegisterRequest,
   AuthResponse,
   UserProfile,
-} from '../../models/auth.models';
+} from '../../models/auth.model';
 import { TokenStorageService } from '../token-storage/token-storage.service';
 import { Router } from '@angular/router';
 

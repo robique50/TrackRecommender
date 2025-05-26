@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth/auth.service';
-import { UserProfile } from '../../models/auth.models';
+import { UserProfile } from '../../models/auth.model';
 
 @Component({
   selector: 'app-main-navbar',
