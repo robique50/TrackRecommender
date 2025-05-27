@@ -47,7 +47,7 @@ namespace TrackRecommender.Server.Services
                 _logger.LogInformation($"Executing Overpass query: {query}");
                 var overpassResponse = await ExecuteOverpassQueryAsync(query);
 
-                if (overpassResponse?.Elements == null || !overpassResponse.Elements.Any())
+                if (overpassResponse?.Elements == null || overpassResponse.Elements.Count == 0)
                 {
                     _logger.LogWarning("No counties returned from Overpass API");
                 }
@@ -84,7 +84,7 @@ namespace TrackRecommender.Server.Services
                     }
                 }
 
-                if (importedRegions.Any())
+                if (importedRegions.Count != 0)
                 {
                     await SaveRegionsToDatabase(importedRegions);
                     _logger.LogInformation($"Successfully imported {importedRegions.Count} counties");
@@ -182,12 +182,12 @@ namespace TrackRecommender.Server.Services
             }
         }
 
-        private Geometry? BuildCountyBoundary(
+        private Polygon? BuildCountyBoundary(
             OverpassElement element,
             Dictionary<long, OverpassElement> ways,
             Dictionary<long, OverpassElement> nodes)
         {
-            if (element.Members == null || !element.Members.Any())
+            if (element.Members == null || element.Members.Count == 0)
             {
                 _logger.LogWarning($"No members found for element {element.Id}");
                 return null;
@@ -206,11 +206,11 @@ namespace TrackRecommender.Server.Services
                     continue;
                 }
 
-                List<Coordinate> wayCoords = new List<Coordinate>();
+                List<Coordinate> wayCoords = [];
 
                 if (way.Geometry != null && way.Geometry.Count >= 2)
                 {
-                    wayCoords = way.Geometry.Select(g => new Coordinate(g.Lon, g.Lat)).ToList();
+                    wayCoords = [.. way.Geometry.Select(g => new Coordinate(g.Lon, g.Lat))];
                 }
                 else if (way.Nodes != null && way.Nodes.Count >= 2)
                 {
@@ -239,7 +239,7 @@ namespace TrackRecommender.Server.Services
                 }
             }
 
-            if (!outerWays.Any())
+            if (outerWays.Count == 0)
             {
                 _logger.LogWarning($"No valid outer ways found for element {element.Id}");
                 return null;
@@ -253,7 +253,7 @@ namespace TrackRecommender.Server.Services
             }
 
             var innerRings = new List<LinearRing>();
-            if (innerWays.Any())
+            if (innerWays.Count != 0)
             {
                 foreach (var innerWayGroup in GroupConnectedWays(innerWays))
                 {
@@ -268,9 +268,9 @@ namespace TrackRecommender.Server.Services
             try
             {
                 Polygon polygon;
-                if (innerRings.Any())
+                if (innerRings.Count != 0)
                 {
-                    polygon = _geometryFactory.CreatePolygon(outerRing, innerRings.ToArray());
+                    polygon = _geometryFactory.CreatePolygon(outerRing, [.. innerRings]);
                 }
                 else
                 {
@@ -291,12 +291,12 @@ namespace TrackRecommender.Server.Services
             }
         }
 
-        private List<List<(long id, List<Coordinate> coords)>> GroupConnectedWays(List<(long id, List<Coordinate> coords)> ways)
+        private static List<List<(long id, List<Coordinate> coords)>> GroupConnectedWays(List<(long id, List<Coordinate> coords)> ways)
         {
             var groups = new List<List<(long id, List<Coordinate> coords)>>();
             var remaining = new List<(long id, List<Coordinate> coords)>(ways);
 
-            while (remaining.Any())
+            while (remaining.Count != 0)
             {
                 var group = new List<(long id, List<Coordinate> coords)>();
                 var current = remaining[0];
@@ -311,9 +311,9 @@ namespace TrackRecommender.Server.Services
                     {
                         var way = remaining[i];
 
-                        foreach (var groupWay in group)
+                        foreach (var (id, coords) in group)
                         {
-                            if (WaysConnect(groupWay.coords, way.coords))
+                            if (WaysConnect(coords, way.coords))
                             {
                                 group.Add(way);
                                 remaining.RemoveAt(i);
@@ -324,7 +324,7 @@ namespace TrackRecommender.Server.Services
 
                         if (foundConnection) break;
                     }
-                } while (foundConnection && remaining.Any());
+                } while (foundConnection && remaining.Count != 0);
 
                 groups.Add(group);
             }
@@ -332,9 +332,9 @@ namespace TrackRecommender.Server.Services
             return groups;
         }
 
-        private bool WaysConnect(List<Coordinate> way1, List<Coordinate> way2)
+        private static bool WaysConnect(List<Coordinate> way1, List<Coordinate> way2)
         {
-            if (!way1.Any() || !way2.Any()) return false;
+            if (way1.Count == 0 || way2.Count == 0) return false;
 
             return AreCoordinatesEqual(way1.First(), way2.First()) ||
                    AreCoordinatesEqual(way1.First(), way2.Last()) ||
@@ -359,26 +359,26 @@ namespace TrackRecommender.Server.Services
             return result;
         }
 
-        private bool AreCoordinatesEqual(Coordinate c1, Coordinate c2, double tolerance = 0.000001)
+        private static bool AreCoordinatesEqual(Coordinate c1, Coordinate c2, double tolerance = 0.000001)
         {
             return Math.Abs(c1.X - c2.X) < tolerance && Math.Abs(c1.Y - c2.Y) < tolerance;
         }
 
         private LinearRing? BuildRingFromWays(List<(long id, List<Coordinate> coords)> ways, long elementId)
         {
-            if (!ways.Any()) return null;
+            if (ways.Count == 0) return null;
 
             var orderedCoords = new List<Coordinate>();
             var remainingWays = new List<(long id, List<Coordinate> coords)>(ways);
 
-            var currentWay = remainingWays[0];
-            orderedCoords.AddRange(currentWay.coords);
+            var (id, coords) = remainingWays[0];
+            orderedCoords.AddRange(coords);
             remainingWays.RemoveAt(0);
 
             int maxIterations = ways.Count * 2;
             int iterations = 0;
 
-            while (remainingWays.Any() && iterations < maxIterations)
+            while (remainingWays.Count != 0 && iterations < maxIterations)
             {
                 iterations++;
                 bool foundConnection = false;
@@ -448,7 +448,7 @@ namespace TrackRecommender.Server.Services
 
                         if (cleanedCoords.Count >= 4)
                         {
-                            return _geometryFactory.CreateLinearRing(cleanedCoords.ToArray());
+                            return _geometryFactory.CreateLinearRing([.. cleanedCoords]);
                         }
                     }
                     catch (Exception ex)
@@ -465,14 +465,14 @@ namespace TrackRecommender.Server.Services
         {
             var newRegions = regions.Where(r => r.Id == 0).ToList();
 
-            if (newRegions.Any())
+            if (newRegions.Count != 0)
             {
                 await _context.Regions.AddRangeAsync(newRegions);
                 _logger.LogInformation($"Adding {newRegions.Count} new regions to database");
             }
 
             var existingRegions = regions.Where(r => r.Id != 0).ToList();
-            if (existingRegions.Any())
+            if (existingRegions.Count != 0)
             {
                 _logger.LogInformation($"Updating {existingRegions.Count} existing regions");
             }

@@ -2,13 +2,37 @@
 using TrackRecommender.Server.Models;
 using TrackRecommender.Server.Models.DTOs;
 using NetTopologySuite.Geometries;
+using NetTopologySuite.IO;
 
 namespace TrackRecommender.Server.Mappers.Implementations
 {
     public class TrailMapper : IMapper<Trail, TrailDto>
     {
+        private readonly GeoJsonWriter _geoJsonWriter;
+        private readonly GeoJsonReader _geoJsonReader;
+        
+        public TrailMapper()
+        {
+            _geoJsonWriter = new GeoJsonWriter();
+            _geoJsonReader = new GeoJsonReader();
+        }
+
         public TrailDto ToDto(Trail entity)
         {
+            string geoJsonData = string.Empty;
+            
+            try
+            {
+                if (entity.Coordinates != null && entity.Coordinates.IsValid)
+                {
+                    geoJsonData = _geoJsonWriter.Write(entity.Coordinates);
+                }
+            }
+            catch (Exception)
+            {
+                geoJsonData = string.Empty;
+            }
+
             return new TrailDto
             {
                 Id = entity.Id,
@@ -23,12 +47,13 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 Category = entity.Category,
                 Network = entity.Network,
                 Coordinates = entity.Coordinates,
+                GeoJsonData = geoJsonData,
                 RegionNames = entity.TrailRegions? 
                     .Where(tr => tr.Region != null) 
                     .Select(tr => tr.Region.Name)
                     .Where(name => name != null)
-                    .ToList() ?? new List<string>(),
-                Tags = entity.Tags ?? new List<string>(),
+                    .ToList() ?? [],
+                Tags = entity.Tags ?? [],
                 AverageRating = entity.UserRatings?.Any() == true ? entity.UserRatings.Average(r => r.Rating) : 0,
                 ReviewsCount = entity.UserRatings?.Count ?? 0,
             };
@@ -36,6 +61,28 @@ namespace TrackRecommender.Server.Mappers.Implementations
 
         public Trail ToEntity(TrailDto dto)
         {
+            LineString coordinates = new([]);
+            
+            try
+            {
+                if (!string.IsNullOrEmpty(dto.GeoJsonData))
+                {
+                    var geometry = _geoJsonReader.Read<LineString>(dto.GeoJsonData);
+                    if (geometry != null && geometry.IsValid)
+                    {
+                        coordinates = geometry;
+                    }
+                }
+                else if (dto.Coordinates != null && dto.Coordinates.IsValid)
+                {
+                    coordinates = dto.Coordinates;
+                }
+            }
+            catch (Exception)
+            {
+                coordinates = new LineString([]);
+            }
+
             var trailEntity = new Trail 
             {
                 Id = dto.Id,
@@ -49,9 +96,10 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 EndLocation = dto.EndLocation,
                 Category = dto.Category,
                 Network = dto.Network,
-                Coordinates = dto.Coordinates ?? new LineString(new Coordinate[] { }),
-                Tags = dto.Tags ?? new List<string>(),
+                Coordinates = coordinates,
+                Tags = dto.Tags ?? [],
             };
+            
             return trailEntity;
         }
     }

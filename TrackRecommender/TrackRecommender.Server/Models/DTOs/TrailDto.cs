@@ -1,4 +1,5 @@
-﻿using NetTopologySuite.Geometries;
+﻿using System.Text.Json.Serialization;
+using NetTopologySuite.Geometries;
 
 namespace TrackRecommender.Server.Models.DTOs
 {
@@ -15,9 +16,11 @@ namespace TrackRecommender.Server.Models.DTOs
         public string EndLocation { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public string? Network { get; set; }
-        public LineString Coordinates { get; set; } = new LineString(new Coordinate[] { });
-        public List<string> RegionNames { get; set; } = new List<string>();
-        public List<string> Tags { get; set; } = new List<string>();
+        [JsonIgnore]
+        public LineString Coordinates { get; set; } = new LineString([]);
+        public string GeoJsonData { get; set; } = string.Empty;
+        public List<string> RegionNames { get; set; } = [];
+        public List<string> Tags { get; set; } = [];
         public int MatchScore { get; set; } = 0;
         public double AverageRating { get; set; }
         public int ReviewsCount { get; set; }

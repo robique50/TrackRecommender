@@ -10,24 +10,16 @@ namespace TrackRecommender.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class MapDataController : ControllerBase
+    public class MapDataController(
+        ITrailRepository trailRepository,
+        IUserRepository userRepository,
+        IMapper<Trail, TrailDto> trailMapper,
+        ILogger<MapDataController> logger) : ControllerBase
     {
-        private readonly ITrailRepository _trailRepository;
-        private readonly IUserRepository _userRepository;
-        private readonly IMapper<Trail, TrailDto> _trailMapper;
-        private readonly ILogger<MapDataController> _logger;
-
-        public MapDataController(
-            ITrailRepository trailRepository,
-            IUserRepository userRepository,
-            IMapper<Trail, TrailDto> trailMapper,
-            ILogger<MapDataController> logger)
-        {
-            _trailRepository = trailRepository;
-            _userRepository = userRepository;
-            _trailMapper = trailMapper;
-            _logger = logger;
-        }
+        private readonly ITrailRepository _trailRepository = trailRepository;
+        private readonly IUserRepository _userRepository = userRepository;
+        private readonly IMapper<Trail, TrailDto> _trailMapper = trailMapper;
+        private readonly ILogger<MapDataController> _logger = logger;
 
         [HttpGet("trails")]
         public async Task<IActionResult> GetTrails(
@@ -97,11 +89,11 @@ namespace TrackRecommender.Server.Controllers
                     preferences.MaxDuration,
                     preferences.PreferredTags);
 
-                if (preferences.PreferredTrailTypes?.Any() == true)
+                if (preferences.PreferredTrailTypes != null && preferences.PreferredTrailTypes.Count > 0)
                 {
-                    trails = trails.Where(t =>
+                    trails = [.. trails.Where(t =>
                         preferences.PreferredTrailTypes.Any(type =>
-                            t.TrailType.Contains(type, StringComparison.OrdinalIgnoreCase))).ToList();
+                            t.TrailType.Contains(type, StringComparison.OrdinalIgnoreCase)))];
                 }
 
                 var trailDtos = trails.Select(t =>
@@ -122,7 +114,7 @@ namespace TrackRecommender.Server.Controllers
             }
         }
 
-        private int CalculateMatchScore(Trail trail, UserPreferences preferences)
+        private static int CalculateMatchScore(Trail trail, UserPreferences preferences)
         {
             int score = 0;
 
@@ -143,7 +135,7 @@ namespace TrackRecommender.Server.Controllers
                 trail.RegionIds.Contains(id)) == true)
                 score += 2;
 
-            if (preferences.PreferredTags?.Any() == true && trail.Tags.Any())
+            if (preferences.PreferredTags != null && preferences.PreferredTags.Count > 0 && trail.Tags.Count != 0)
             {
                 bool hasMatchingTag = trail.Tags.Any(tag =>
                     preferences.PreferredTags.Any(prefTag =>

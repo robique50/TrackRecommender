@@ -6,14 +6,9 @@ namespace TrackRecommender.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController(AuthService authService) : ControllerBase
     {
-        private readonly AuthService _authService;
-
-        public AuthController(AuthService authService)
-        {
-            _authService = authService;
-        }
+        private readonly AuthService _authService = authService;
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
@@ -23,10 +18,10 @@ namespace TrackRecommender.Server.Controllers
 
             try
             {
-                var result = await _authService.RegisterAsync(registerDto);
+                var (Success, ErrorMessage) = await _authService.RegisterAsync(registerDto);
 
-                if (!result.Success)
-                    return BadRequest(new { message = result.ErrorMessage });
+                if (!Success)
+                    return BadRequest(new { message = ErrorMessage });
 
                 return Ok(new { message = "Registration successful" });
             }
@@ -117,9 +112,9 @@ namespace TrackRecommender.Server.Controllers
 
         private string GetIpAddress()
         {
-            if (Request.Headers.ContainsKey("X-Forwarded-For"))
+            if (Request.Headers.TryGetValue("X-Forwarded-For", out Microsoft.Extensions.Primitives.StringValues value))
             {
-                var forwardedIp = Request.Headers["X-Forwarded-For"].ToString();
+                var forwardedIp = value.ToString();
                 if (!string.IsNullOrEmpty(forwardedIp))
                     return forwardedIp;
             }
