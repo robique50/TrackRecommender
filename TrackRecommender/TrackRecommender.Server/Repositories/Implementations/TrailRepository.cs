@@ -16,22 +16,28 @@ namespace TrackRecommender.Server.Repositories.Implementations
         public async Task<List<Trail>> GetAllTrailsAsync()
         {
             return await _context.Trails
-                .Include(t => t.Regions)
+                .Include(t => t.TrailRegions)
+                    .ThenInclude(tr => tr.Region)
+                .Include(t => t.UserRatings)
                 .ToListAsync();
         }
 
         public async Task<Trail?> GetTrailByIdAsync(int id)
         {
             var trail = await _context.Trails
-                .Include(t => t.Regions)
+                .Include(t => t.TrailRegions)
+                    .ThenInclude(tr => tr.Region)
+                .Include(t => t.UserRatings)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (trail != null)
+            if (trail?.TrailRegions != null)
             {
-                trail.RegionIds = trail.Regions.Select(r => r.Id).ToList();
-                trail.RegionNames = trail.Regions.Select(r => r.Name).ToList();
+                trail.RegionIds = trail.TrailRegions.Select(tr => tr.RegionId).ToList();
+                trail.RegionNames = trail.TrailRegions
+                                        .Where(tr => tr.Region?.Name != null)
+                                        .Select(tr => tr.Region!.Name)
+                                        .ToList();
             }
-
             return trail;
         }
 
@@ -41,16 +47,23 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 return new List<Trail>();
 
             var trails = await _context.Trails
-                .Where(t => t.Name == name)
-                .Include(t => t.Regions)
+                .Where(t => t.Name.Contains(name))
+                .Include(t => t.TrailRegions)
+                    .ThenInclude(tr => tr.Region)
+                .Include(t => t.UserRatings)
                 .ToListAsync();
 
             foreach (var trail in trails)
             {
-                trail.RegionIds = trail.Regions.Select(r => r.Id).ToList();
-                trail.RegionNames = trail.Regions.Select(r => r.Name).ToList();
+                if (trail.TrailRegions != null)
+                {
+                    trail.RegionIds = trail.TrailRegions.Select(tr => tr.RegionId).ToList();
+                    trail.RegionNames = trail.TrailRegions
+                                            .Where(tr => tr.Region?.Name != null)
+                                            .Select(tr => tr.Region!.Name)
+                                            .ToList();
+                }
             }
-
             return trails;
         }
 
@@ -68,33 +81,39 @@ namespace TrackRecommender.Server.Repositories.Implementations
 
             if (trail.RegionIds != null && trail.RegionIds.Any())
             {
+                trail.TrailRegions = trail.TrailRegions ?? new List<TrailRegion>();
+
                 foreach (var regionId in trail.RegionIds)
                 {
-                    var region = await _context.Regions.FindAsync(regionId);
-                    if (region == null)
+                    if (!trail.TrailRegions.Any(tr => tr.RegionId == regionId))
                     {
-                        throw new InvalidOperationException($"Region with ID {regionId} does not exist.");
+                        trail.TrailRegions.Add(new TrailRegion { RegionId = regionId });
                     }
-                    trail.Regions.Add(region);
                 }
             }
-
             await _context.Trails.AddAsync(trail);
         }
 
         public async Task<List<Trail>> GetTrailsByRegionIdAsync(int regionId)
         {
             var trails = await _context.Trails
-                .Where(t => t.Regions.Any(r => r.Id == regionId))
-                .Include(t => t.Regions)
+                .Where(t => t.TrailRegions.Any(tr => tr.RegionId == regionId))
+                .Include(t => t.TrailRegions)
+                    .ThenInclude(tr => tr.Region)
+                .Include(t => t.UserRatings)
                 .ToListAsync();
 
             foreach (var trail in trails)
             {
-                trail.RegionIds = trail.Regions.Select(r => r.Id).ToList();
-                trail.RegionNames = trail.Regions.Select(r => r.Name).ToList();
+                if (trail.TrailRegions != null)
+                {
+                    trail.RegionIds = trail.TrailRegions.Select(tr => tr.RegionId).ToList();
+                    trail.RegionNames = trail.TrailRegions
+                                            .Where(tr => tr.Region?.Name != null)
+                                            .Select(tr => tr.Region!.Name)
+                                            .ToList();
+                }
             }
-
             return trails;
         }
 
@@ -104,27 +123,34 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 return await GetAllTrailsAsync();
 
             var trails = await _context.Trails
-                .Where(t => t.Regions.Any(r => regionIds.Contains(r.Id)))
-                .Include(t => t.Regions)
+                .Where(t => t.TrailRegions.Any(tr => regionIds.Contains(tr.RegionId)))
+                .Include(t => t.TrailRegions)
+                    .ThenInclude(tr => tr.Region)
+                .Include(t => t.UserRatings)
                 .ToListAsync();
 
             foreach (var trail in trails)
             {
-                trail.RegionIds = trail.Regions.Select(r => r.Id).ToList();
-                trail.RegionNames = trail.Regions.Select(r => r.Name).ToList();
+                if (trail.TrailRegions != null)
+                {
+                    trail.RegionIds = trail.TrailRegions.Select(tr => tr.RegionId).ToList();
+                    trail.RegionNames = trail.TrailRegions
+                                            .Where(tr => tr.Region?.Name != null)
+                                            .Select(tr => tr.Region!.Name)
+                                            .ToList();
+                }
             }
-
             return trails;
         }
 
         public async Task AddTrailRegionAsync(int trailId, int regionId)
         {
-            var trail = await _context.Trails.FindAsync(trailId);
-            if (trail == null)
+            var trailExists = await _context.Trails.AnyAsync(t => t.Id == trailId);
+            if (!trailExists)
                 throw new InvalidOperationException($"Trail with ID {trailId} does not exist.");
 
-            var region = await _context.Regions.FindAsync(regionId);
-            if (region == null)
+            var regionExists = await _context.Regions.AnyAsync(r => r.Id == regionId);
+            if (!regionExists)
                 throw new InvalidOperationException($"Region with ID {regionId} does not exist.");
 
             var exists = await _context.TrailRegions.AnyAsync(tr =>
@@ -132,7 +158,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
 
             if (!exists)
             {
-                await _context.TrailRegions.AddAsync(new TrailRegion
+                _context.TrailRegions.Add(new TrailRegion
                 {
                     TrailId = trailId,
                     RegionId = regionId
@@ -160,21 +186,23 @@ namespace TrackRecommender.Server.Repositories.Implementations
         }
 
         public async Task<List<Trail>> FilterTrailsAsync(
-    List<int>? regionIds = null,
-    string? difficulty = null,
-    double? maxDistance = null,
-    string? category = null,
-    string? trailType = null,
-    double? maxDuration = null,
-    List<string>? tags = null)
+            List<int>? regionIds = null,
+            string? difficulty = null,
+            double? maxDistance = null,
+            string? category = null,
+            string? trailType = null,
+            double? maxDuration = null,
+            List<string>? tags = null)
         {
             IQueryable<Trail> query = _context.Trails
-                .Include(t => t.Regions)
+                .Include(t => t.TrailRegions)
+                    .ThenInclude(tr => tr.Region)
+                .Include(t => t.UserRatings)
                 .AsNoTracking();
 
             if (regionIds != null && regionIds.Any())
             {
-                query = query.Where(t => t.Regions.Any(r => regionIds.Contains(r.Id)));
+                query = query.Where(t => t.TrailRegions.Any(tr => regionIds.Contains(tr.RegionId)));
             }
 
             if (!string.IsNullOrWhiteSpace(difficulty))
@@ -192,6 +220,11 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 query = query.Where(t => t.Category == category);
             }
 
+            if (!string.IsNullOrWhiteSpace(trailType))
+            {
+                query = query.Where(t => t.TrailType != null && t.TrailType.Contains(trailType, StringComparison.OrdinalIgnoreCase));
+            }
+
             if (maxDuration.HasValue && maxDuration.Value > 0)
             {
                 query = query.Where(t => t.Duration <= maxDuration.Value);
@@ -199,37 +232,40 @@ namespace TrackRecommender.Server.Repositories.Implementations
 
             var trails = await query.ToListAsync();
 
-            if (!string.IsNullOrWhiteSpace(trailType))
-            {
-                trails = trails.Where(t => t.TrailType.Contains(trailType, StringComparison.OrdinalIgnoreCase)).ToList();
-            }
-
             if (tags != null && tags.Any())
             {
                 trails = trails.Where(t =>
-                    t.Tags.Any(tag => tags.Any(searchTag =>
-                        tag.Contains(searchTag, StringComparison.OrdinalIgnoreCase)))
+                    t.Tags != null && t.Tags.Any(tagInEntity => tags.Any(searchTag =>
+                        tagInEntity.Contains(searchTag, StringComparison.OrdinalIgnoreCase)))
                 ).ToList();
             }
 
             foreach (var trail in trails)
             {
-                trail.RegionIds = trail.Regions.Select(r => r.Id).ToList();
-                trail.RegionNames = trail.Regions.Select(r => r.Name).ToList();
+                if (trail.TrailRegions != null)
+                {
+                    trail.RegionIds = trail.TrailRegions.Select(tr => tr.RegionId).ToList();
+                    trail.RegionNames = trail.TrailRegions
+                                            .Where(tr => tr.Region?.Name != null)
+                                            .Select(tr => tr.Region!.Name)
+                                            .ToList();
+                }
             }
-
             return trails;
         }
 
-        public async Task<bool> TrailExistsAsync(string name, string network, string geoJsonData)
+        public async Task<bool> TrailExistsAsync(string name, string? network)
         {
-            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(geoJsonData))
+            if (string.IsNullOrWhiteSpace(name))
                 return false;
 
-            return await _context.Trails.AnyAsync(t =>
-                t.Name == name &&
-                t.Network == network &&
-                t.GeoJsonData == geoJsonData);
+            var query = _context.Trails.Where(t => t.Name == name);
+
+            if (!string.IsNullOrEmpty(network))
+            {
+                query = query.Where(t => t.Network == network);
+            }
+            return await query.AnyAsync();
         }
 
         public async Task UpdateTrailAsync(Trail trail)
@@ -237,23 +273,37 @@ namespace TrackRecommender.Server.Repositories.Implementations
             if (trail == null)
                 throw new ArgumentNullException(nameof(trail));
 
-            if (trail.RegionIds != null && trail.RegionIds.Any())
+            var existingTrail = await _context.Trails
+                .Include(t => t.TrailRegions)
+                .FirstOrDefaultAsync(t => t.Id == trail.Id);
+
+            if (existingTrail == null)
             {
-                var currentRegionIds = await GetRegionIdsForTrailAsync(trail.Id);
-
-                var regionsToAdd = trail.RegionIds.Except(currentRegionIds);
-                foreach (var regionId in regionsToAdd)
-                {
-                    await AddTrailRegionAsync(trail.Id, regionId);
-                }
-
-                var regionsToRemove = currentRegionIds.Except(trail.RegionIds);
-                foreach (var regionId in regionsToRemove)
-                {
-                    await RemoveTrailRegionAsync(trail.Id, regionId);
-                }
+                throw new KeyNotFoundException($"Trail with ID {trail.Id} not found for update.");
             }
 
+            _context.Entry(existingTrail).CurrentValues.SetValues(trail);
+
+            if (trail.TrailRegions != null)
+            {
+                var regionIdsInNewList = trail.TrailRegions.Select(tr => tr.RegionId).ToList();
+                var regionsToRemove = existingTrail.TrailRegions
+                    .Where(tr => !regionIdsInNewList.Contains(tr.RegionId))
+                    .ToList();
+                _context.TrailRegions.RemoveRange(regionsToRemove);
+
+                foreach (var newTr in trail.TrailRegions)
+                {
+                    if (!existingTrail.TrailRegions.Any(et => et.RegionId == newTr.RegionId))
+                    {
+                        existingTrail.TrailRegions.Add(new TrailRegion { TrailId = existingTrail.Id, RegionId = newTr.RegionId });
+                    }
+                }
+            }
+            else
+            {
+                existingTrail.TrailRegions.Clear();
+            }
             _context.Trails.Update(trail);
         }
 
@@ -265,16 +315,46 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 var trailRegions = await _context.TrailRegions
                     .Where(tr => tr.TrailId == trailId)
                     .ToListAsync();
-
-                _context.TrailRegions.RemoveRange(trailRegions);
-
+                if (trailRegions.Any())
+                {
+                    _context.TrailRegions.RemoveRange(trailRegions);
+                }
                 _context.Trails.Remove(trail);
             }
+        }
+
+        public async Task AddTrailsAsync(IEnumerable<Trail> trails)
+        {
+            await _context.Trails.AddRangeAsync(trails);
         }
 
         public async Task<int> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> TrailExistsByOsmIdAsync(long osmId)
+        {
+            return await _context.Trails.AnyAsync(t => t.OsmId == osmId);
+        }
+
+        public async Task<Trail?> GetTrailByOsmIdAsync(long osmId)
+        {
+            var trail = await _context.Trails
+               .Include(t => t.TrailRegions)
+                   .ThenInclude(tr => tr.Region)
+               .Include(t => t.UserRatings)
+               .FirstOrDefaultAsync(t => t.OsmId == osmId);
+
+            if (trail?.TrailRegions != null)
+            {
+                trail.RegionIds = trail.TrailRegions.Select(tr => tr.RegionId).ToList();
+                trail.RegionNames = trail.TrailRegions
+                                        .Where(tr => tr.Region?.Name != null)
+                                        .Select(tr => tr.Region!.Name)
+                                        .ToList();
+            }
+            return trail;
         }
     }
 }

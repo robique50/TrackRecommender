@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using NetTopologySuite.Geometries;
 
 namespace TrackRecommender.Server.Models
 {
     public class Trail
     {
         public int Id { get; set; }
+        public long? OsmId { get; set; } 
         public string Name { get; set; }
         public string Description { get; set; }
         public double Distance { get; set; }
@@ -13,11 +15,12 @@ namespace TrackRecommender.Server.Models
         public string TrailType { get; set; }
         public string StartLocation { get; set; }
         public string EndLocation { get; set; }
-        public string GeoJsonData { get; set; }
+        public LineString Coordinates { get; set; }
         public List<string> Tags { get; set; }
         public string Category { get; set; } 
-        public string? Network { get; set; } 
-        public virtual ICollection<Region> Regions { get; set; }
+        public string? Network { get; set; }
+        public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+        public virtual ICollection<TrailRegion> TrailRegions { get; set; } = new List<TrailRegion>();
         public virtual ICollection<UserTrailRating> UserRatings { get; set; } = new List<UserTrailRating>();
 
         [NotMapped]
@@ -34,11 +37,10 @@ namespace TrackRecommender.Server.Models
             TrailType = string.Empty;
             StartLocation = string.Empty;
             EndLocation = string.Empty;
-            GeoJsonData = string.Empty;
             Category = "Local";
+            Coordinates = new LineString(new Coordinate[] { });
             Network = string.Empty;
             Tags = new List<string>();
-            Regions = new List<Region>();
             RegionIds = new List<int>();
             RegionNames = new List<string>();
         }
@@ -52,11 +54,11 @@ namespace TrackRecommender.Server.Models
             string trailType,
             string startLocation,
             string endLocation,
-            string geoJsonData,
+            LineString coordinates,
             List<string> tags,
             string category = "Local",
             string network = "",
-            ICollection<Region>? regions = null)
+            ICollection<TrailRegion>? trailRegions = null)
             : this()
         {
             Name = name;
@@ -67,11 +69,11 @@ namespace TrackRecommender.Server.Models
             TrailType = trailType;
             StartLocation = startLocation;
             EndLocation = endLocation;
-            GeoJsonData = geoJsonData;
+            Coordinates = coordinates;
             Tags = tags ?? new List<string>();
             Category = category;
             Network = network ?? string.Empty;
-            Regions = regions ?? new List<Region>();
+            TrailRegions = trailRegions ?? new List<TrailRegion>();
         }
 
         public static string DetermineCategoryFromNetwork(string network)

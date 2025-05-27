@@ -22,10 +22,12 @@ namespace TrackRecommender.Server.Repositories.Interfaces
             string? trailType = null,
             double? maxDuration = null,
             List<string>? tags = null);
-
-        Task<bool> TrailExistsAsync(string name, string network, string geoJsonData);
+        Task<bool> TrailExistsAsync(string name, string? network);
+        Task AddTrailsAsync(IEnumerable<Trail> trails); 
         Task UpdateTrailAsync(Trail trail);
         Task DeleteTrailAsync(int trailId);
+        Task<bool> TrailExistsByOsmIdAsync(long osmId);
+        Task<Trail?> GetTrailByOsmIdAsync(long osmId);
         Task<int> SaveChangesAsync();
     }
 }

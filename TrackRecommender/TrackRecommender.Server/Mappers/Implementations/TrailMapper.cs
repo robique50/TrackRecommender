@@ -1,6 +1,7 @@
 ﻿using TrackRecommender.Server.Mappers.Interfaces;
 using TrackRecommender.Server.Models;
 using TrackRecommender.Server.Models.DTOs;
+using NetTopologySuite.Geometries;
 
 namespace TrackRecommender.Server.Mappers.Implementations
 {
@@ -12,7 +13,7 @@ namespace TrackRecommender.Server.Mappers.Implementations
             {
                 Id = entity.Id,
                 Name = entity.Name,
-                Description = entity.Description,
+                Description = entity.Description, 
                 Distance = entity.Distance,
                 Duration = entity.Duration,
                 Difficulty = entity.Difficulty,
@@ -21,17 +22,21 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 EndLocation = entity.EndLocation,
                 Category = entity.Category,
                 Network = entity.Network,
-                GeoJsonData = entity.GeoJsonData,
-                RegionNames = entity.RegionNames?.Count > 0
-                    ? entity.RegionNames
-                    : entity.Regions?.Select(r => r.Name).ToList() ?? new List<string>(),
-                Tags = entity.Tags
+                Coordinates = entity.Coordinates,
+                RegionNames = entity.TrailRegions? 
+                    .Where(tr => tr.Region != null) 
+                    .Select(tr => tr.Region.Name)
+                    .Where(name => name != null)
+                    .ToList() ?? new List<string>(),
+                Tags = entity.Tags ?? new List<string>(),
+                AverageRating = entity.UserRatings?.Any() == true ? entity.UserRatings.Average(r => r.Rating) : 0,
+                ReviewsCount = entity.UserRatings?.Count ?? 0,
             };
         }
 
         public Trail ToEntity(TrailDto dto)
         {
-            return new Trail
+            var trailEntity = new Trail 
             {
                 Id = dto.Id,
                 Name = dto.Name,
@@ -44,9 +49,10 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 EndLocation = dto.EndLocation,
                 Category = dto.Category,
                 Network = dto.Network,
-                GeoJsonData = dto.GeoJsonData,
-                Tags = dto.Tags
+                Coordinates = dto.Coordinates ?? new LineString(new Coordinate[] { }),
+                Tags = dto.Tags ?? new List<string>(),
             };
+            return trailEntity;
         }
     }
 }

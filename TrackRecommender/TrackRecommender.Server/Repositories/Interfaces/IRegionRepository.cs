@@ -10,9 +10,9 @@ namespace TrackRecommender.Server.Repositories.Interfaces
         Task AddRegionAsync(Region region);
         Task<List<Region>> GetRegionsByTrailIdAsync(int trailId);
         Task<List<string>> GetRegionNamesByTrailIdAsync(int trailId);
+        Task<List<Trail>> GetTrailsByRegionIdAsync(int regionId);
         Task UpdateRegion(Region region);
         Task DeleteRegionAsync(int regionId);
         Task<int> SaveChangesAsync();
-
     }
 }

@@ -1,719 +1,731 @@
-﻿using System.Text;
+﻿using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.Simplify;
 using System.Text.Json;
 using TrackRecommender.Server.Models;
-using TrackRecommender.Server.Repositories.Interfaces;
+using TrackRecommender.Server.Models.DTOs;
 using static TrackRecommender.Server.External.OpenStreetMap.OverpassModels;
 
 namespace TrackRecommender.Server.Services
 {
     public class TrailImportService
     {
-        private readonly ITrailRepository _trailRepository;
-        private readonly IRegionRepository _regionRepository;
+        private readonly AppDbContext _context;
         private readonly HttpClient _httpClient;
         private readonly ILogger<TrailImportService> _logger;
+        private readonly GeometryFactory _geometryFactory;
+        private readonly RegionImportService _regionImportService;
 
-        private int _trailCounter = 0;
-        private const int OVERPASS_TIMEOUT_SECONDS = 300;
-        private const int OVERPASS_DETAILED_FETCH_BATCH_SIZE = 10;
-        private const int OVERPASS_API_DELAY_MS = 1500;
-        private const int SAVE_CHANGES_BATCH_DELAY_MS = 1000;
+        private int _newTrailCounter = 0;
+        private int _updatedTrailCounter = 0;
+
+        private const int OVERPASS_TIMEOUT_SECONDS = 180;
+        private const int SAVE_CHANGES_BATCH_SIZE = 100;
+        private const double MAX_VALID_DISTANCE_KM = 1000;
+        private const double MIN_VALID_DISTANCE_KM = 0.1;
+        private const double GEOMETRY_SIMPLIFY_TOLERANCE = 0.0001;
+
+        private Dictionary<int, Region> _romanianRegionsCache = new Dictionary<int, Region>();
 
         public TrailImportService(
-            ITrailRepository trailRepository,
-            IRegionRepository regionRepository,
+            AppDbContext context,
             HttpClient httpClient,
-            ILogger<TrailImportService> logger)
+            ILogger<TrailImportService> logger,
+            RegionImportService regionImportService)
         {
-            _trailRepository = trailRepository ?? throw new ArgumentNullException(nameof(trailRepository));
-            _regionRepository = regionRepository ?? throw new ArgumentNullException(nameof(regionRepository));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-            _httpClient.Timeout = TimeSpan.FromMinutes(10);
+            _regionImportService = regionImportService ?? throw new ArgumentNullException(nameof(regionImportService));
+            _geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+            _httpClient.Timeout = TimeSpan.FromSeconds(OVERPASS_TIMEOUT_SECONDS + 120);
         }
 
         public async Task ImportAllTrailsAsync()
         {
-            _logger.LogInformation("Starting trail import process...");
-            _trailCounter = 0;
+            _logger.LogInformation("Starting optimized trail import process...");
+            _newTrailCounter = 0;
+            _updatedTrailCounter = 0;
 
             try
             {
-                var regions = await _regionRepository.GetAllRegionsAsync();
-                if (!regions.Any())
+                await EnsureRegionsExist();
+
+                await LoadRomanianRegionsCacheAsync();
+
+                if (!_romanianRegionsCache.Any())
                 {
-                    _logger.LogWarning("No regions found in the database. It's recommended to have regions pre-populated or ensure they are created correctly during import.");
+                    _logger.LogWarning("No Romanian regions found.");
+                    return;
                 }
 
-                string nationalInternationalCriteria = @"relation(area.romania)[""network""~""^(nwn|ncn|iwn|icn)$""][""route""~""^(hiking|foot|bicycle|mtb)$""];";
-                await ImportTrailsByCriteriaAsync("National & International", nationalInternationalCriteria);
+                var overpassResponse = await FetchTrailsFromOverpass();
+                if (overpassResponse?.Elements == null || !overpassResponse.Elements.Any())
+                {
+                    _logger.LogInformation("No trails returned from Overpass API");
+                    return;
+                }
 
-                string regionalCriteria = @"relation(area.romania)[""network""~""^(rwn|rcn)$""][""route""~""^(hiking|foot|bicycle|mtb)$""];";
-                await ImportTrailsByCriteriaAsync("Regional", regionalCriteria);
+                await ProcessTrailsResponse(overpassResponse);
 
-                string localCriteria = @"
-                (
-                  relation(area.romania)[""network""~""^(lwn|lcn)$""][""route""~""^(hiking|foot|bicycle|mtb)$""];
-                  relation(area.romania)[""route""~""^(hiking|foot|bicycle|mtb)$""][""name""][!""network""];
-                );";
-                await ImportTrailsByCriteriaAsync("Local", localCriteria);
-
-                _logger.LogInformation($"Trail import process completed successfully. Total trails imported: {_trailCounter}");
+                _logger.LogInformation($"Import completed. New: {_newTrailCounter}, Updated: {_updatedTrailCounter}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred during the overall trail import process");
-            }
-            finally
-            {
-                GC.Collect();
+                _logger.LogError(ex, "Critical error during trail import");
+                throw;
             }
         }
 
-        private async Task ImportTrailsByCriteriaAsync(string categoryName, string overpassRelationCriteria)
+        private async Task EnsureRegionsExist()
         {
-            _logger.LogInformation("Starting import of {CategoryName} trails...", categoryName);
+            var regionCount = await _context.Regions.CountAsync();
+            if (regionCount == 0)
+            {
+                _logger.LogInformation("No regions found. Importing Romanian counties...");
+                await _regionImportService.ImportRomanianCountiesAsync();
+            }
+        }
 
-            string idQuery = $@"
+        private async Task<OverpassResponse?> FetchTrailsFromOverpass()
+        {
+            string query = $@"
                 [out:json][timeout:{OVERPASS_TIMEOUT_SECONDS}];
-                area[""name""=""România""][""admin_level""=""2""]->.romania;
-                {overpassRelationCriteria}
-                out ids;";
+                area[""name""=""România""][""admin_level""=""2""]->.searchArea;
+                (
+                    relation(area.searchArea)[""type""=""route""][""route""~""^(hiking|foot|bicycle|mtb|running|trail_running)$""][""name""];
+                    relation(area.searchArea)[""type""=""route""][""network""~""^(iwn|nwn|rwn|lwn|icn|ncn|rcn|lcn)$""][""route""~""^(hiking|foot|bicycle|mtb|running|trail_running)$""][""name""];
+                );
+                out body;
+                >;
+                out skel qt geom;";
 
-            var idResponse = await ExecuteOverpassQueryAsync(idQuery);
-            if (idResponse?.Elements == null || !idResponse.Elements.Any())
+            return await ExecuteOverpassQueryAsync(query);
+        }
+
+        private async Task ProcessTrailsResponse(OverpassResponse response)
+        {
+            var relations = response.Elements
+                .Where(e => e.Type == "relation" && e.Tags?.ContainsKey("name") == true)
+                .ToList();
+
+            var waysDict = response.Elements
+                .Where(e => e.Type == "way")
+                .ToDictionary(w => w.Id, w => w);
+
+            _logger.LogInformation($"Processing {relations.Count} trail relations...");
+
+            var trailsToAddBatch = new List<Trail>();
+            int processedCount = 0;
+
+            foreach (var relation in relations)
             {
-                _logger.LogWarning("No {CategoryName} trails found in OSM data based on initial ID query.", categoryName);
-                return;
-            }
+                processedCount++;
 
-            var relationIds = idResponse.Elements.Where(e => e.Type == "relation").Select(e => e.Id).Distinct().ToList();
-            _logger.LogInformation("Found {Count} {CategoryName} trail relation IDs. Fetching details sequentially...", relationIds.Count, categoryName);
-
-            List<OverpassElement> fullyDetailedElements = new List<OverpassElement>();
-            int conceptualBatchNumber = 0;
-
-            for (int k = 0; k < relationIds.Count; k++)
-            {
-                var relationId = relationIds[k];
-
-                if (k % OVERPASS_DETAILED_FETCH_BATCH_SIZE == 0)
+                if (processedCount % 10 == 0)
                 {
-                    conceptualBatchNumber = (k / OVERPASS_DETAILED_FETCH_BATCH_SIZE) + 1;
-                    _logger.LogInformation("Starting to fetch details for conceptual batch {BatchNum}/{TotalConceptualBatches} for {CategoryName} trails. Current relation ID: {RelationId}",
-                        conceptualBatchNumber,
-                        (int)Math.Ceiling((double)relationIds.Count / OVERPASS_DETAILED_FETCH_BATCH_SIZE),
-                        categoryName,
-                        relationId);
+                    _logger.LogInformation($"Processing relation {processedCount}/{relations.Count}...");
                 }
 
-                string detailedQuery = $@"
-                    [out:json][timeout:{OVERPASS_TIMEOUT_SECONDS}];
-                    relation({relationId});
-                    (._;>;);
-                    out body geom;";
+                var processedData = await CreateTrailDataFromRelation(relation, waysDict);
+                if (processedData == null) continue;
 
-                var detailedData = await ExecuteOverpassQueryAsync(detailedQuery);
+                await ProcessSingleTrail(processedData, relation.Id, trailsToAddBatch);
 
-                if (detailedData?.Elements != null && detailedData.Elements.Any())
+                if (trailsToAddBatch.Count >= SAVE_CHANGES_BATCH_SIZE || processedCount == relations.Count)
                 {
-                    var relationElement = detailedData.Elements.FirstOrDefault(e => e.Type == "relation" && e.Id == relationId);
-                    if (relationElement != null)
-                    {
-                        if ((relationElement.Geometry == null || !relationElement.Geometry.Any()) && relationElement.Members != null)
-                        {
-                            List<GeometryPoint> combinedGeometry = new List<GeometryPoint>();
-                            foreach (var member in relationElement.Members.Where(m => m.Type == "way"))
-                            {
-                                var way = detailedData.Elements.FirstOrDefault(e => e.Type == "way" && e.Id == member.Ref);
-                                if (way == null)
-                                {
-                                    _logger.LogWarning("Way member with ref {WayRefId} for relation {RelationId} not found in detailed OSM data.", member.Ref, relationId);
-                                    continue;
-                                }
-                                if (way.Geometry == null || !way.Geometry.Any())
-                                {
-                                    _logger.LogWarning("Way member {WayId} (ref {WayRefId}) for relation {RelationId} has no geometry.", way.Id, member.Ref, relationId);
-                                    continue;
-                                }
-                                combinedGeometry.AddRange(way.Geometry);
-                            }
+                    await SaveTrailsBatch(trailsToAddBatch);
+                    trailsToAddBatch.Clear();
+                }
+            }
 
-                            if (combinedGeometry.Any())
-                            {
-                                relationElement.Geometry = combinedGeometry;
-                                _logger.LogInformation("Successfully built geometry for relation {RelationId} from {PointCount} points from its member ways.", relationId, combinedGeometry.Count);
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Failed to build geometry for relation {RelationId} from its members. It will likely be skipped.", relationId);
-                            }
-                        }
-                        else if (relationElement.Geometry != null && relationElement.Geometry.Any())
-                        {
-                            _logger.LogInformation("Relation {RelationId} already has geometry with {PointCount} points.", relationId, relationElement.Geometry.Count);
-                        }
+            if (_context.ChangeTracker.HasChanges())
+            {
+                await SaveChangesToDbAsync();
+            }
+        }
 
-                        if (relationElement.Geometry != null && relationElement.Geometry.Any())
-                        {
-                            fullyDetailedElements.Add(relationElement);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("Relation {RelationId} processed but ended up with no usable geometry. Skipping.", relationId);
-                        }
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Could not find main relation element for ID {RelationId} in its detailed response.", relationId);
-                    }
+        private async Task ProcessSingleTrail(ProcessedTrailDto processedData, long osmId, List<Trail> batch)
+        {
+            var existingTrail = await _context.Trails
+                .Include(t => t.TrailRegions)
+                .FirstOrDefaultAsync(t => t.OsmId == osmId);
+
+            if (existingTrail != null)
+            {
+                UpdateExistingTrailWithProcessedData(existingTrail, processedData);
+                _updatedTrailCounter++;
+            }
+            else
+            {
+                var newTrail = ConvertProcessedDataToTrailEntity(processedData, osmId);
+                batch.Add(newTrail);
+                _newTrailCounter++;
+            }
+        }
+
+        private async Task SaveTrailsBatch(List<Trail> trails)
+        {
+            if (trails.Any())
+            {
+                await _context.Trails.AddRangeAsync(trails);
+            }
+
+            if (trails.Any() || _context.ChangeTracker.HasChanges())
+            {
+                await SaveChangesToDbAsync();
+            }
+        }
+
+        private async Task LoadRomanianRegionsCacheAsync()
+        {
+            var regions = await _context.Regions
+                .Where(r => r.Boundary != null && r.Boundary.IsValid)
+                .AsNoTracking()
+                .ToListAsync();
+
+            _romanianRegionsCache = regions.ToDictionary(r => r.Id, r => r);
+            _logger.LogInformation($"Loaded {_romanianRegionsCache.Count} valid regions in cache");
+        }
+
+        private async Task SaveChangesToDbAsync()
+        {
+            try
+            {
+                var changes = await _context.SaveChangesAsync();
+                _logger.LogInformation($"Saved {changes} changes to database");
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Error saving changes to database");
+
+                foreach (var entry in ex.Entries)
+                {
+                    entry.State = EntityState.Detached;
+                }
+                throw;
+            }
+        }
+
+        private async Task<ProcessedTrailDto?> CreateTrailDataFromRelation(
+            OverpassElement relation,
+            Dictionary<long, OverpassElement> waysDict)
+        {
+            string? trailName = relation.Tags?.GetValueOrDefault("name");
+            if (string.IsNullOrWhiteSpace(trailName)) return null;
+
+            if (IsNonRomanianTrailByName(trailName, relation.Tags ?? new Dictionary<string, string>()))
+            {
+                _logger.LogDebug($"Skipping non-Romanian trail: {trailName}");
+                return null;
+            }
+
+            var assembledCoordinates = BuildTrailCoordinatesFromRelationMembers(relation, waysDict, trailName);
+            if (assembledCoordinates == null || assembledCoordinates.Count < 2)
+            {
+                _logger.LogWarning($"Could not build valid coordinates for trail: {trailName}");
+                return null;
+            }
+
+            LineString rawLineString;
+            try
+            {
+                rawLineString = _geometryFactory.CreateLineString(assembledCoordinates.ToArray());
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogError(ex, $"Failed to create LineString for trail: {trailName}");
+                return null;
+            }
+
+            if (!rawLineString.IsValid)
+            {
+                _logger.LogWarning($"Invalid geometry for trail: {trailName}, attempting repair...");
+                var repaired = rawLineString.Buffer(0);
+                if (repaired is LineString rl && rl.IsValid && rl.Coordinates.Length >= 2)
+                {
+                    rawLineString = rl;
+                    _logger.LogInformation($"Successfully repaired geometry for trail: {trailName}");
                 }
                 else
                 {
-                    _logger.LogWarning("No detailed data returned or no elements for relation ID {RelationId} (ExecuteOverpassQueryAsync might have returned null due to errors/retries failing).", relationId);
-                }
-
-                await Task.Delay(OVERPASS_API_DELAY_MS);
-            }
-
-            _logger.LogInformation("Finished fetching details for {CategoryName} trails. Total elements with geometry: {Count}.", categoryName, fullyDetailedElements.Count);
-
-            int processingBatchSize = 50;
-            for (int i = 0; i < fullyDetailedElements.Count; i += processingBatchSize)
-            {
-                var batchToProcess = fullyDetailedElements.Skip(i).Take(processingBatchSize).ToList();
-                await ProcessTrailBatchAsync(batchToProcess);
-
-                int savedCount = await _trailRepository.SaveChangesAsync();
-                _logger.LogInformation("Saved {SavedCount} changes to the database after processing a batch of {CategoryName} trails.", savedCount, categoryName);
-
-                if (i + processingBatchSize < fullyDetailedElements.Count)
-                {
-                    await Task.Delay(SAVE_CHANGES_BATCH_DELAY_MS);
+                    _logger.LogError($"Could not repair geometry for trail: {trailName}");
+                    return null;
                 }
             }
-            _logger.LogInformation("{CategoryName} trails import section completed.", categoryName);
-        }
 
-        public async Task<OverpassResponse?> ExecuteOverpassQueryAsync(string overpassQuery)
-        {
-            _logger.LogDebug("Executing Overpass query: {Query}", overpassQuery);
-            int maxRetries = 3;
-            int currentRetry = 0;
-            TimeSpan retryDelay = TimeSpan.FromSeconds(15);
-
-            while (true)
+            if (!IsTrailSpatiallyInRomania(rawLineString) && _romanianRegionsCache.Any())
             {
-                try
-                {
-                    var content = new StringContent($"data={Uri.EscapeDataString(overpassQuery)}", Encoding.UTF8, "application/x-www-form-urlencoded");
-                    _logger.LogInformation("Sending Overpass API request... (Attempt {AttemptNum}) for query: {QueryType}",
-                        currentRetry + 1,
-                        overpassQuery.Contains("is_in") ? "IS_IN" : (overpassQuery.Contains("out ids") ? "OUT_IDS" : "RELATION_DETAILS"));
-                    var response = await _httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return JsonSerializer.Deserialize<OverpassResponse>(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    }
-                    else if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || // 429
-                             response.StatusCode == System.Net.HttpStatusCode.GatewayTimeout ||   // 504
-                             response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || // 503
-                             response.StatusCode == System.Net.HttpStatusCode.BadGateway)        // 502
-                    {
-                        currentRetry++;
-                        var errorBody = await response.Content.ReadAsStringAsync();
-                        if (currentRetry > maxRetries)
-                        {
-                            _logger.LogError("Overpass API error ({StatusCode}). Max retries ({MaxRetries}) reached. Giving up. Body: {ErrorBody}. Query: {Query}",
-                                (int)response.StatusCode, maxRetries, errorBody, overpassQuery);
-                            return null;
-                        }
-                        _logger.LogWarning("Overpass API error ({StatusCode}) received. Retrying in {RetryDelaySeconds}s... (Attempt {CurrentRetry}/{MaxRetries}). Body: {ErrorBody}. Query: {Query}",
-                            (int)response.StatusCode, retryDelay.TotalSeconds, currentRetry, maxRetries, errorBody, overpassQuery);
-
-                        await Task.Delay(retryDelay);
-                        retryDelay = TimeSpan.FromSeconds(retryDelay.TotalSeconds * 2 + new Random().Next(1, 10001) / 1000.0);
-                    }
-                    else
-                    {
-                        var errorContent = await response.Content.ReadAsStringAsync();
-                        _logger.LogError("Overpass API error (non-retryable): {StatusCode}. Content: {ErrorContent}. Query: {Query}", response.StatusCode, errorContent, overpassQuery);
-                        return null;
-                    }
-                }
-                catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException || ex.CancellationToken.IsCancellationRequested)
-                {
-                    _logger.LogError(ex, "Overpass query timed out or was canceled by HttpClient. Attempt {CurrentRetryVal}/{MaxRetries}. Query: {Query}", currentRetry + 1, maxRetries, overpassQuery);
-                    currentRetry++;
-                    if (currentRetry > maxRetries)
-                    {
-                        _logger.LogError("Max retries reached for timeout/canceled query. Giving up. Query: {Query}", overpassQuery);
-                        return null;
-                    }
-                    var timeoutRetryDelay = TimeSpan.FromSeconds(Math.Max(retryDelay.TotalSeconds, 20));
-                    _logger.LogWarning("Waiting for {RetryDelaySeconds}s before retrying due to timeout/cancellation.", timeoutRetryDelay.TotalSeconds);
-                    await Task.Delay(timeoutRetryDelay);
-                    retryDelay = TimeSpan.FromSeconds(timeoutRetryDelay.TotalSeconds * 1.5 + new Random().Next(1, 5001) / 1000.0); // Următoarea pauză
-                }
-                catch (HttpRequestException httpEx)
-                {
-                    _logger.LogError(httpEx, "HttpRequestException during Overpass query (Network issue?). Attempt {CurrentRetryVal}/{MaxRetries}. Query: {Query}", currentRetry + 1, maxRetries, overpassQuery);
-                    currentRetry++;
-                    if (currentRetry > maxRetries)
-                    {
-                        _logger.LogError("Max retries reached for HttpRequestException. Giving up. Query: {Query}", overpassQuery);
-                        return null;
-                    }
-                    var networkErrorRetryDelay = TimeSpan.FromSeconds(Math.Max(retryDelay.TotalSeconds, 15)); // Minim 15s pentru erori de rețea
-                    _logger.LogWarning("Waiting for {RetryDelaySeconds}s before retrying due to HttpRequestException.", networkErrorRetryDelay.TotalSeconds);
-                    await Task.Delay(networkErrorRetryDelay);
-                    retryDelay = TimeSpan.FromSeconds(networkErrorRetryDelay.TotalSeconds * 1.5 + new Random().Next(1, 5001) / 1000.0);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Generic exception during Overpass query. Attempt {CurrentRetryVal}/{MaxRetries}. Query: {Query}", currentRetry + 1, maxRetries, overpassQuery);
-                    currentRetry++;
-                    if (currentRetry > maxRetries)
-                    {
-                        _logger.LogError("Max retries reached for generic exception. Giving up. Query: {Query}", overpassQuery);
-                        return null;
-                    }
-                    var genericErrorRetryDelay = TimeSpan.FromSeconds(Math.Max(retryDelay.TotalSeconds, 10));
-                    _logger.LogWarning("Waiting for {RetryDelaySeconds}s before retrying due to generic exception.", genericErrorRetryDelay.TotalSeconds);
-                    await Task.Delay(genericErrorRetryDelay);
-                    retryDelay = TimeSpan.FromSeconds(genericErrorRetryDelay.TotalSeconds * 1.5 + new Random().Next(1, 5001) / 1000.0);
-                }
-            }
-        }
-
-        private async Task ProcessTrailBatchAsync(List<OverpassElement> trails)
-        {
-            if (!trails.Any()) return;
-            _logger.LogInformation("Processing batch of {TrailCount} trails for database insertion.", trails.Count);
-
-            foreach (var element in trails)
-            {
-                try
-                {
-                    await ProcessSingleTrailAsync(element);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Critical error processing single trail with OSM ID {OsmId}. Skipping this trail.", element.Id);
-                }
-            }
-        }
-
-        private async Task ProcessSingleTrailAsync(OverpassElement element)
-        {
-            if (element.Tags == null || !element.Tags.Any())
-            {
-                _logger.LogWarning("Skipping trail with OSM ID {OsmId} - missing tags.", element.Id);
-                return;
+                _logger.LogDebug($"Trail not in Romania: {trailName}");
+                return null;
             }
 
-            if (element.Geometry == null || !element.Geometry.Any())
+            var simplifiedLineString = SimplifyTrailGeometry(rawLineString, trailName);
+            if (simplifiedLineString.Coordinates.Length < 2) return null;
+
+            double distanceKm = CalculateHaversineDistanceForLineString(simplifiedLineString);
+            if (distanceKm < MIN_VALID_DISTANCE_KM || distanceKm > MAX_VALID_DISTANCE_KM)
             {
-                _logger.LogWarning("Skipping trail with OSM ID {OsmId} - missing or empty geometry after fetch and construction attempts.", element.Id);
-                return;
+                _logger.LogWarning($"Trail {trailName} has invalid distance: {distanceKm}km");
+                return null;
             }
 
-            if (!element.Tags.TryGetValue("name", out var trailName) || string.IsNullOrWhiteSpace(trailName))
-            {
-                _logger.LogWarning("Skipping trail with OSM ID {OsmId} - missing name tag.", element.Id);
-                return;
-            }
+            var associatedRegions = DetermineIntersectedRomanianRegions(simplifiedLineString);
+            var osmTags = relation.Tags ?? new Dictionary<string, string>();
 
-            if (IsNonRomanianTrail(trailName))
-            {
-                _logger.LogInformation("Skipping non-Romanian trail based on name: {TrailName} (OSM ID: {OsmId})", trailName, element.Id);
-                return;
-            }
-
-            var coordinates = element.Geometry.Select(g => new[] { g.Lon, g.Lat }).ToList();
-            double distance = CalculateDistance(coordinates);
-
-            if (distance < 3)
-            {
-                _logger.LogInformation("Skipping trail '{TrailName}' (OSM ID: {OsmId}) - too short ({DistanceKm:F2} km).", trailName, element.Id, distance);
-                return;
-            }
-
-            var intersectedRegionIds = await DetermineRegionsForTrailAsync(coordinates, trailName, element.Id);
-            if (!intersectedRegionIds.Any())
-            {
-                _logger.LogWarning("Skipping trail '{TrailName}' (OSM ID: {OsmId}) - does not intersect any known or creatable regions.", trailName, element.Id);
-                return;
-            }
-
-            string geoJsonData = JsonSerializer.Serialize(new { type = "LineString", coordinates });
-            string network = element.Tags.TryGetValue("network", out var networkValue) ? networkValue : string.Empty;
-            string category = DetermineCategoryFromNetwork(network);
-
-            if (await _trailRepository.TrailExistsAsync(trailName, network, geoJsonData))
-            {
-                _logger.LogInformation("Trail '{TrailName}' (Network: {Network}, OSM ID: {OsmId}) already exists with identical geometry. Skipping.", trailName, network, element.Id);
-                return;
-            }
-
-            var regions = new List<Region>();
-            var regionNames = new List<string>();
-            foreach (var regionId in intersectedRegionIds)
-            {
-                var region = await _regionRepository.GetRegionByIdAsync(regionId);
-                if (region != null)
-                {
-                    regions.Add(region);
-                    regionNames.Add(region.Name);
-                }
-                else
-                {
-                    _logger.LogWarning("Could not retrieve region with ID {RegionId} for trail '{TrailName}' (OSM ID: {OsmId}) even after attempting to determine/create it.", regionId, trailName, element.Id);
-                }
-            }
-            if (!regions.Any())
-            {
-                _logger.LogWarning("Trail '{TrailName}' (OSM ID: {OsmId}) ended up with no valid regions after lookups. Skipping.", trailName, element.Id);
-                return;
-            }
-
-            string difficultyForTrail = DetermineDifficulty(element.Tags, distance);
-            string trailTypeForTrail = DetermineTrailTypeFromOsm(element.Tags);
-
-            var trail = new Trail
+            return new ProcessedTrailDto
             {
                 Name = trailName,
-                Description = element.Tags.TryGetValue("description", out var desc) ? desc : $"Traseu {category.ToLower()} în {string.Join(", ", regionNames)}.",
-                Distance = distance,
-                Difficulty = difficultyForTrail,
-                TrailType = trailTypeForTrail,
-                Duration = EstimateDuration(distance, difficultyForTrail, trailTypeForTrail, element.Tags),
-                StartLocation = coordinates.Any() ? $"{coordinates.First()[1]:F6},{coordinates.First()[0]:F6}" : string.Empty,
-                EndLocation = coordinates.Count > 1 ? $"{coordinates.Last()[1]:F6},{coordinates.Last()[0]:F6}" : string.Empty,
-                GeoJsonData = geoJsonData,
-                Tags = ExtractRelevantTags(element.Tags),
-                Category = category,
-                Network = network,
-                Regions = regions,
+                Description = osmTags.GetValueOrDefault("description"),
+                Coordinates = simplifiedLineString,
+                DistanceKm = distanceKm,
+                Difficulty = DetermineDifficulty(osmTags, distanceKm),
+                TrailType = DetermineTrailTypeFromOsm(osmTags),
+                EstimatedDurationHours = EstimateDuration(distanceKm, osmTags.GetValueOrDefault("sac_scale") ?? "Easy", DetermineTrailTypeFromOsm(osmTags), osmTags),
+                StartLocation = $"{simplifiedLineString.StartPoint.Y:F6},{simplifiedLineString.StartPoint.X:F6}",
+                EndLocation = $"{simplifiedLineString.EndPoint.Y:F6},{simplifiedLineString.EndPoint.X:F6}",
+                Tags = ExtractRelevantTags(osmTags),
+                Category = DetermineCategoryFromNetwork(osmTags.GetValueOrDefault("network")),
+                Network = osmTags.GetValueOrDefault("network"),
+                AssociatedRegions = associatedRegions,
+                OsmTags = osmTags
             };
-
-            await _trailRepository.AddTrailAsync(trail);
-            _trailCounter++;
-            _logger.LogInformation("Successfully prepared trail '{TrailName}' (OSM ID: {OsmId}) for addition. Category: {Category}, Distance: {DistanceKm:F2} km, Regions: {RegionNames}",
-                trailName, element.Id, category, distance, string.Join(", ", regionNames));
         }
 
-
-        private async Task<List<int>> DetermineRegionsForTrailAsync(List<double[]> coordinates, string trailNameForLogging, long osmIdForLogging)
+        private LineString SimplifyTrailGeometry(LineString rawLineString, string trailName)
         {
-            if (coordinates == null || !coordinates.Any())
+            if (rawLineString.Coordinates.Length <= 20)
             {
-                _logger.LogWarning("Cannot determine regions for trail '{TrailName}' (OSM ID: {OsmIdForLogging}): no coordinates provided.", trailNameForLogging, osmIdForLogging);
-                return new List<int>();
+                return rawLineString;
             }
 
-            var checkPoints = new List<double[]>();
-            if (coordinates.Any()) checkPoints.Add(coordinates.First());
-            if (coordinates.Count > 1) checkPoints.Add(coordinates[coordinates.Count / 2]);
-            if (coordinates.Count > 2) checkPoints.Add(coordinates.Last());
-
-            checkPoints = checkPoints.GroupBy(p => $"{p[0]},{p[1]}").Select(g => g.First()).ToList();
-
-            var intersectedRegionIds = new HashSet<int>();
-
-            foreach (var point in checkPoints)
+            try
             {
-                string regionQuery = $@"
-                    [out:json][timeout:90];
-                    is_in({point[1]:F6},{point[0]:F6});
-                    area._[admin_level=""4""][boundary=""administrative""];
-                    out tags;";
-
-                var regionData = await ExecuteOverpassQueryAsync(regionQuery);
-                if (regionData?.Elements != null)
+                var simplifier = new DouglasPeuckerSimplifier(rawLineString)
                 {
-                    foreach (var areaElement in regionData.Elements.Where(e => e.Type == "area"))
-                    {
-                        if (areaElement.Tags != null && areaElement.Tags.TryGetValue("name", out var regionName))
-                        {
-                            var region = await _regionRepository.GetRegionByNameAsync(regionName);
-                            if (region == null)
-                            {
-                                _logger.LogInformation("Region '{RegionName}' not found in DB for trail '{TrailName}' (OSM ID: {OsmIdForLogging}). Creating it.", regionName, trailNameForLogging, osmIdForLogging);
-                                var newRegion = new Region { Name = regionName };
-                                await _regionRepository.AddRegionAsync(newRegion);
-                                await _regionRepository.SaveChangesAsync();
-                                region = await _regionRepository.GetRegionByNameAsync(regionName);
-                            }
+                    DistanceTolerance = GEOMETRY_SIMPLIFY_TOLERANCE
+                };
 
-                            if (region != null)
-                            {
-                                intersectedRegionIds.Add(region.Id);
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Failed to find or create region '{RegionName}' for trail '{TrailName}' (OSM ID: {OsmIdForLogging}).", regionName, trailNameForLogging, osmIdForLogging);
-                            }
-                        }
+                var simplifiedResult = simplifier.GetResultGeometry();
+                if (simplifiedResult is LineString simplifiedLs && simplifiedLs.Coordinates.Length >= 2)
+                {
+                    _logger.LogDebug($"Simplified trail {trailName} from {rawLineString.Coordinates.Length} to {simplifiedLs.Coordinates.Length} points");
+                    return simplifiedLs;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"Could not simplify geometry for trail: {trailName}");
+            }
+
+            return rawLineString;
+        }
+
+        private Trail ConvertProcessedDataToTrailEntity(ProcessedTrailDto dto, long osmId)
+        {
+            var trail = new Trail
+            {
+                OsmId = osmId,
+                Name = dto.Name,
+                Description = dto.Description ?? string.Empty,
+                Coordinates = dto.Coordinates,
+                Distance = dto.DistanceKm,
+                Difficulty = dto.Difficulty,
+                TrailType = dto.TrailType,
+                Duration = dto.EstimatedDurationHours,
+                StartLocation = dto.StartLocation,
+                EndLocation = dto.EndLocation,
+                Tags = dto.Tags,
+                Category = dto.Category,
+                Network = dto.Network,
+                LastUpdated = DateTime.UtcNow
+            };
+            if (dto.AssociatedRegions.Any())
+            {
+                trail.TrailRegions = dto.AssociatedRegions
+                    .Select(r => new TrailRegion { RegionId = r.Id })
+                    .ToList();
+            }
+            return trail;
+        }
+
+        private void UpdateExistingTrailWithProcessedData(Trail existingTrail, ProcessedTrailDto dto)
+        {
+            existingTrail.Name = dto.Name;
+            existingTrail.Description = dto.Description ?? string.Empty;
+            existingTrail.Coordinates = dto.Coordinates;
+            existingTrail.Distance = dto.DistanceKm;
+            existingTrail.Difficulty = dto.Difficulty;
+            existingTrail.TrailType = dto.TrailType;
+            existingTrail.Duration = dto.EstimatedDurationHours;
+            existingTrail.StartLocation = dto.StartLocation;
+            existingTrail.EndLocation = dto.EndLocation;
+            existingTrail.Tags = dto.Tags;
+            existingTrail.Category = dto.Category;
+            existingTrail.Network = dto.Network;
+            existingTrail.LastUpdated = DateTime.UtcNow;
+
+            var newRegionIds = dto.AssociatedRegions.Select(r => r.Id).ToHashSet();
+            var currentRegionIds = existingTrail.TrailRegions.Select(tr => tr.RegionId).ToHashSet();
+
+            var regionsToRemove = existingTrail.TrailRegions.Where(tr => !newRegionIds.Contains(tr.RegionId)).ToList();
+            foreach (var trToRemove in regionsToRemove)
+            {
+                existingTrail.TrailRegions.Remove(trToRemove);
+            }
+
+            foreach (var regionIdToAdd in newRegionIds)
+            {
+                if (!currentRegionIds.Contains(regionIdToAdd) && _romanianRegionsCache.ContainsKey(regionIdToAdd))
+                {
+                    existingTrail.TrailRegions.Add(new TrailRegion { RegionId = regionIdToAdd });
+                }
+            }
+            _context.Entry(existingTrail).State = EntityState.Modified;
+        }
+
+        private List<Coordinate>? BuildTrailCoordinatesFromRelationMembers(
+            OverpassElement relation,
+            Dictionary<long, OverpassElement> waysDict,
+            string trailNameForLogging)
+        {
+            if (relation.Members == null || !relation.Members.Any()) return null;
+
+            var waySegments = new List<(long id, List<Coordinate> coords, long firstNodeId, long lastNodeId, string role)>();
+            foreach (var member in relation.Members)
+            {
+                if (member.Type != "way" || !waysDict.TryGetValue(member.Ref, out var wayElement) ||
+                    wayElement.Nodes == null || wayElement.Nodes.Count < 2 ||
+                    wayElement.Geometry == null || wayElement.Geometry.Count < 2)
+                {
+                    continue;
+                }
+                var wayCoords = wayElement.Geometry.Select(g => new Coordinate(g.Lon, g.Lat)).ToList();
+                waySegments.Add((member.Ref, wayCoords ?? new List<Coordinate>(), wayElement.Nodes.First(), wayElement.Nodes.Last(), member.Role ?? ""));
+            }
+
+            if (!waySegments.Any()) return null;
+
+            var orderedPathCoordinates = new List<Coordinate>();
+            var remainingSegments = new List<(long id, List<Coordinate> coords, long firstNodeId, long lastNodeId, string role)>(waySegments);
+
+            if (!remainingSegments.Any()) return orderedPathCoordinates;
+
+            (long id, List<Coordinate> coords, long firstNodeId, long lastNodeId, string role) startSegment;
+            var preferredStart = remainingSegments.FirstOrDefault(s => string.IsNullOrEmpty(s.role) || s.role.Equals("forward", StringComparison.OrdinalIgnoreCase));
+
+            if (preferredStart.coords != null)
+            {
+                startSegment = preferredStart;
+            }
+            else if (remainingSegments.Any())
+            {
+                startSegment = remainingSegments.First();
+            }
+            else
+            {
+                return null;
+            }
+            if (startSegment.coords == null) return null;
+
+
+            List<Coordinate> currentCoords = new List<Coordinate>(startSegment.coords);
+            long currentPathEndNodeId = startSegment.lastNodeId;
+
+            if (startSegment.role.Equals("backward", StringComparison.OrdinalIgnoreCase))
+            {
+                currentCoords.Reverse();
+                currentPathEndNodeId = startSegment.firstNodeId;
+            }
+
+            orderedPathCoordinates.AddRange(currentCoords);
+            remainingSegments.Remove(startSegment);
+
+            int iterations = 0;
+            while (remainingSegments.Any() && iterations < waySegments.Count * 2)
+            {
+                iterations++;
+                bool foundNext = false;
+                (long id, List<Coordinate> coords, long firstNodeId, long lastNodeId, string role) bestCandidate = default;
+                bool reverseCandidate = false;
+
+                foreach (var candidate in remainingSegments)
+                {
+                    if (candidate.coords == null) continue;
+                    if (candidate.firstNodeId == currentPathEndNodeId)
+                    {
+                        bestCandidate = candidate;
+                        reverseCandidate = false;
+                        foundNext = true;
+                        break;
+                    }
+                    if (candidate.lastNodeId == currentPathEndNodeId)
+                    {
+                        bestCandidate = candidate;
+                        reverseCandidate = true;
+                        foundNext = true;
+                        break;
                     }
                 }
-                await Task.Delay(OVERPASS_API_DELAY_MS);
+
+                if (foundNext && bestCandidate.coords != null)
+                {
+                    var segmentToAddCoords = new List<Coordinate>(bestCandidate.coords);
+                    if (reverseCandidate)
+                    {
+                        segmentToAddCoords.Reverse();
+                        currentPathEndNodeId = bestCandidate.firstNodeId;
+                    }
+                    else
+                    {
+                        currentPathEndNodeId = bestCandidate.lastNodeId;
+                    }
+
+                    if (orderedPathCoordinates.Any() && segmentToAddCoords.Any() &&
+                        orderedPathCoordinates.Last().Equals2D(segmentToAddCoords.First(), 0.000001))
+                    {
+                        segmentToAddCoords.RemoveAt(0);
+                    }
+
+                    if (segmentToAddCoords.Any()) orderedPathCoordinates.AddRange(segmentToAddCoords);
+                    remainingSegments.Remove(bestCandidate);
+                }
+                else
+                {
+                    break;
+                }
             }
 
-            if (!intersectedRegionIds.Any())
-            {
-                _logger.LogWarning("No regions determined for trail '{TrailName}' (OSM ID: {OsmIdForLogging}) after checking {PointCount} points. The trail might be outside known admin boundaries or too short.",
-                    trailNameForLogging, osmIdForLogging, checkPoints.Count);
-            }
-            return intersectedRegionIds.ToList();
+            return orderedPathCoordinates.Count >= 2 ? orderedPathCoordinates : null;
         }
 
-        private double CalculateDistance(List<double[]> coordinates)
+        private bool IsNonRomanianTrailByName(string name, Dictionary<string, string> tags)
         {
-            if (coordinates == null || coordinates.Count < 2) return 0;
-            double totalDistance = 0;
-            for (int i = 0; i < coordinates.Count - 1; i++)
+            var nameLower = name.ToLowerInvariant();
+            var nonRomanianKeywords = new[] { "ukraine", "ukraina", "україна", "hungary", "magyarország", "serbia", "србија", "bulgaria", "българия" };
+            if (nonRomanianKeywords.Any(keyword => nameLower.Contains(keyword))) return true;
+            foreach (var keyword in nonRomanianKeywords)
             {
-                totalDistance += CalculateHaversineDistance(
-                    coordinates[i][1], coordinates[i][0],
-                    coordinates[i + 1][1], coordinates[i + 1][0]
-                );
+                if (tags.Any(tag => tag.Key.StartsWith("name:") && tag.Value.ToLowerInvariant().Contains(keyword))) return true;
+            }
+            return false;
+        }
+
+        private bool IsTrailSpatiallyInRomania(LineString trailGeometry)
+        {
+            if (trailGeometry == null || !trailGeometry.IsValid || trailGeometry.IsEmpty) return false;
+            if (!_romanianRegionsCache.Any())
+            {
+                var centroid = trailGeometry.Centroid;
+                if (centroid == null || !centroid.IsValid) return false;
+                const double MinLat = 43.5, MaxLat = 48.3; const double MinLon = 20.0, MaxLon = 29.8;
+                return centroid.Y >= MinLat && centroid.Y <= MaxLat && centroid.X >= MinLon && centroid.X <= MaxLon;
+            }
+            foreach (var region in _romanianRegionsCache.Values)
+            {
+                if (region.Boundary != null && region.Boundary.IsValid && trailGeometry.Intersects(region.Boundary)) return true;
+            }
+            return false;
+        }
+
+        private List<Region> DetermineIntersectedRomanianRegions(LineString trailGeometry)
+        {
+            var intersectedRegions = new HashSet<Region>(new RegionIdComparer());
+            if (trailGeometry == null || !trailGeometry.IsValid || trailGeometry.IsEmpty || !_romanianRegionsCache.Any())
+                return new List<Region>();
+
+            foreach (var region in _romanianRegionsCache.Values)
+            {
+                if (region.Boundary != null && region.Boundary.IsValid && !region.Boundary.IsEmpty)
+                {
+                    try { if (trailGeometry.Intersects(region.Boundary)) intersectedRegions.Add(region); }
+                    catch { }
+                }
+            }
+            return intersectedRegions.ToList();
+        }
+
+        private class RegionIdComparer : IEqualityComparer<Region>
+        {
+            public bool Equals(Region? x, Region? y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null || y is null) return false;
+                return x.Id == y.Id;
+            }
+            public int GetHashCode(Region? obj)
+            {
+                return obj is null ? 0 : obj.Id.GetHashCode();
+            }
+        }
+
+        private double CalculateHaversineDistanceForLineString(LineString line)
+        {
+            double totalDistance = 0;
+            var coordinates = line.Coordinates;
+            if (coordinates == null || coordinates.Length < 2) return 0;
+            for (int i = 0; i < coordinates.Length - 1; i++)
+            {
+                totalDistance += CalculateHaversineDistance(coordinates[i].Y, coordinates[i].X, coordinates[i + 1].Y, coordinates[i + 1].X);
             }
             return Math.Round(totalDistance, 2);
         }
+
         private double CalculateHaversineDistance(double lat1, double lon1, double lat2, double lon2)
         {
-            const double EarthRadiusKm = 6371.0;
+            const double R = 6371;
             var dLat = ToRadians(lat2 - lat1);
             var dLon = ToRadians(lon2 - lon1);
             var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
                     Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
                     Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
             var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            return EarthRadiusKm * c;
+            return R * c;
         }
+
         private double ToRadians(double degrees) => degrees * (Math.PI / 180.0);
 
         private string DetermineCategoryFromNetwork(string? network)
         {
-            if (string.IsNullOrEmpty(network)) return "Local";
-            network = network.ToLowerInvariant();
-            if (network.Contains("iwn") || network.Contains("icn")) return "International";
-            if (network.Contains("nwn") || network.Contains("ncn")) return "National";
-            if (network.Contains("rwn") || network.Contains("rcn")) return "Regional";
+            if (string.IsNullOrEmpty(network))
+                return "Local";
+
+            var n = network.ToLowerInvariant();
+
+            if (n.Contains("iwn") || n.Contains("icn"))
+                return "International";
+            if (n.Contains("nwn") || n.Contains("ncn"))
+                return "National";
+            if (n.Contains("rwn") || n.Contains("rcn"))
+                return "Regional";
+
             return "Local";
         }
-        private bool IsNonRomanianTrail(string name)
-        {
-            if (name.Any(c => "öüäßçğøåæłńśźżščřďťňÖÜÄẞÇĞØÅÆŁŃŚŹŻŠČŘĎŤŇ".Contains(c)))
-            {
-                if (!name.Any(c => "ăâîșțĂÂÎȘȚ".Contains(c))) return true;
-            }
-            return false;
-        }
+
         private string DetermineDifficulty(Dictionary<string, string> tags, double distance)
         {
-            if (tags.TryGetValue("sac_scale", out var sacScale))
-            {
-                return sacScale.ToLowerInvariant() switch
-                {
-                    "hiking" => "Easy",
-                    "mountain_hiking" => "Moderate",
-                    "alpine_hiking" => "Difficult",
-                    _ => "Moderate"
-                };
-            }
+            if (tags.TryGetValue("sac_scale", out var s))
+                return s;
+            if (tags.TryGetValue("difficulty", out var d))
+                return d;
 
-            if (tags.TryGetValue("difficulty", out var osmDiff)) return osmDiff;
-            if (distance < 5) return "Easy";
-            if (distance < 12) return "Moderate";
-            if (distance < 20) return "Difficult";
-            if (distance < 35) return "Very Difficult";
-            return "Expert";
+            if (distance < 5)
+                return "Easy";
+            if (distance < 15)
+                return "Moderate";
+
+            return "Difficult";
         }
+
         private string DetermineTrailTypeFromOsm(Dictionary<string, string> tags)
         {
-            if (tags.TryGetValue("route", out var routeValue))
-            {
-                return routeValue.ToLowerInvariant() switch
-                {
-                    "hiking" => "Hiking",
-                    "foot" => "Foot Trail",
-                    "bicycle" => "Bicycle Trail",
-                    "mtb" => "MTB Trail",
-                    "horse" => "Equestrian Trail",
-                    "ski" => "Ski Trail",
-                    _ => routeValue
-                };
-            }
-            if (tags.TryGetValue("highway", out var highwayValue))
-            {
-                return highwayValue.ToLowerInvariant() switch
-                {
-                    "path" => "Path",
-                    "track" => "Track",
-                    "footway" => "Footway",
-                    "cycleway" => "Cycleway",
-                    "bridleway" => "Bridleway",
-                    "steps" => "Steps",
-                    _ => highwayValue
-                };
-            }
-            return "Unspecified Trail";
+            if (tags.TryGetValue("route", out var r))
+                return r;
+
+            return "Hiking";
         }
+
+        private List<string> ExtractRelevantTags(Dictionary<string, string> tags)
+        {
+            var k = new[] { "name", "ref", "network", "route", "operator", "sac_scale", "surface" };
+            var relevantTags = tags
+                .Where(kvp => k.Contains(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                .Select(kvp => $"{kvp.Key}={kvp.Value}")
+                .ToList();
+
+            if (!tags.ContainsKey("source"))
+                relevantTags.Add("source=OpenStreetMap");
+
+            return relevantTags;
+        }
+
         private double EstimateDuration(double distance, string difficulty, string trailType, Dictionary<string, string> tags)
         {
-            if (tags.TryGetValue("duration", out var durationStr))
-            {
-                if (TryParseOsmDuration(durationStr, out double osmHours))
-                {
-                    _logger.LogInformation("Using duration from OSM tag for trail (Distance: {Distance}km): OSM value '{OsmDurationStr}' -> Parsed to {OsmHours}h", distance, durationStr, osmHours);
-                    return Math.Round(osmHours, 1);
-                }
-                else
-                {
-                    _logger.LogWarning("Failed to parse OSM duration tag: '{OsmDurationStr}'. Estimating duration based on distance, difficulty, and type.", durationStr);
-                }
-            }
+            if (tags.TryGetValue("duration", out var ds) && TryParseOsmDuration(ds, out var oh))
+                return oh;
 
-            double speedKmh;
+            var spd = 3.5;
 
-            bool isPrimarilyHiking = trailType.Contains("Hiking", StringComparison.OrdinalIgnoreCase) ||
-                                     trailType.Contains("Foot Path", StringComparison.OrdinalIgnoreCase) ||
-                                     trailType.Contains("Path", StringComparison.OrdinalIgnoreCase) ||
-                                     trailType.Contains("Footway", StringComparison.OrdinalIgnoreCase);
+            if (trailType.Contains("bike", StringComparison.OrdinalIgnoreCase))
+                spd = 12;
 
-            bool isPrimarilyBiking = trailType.Contains("Bicycle", StringComparison.OrdinalIgnoreCase) ||
-                                     trailType.Contains("Cycleway", StringComparison.OrdinalIgnoreCase) ||
-                                     trailType.Contains("MTB", StringComparison.OrdinalIgnoreCase);
+            if (difficulty.Contains("easy", StringComparison.OrdinalIgnoreCase))
+                spd *= 1.2;
+            if (difficulty.Contains("difficult", StringComparison.OrdinalIgnoreCase))
+                spd *= 0.8;
 
-            if (isPrimarilyHiking)
-            {
-                speedKmh = difficulty switch
-                {
-                    "Easy" => 4.0,
-                    "Moderate" => 3.5,
-                    "Difficult" => 2.8,
-                    "Very Difficult" => 2.2,
-                    "Expert" => 1.8,
-                    _ => 3.0
-                };
-            }
-            else if (isPrimarilyBiking)
-            {
-                speedKmh = difficulty switch
-                {
-                    "Easy" => 18.0,
-                    "Moderate" => 15.0,
-                    "Difficult" => 12.0,
-                    "Very Difficult" => 9.0,
-                    "Expert" => 7.0,
-                    _ => 12.0
-                };
-            }
-            else
-            {
-                speedKmh = 3.0;
-            }
-
-            if (distance <= 0 || speedKmh <= 0) return 0;
-
-            double baseHours = distance / speedKmh;
-
-            double breakFactor = isPrimarilyBiking ? 0.15 : 0.20;
-            double totalHours = baseHours * (1 + breakFactor);
-
-            _logger.LogInformation("Estimated duration for trail (Distance: {Distance}km, Difficulty: {Difficulty}, Type: {TrailType}): Speed {SpeedKmh}km/h, BaseHours {BaseHours:F1}h, TotalHours {TotalHours:F1}h",
-                distance, difficulty, trailType, speedKmh, baseHours, totalHours);
-
-            return Math.Round(totalHours, 1);
+            return Math.Round(distance / Math.Max(1, spd) * 1.2, 1);
         }
 
         private bool TryParseOsmDuration(string durationStr, out double hours)
         {
             hours = 0;
-            if (string.IsNullOrWhiteSpace(durationStr)) return false;
 
-            try
+            if (string.IsNullOrWhiteSpace(durationStr))
+                return false;
+
+            if (durationStr.StartsWith("PT"))
             {
-                if (durationStr.StartsWith("PT", StringComparison.OrdinalIgnoreCase))
+                try
                 {
-                    hours = System.Xml.XmlConvert.ToTimeSpan(durationStr.ToUpperInvariant()).TotalHours;
+                    hours = System.Xml.XmlConvert.ToTimeSpan(durationStr).TotalHours;
                     return true;
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Could not parse OSM duration string '{DurationStr}' as ISO 8601 TimeSpan.", durationStr);
-            }
-
-            var parts = durationStr.Split(':');
-            if (parts.Length == 2 || parts.Length == 3)
-            {
-                if (int.TryParse(parts[0], out int h) && int.TryParse(parts[1], out int m))
+                catch
                 {
-                    int s = 0;
-                    if (parts.Length == 3 && !int.TryParse(parts[2], out s))
-                    {
-                        return false;
-                    }
-
-                    if (h >= 0 && m >= 0 && m < 60 && s >= 0 && s < 60)
-                    {
-                        hours = h + (m / 60.0) + (s / 3600.0);
-                        return true;
-                    }
+                    return false;
                 }
             }
-            if (double.TryParse(durationStr.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double directHours))
+
+            var p = durationStr.Split(':');
+            if (p.Length >= 2 && int.TryParse(p[0], out int h) && int.TryParse(p[1], out int m))
             {
-                if (directHours >= 0)
-                {
-                    hours = directHours;
-                    return true;
-                }
+                hours = h + m / 60.0;
+                return true;
             }
+
+            if (double.TryParse(durationStr.Replace(",", "."),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out double dh))
+            {
+                hours = dh;
+                return true;
+            }
+
             return false;
         }
 
-        private List<string> ExtractRelevantTags(Dictionary<string, string> tags)
+
+        private async Task<OverpassResponse?> ExecuteOverpassQueryAsync(string overpassQuery)
         {
-            var relevantTags = new List<string>();
-            if (tags == null || !tags.Any())
-                return relevantTags;
-
-            string[] usefulKeys = {
-                "name", "name:ro", "alt_name", "official_name", "short_name",
-                "ref", "network", "route", "operator", "description:ro", "website", "source",
-                "note", "fixme", "wikidata", "wikipedia",
-
-                "highway", "surface", "tracktype", "smoothness", "width", "incline",
-                "mtb:scale", "mtb:scale:uphill", "mtb:scale:imba", "sac_scale", "trail_visibility",
-
-                "osmc:symbol", "wiki:symbol", "symbol", "colour", "color",
-                "cables", "handrail", "bridge", "tunnel", "ford",
-
-                "access", "foot", "bicycle", "mtb", "horse", "ski", "motor_vehicle",
-                "fee", "oneway", "seasonal", "winter_road", "opening_hours",
-
-                "drinking_water", "shelter_type",
-
-                "hazard", "warning",
-
-                "lit", "importance", "layer", "covered"
-            };
-
-            foreach (var key in usefulKeys)
+            int maxRetries = 3; int currentRetry = 0; TimeSpan retryDelay = TimeSpan.FromSeconds(15);
+            while (currentRetry <= maxRetries)
             {
-                if (tags.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                try
                 {
-                    relevantTags.Add($"{key}={value}");
+                    var content = new StringContent($"data={Uri.EscapeDataString(overpassQuery)}", System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
+                    var response = await _httpClient.PostAsync("https://overpass-api.de/api/interpreter", content);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var json = await response.Content.ReadAsStringAsync();
+                        if (string.IsNullOrWhiteSpace(json)) return null;
+                        return JsonSerializer.Deserialize<OverpassResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    }
+                    if ((int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
+                    {
+                        currentRetry++; if (currentRetry <= maxRetries) { await Task.Delay(retryDelay); retryDelay = TimeSpan.FromSeconds(retryDelay.TotalSeconds * 1.5 + Random.Shared.Next(1, 5)); continue; }
+                    }
+                    return null;
                 }
+                catch (TaskCanceledException)
+                {
+                    currentRetry++; if (currentRetry <= maxRetries) { await Task.Delay(retryDelay); retryDelay = TimeSpan.FromSeconds(retryDelay.TotalSeconds * 1.5 + Random.Shared.Next(1, 5)); continue; }
+                    return null;
+                }
+                catch { return null; }
             }
-
-            return relevantTags.Distinct().ToList();
+            return null;
         }
     }
 }

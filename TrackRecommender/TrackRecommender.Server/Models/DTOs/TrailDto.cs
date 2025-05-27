@@ -1,4 +1,6 @@
-﻿namespace TrackRecommender.Server.Models.DTOs
+﻿using NetTopologySuite.Geometries;
+
+namespace TrackRecommender.Server.Models.DTOs
 {
     public class TrailDto
     {
@@ -13,9 +15,11 @@
         public string EndLocation { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public string? Network { get; set; }
-        public string GeoJsonData { get; set; } = string.Empty;
+        public LineString Coordinates { get; set; } = new LineString(new Coordinate[] { });
         public List<string> RegionNames { get; set; } = new List<string>();
         public List<string> Tags { get; set; } = new List<string>();
         public int MatchScore { get; set; } = 0;
+        public double AverageRating { get; set; }
+        public int ReviewsCount { get; set; }
     }
 }

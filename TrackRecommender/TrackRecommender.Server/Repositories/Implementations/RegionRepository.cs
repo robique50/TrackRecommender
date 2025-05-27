@@ -114,5 +114,30 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 _context.Regions.Remove(region);
             }
         }
+
+        public async Task<List<Trail>> GetTrailsByRegionIdAsync(int regionId)
+        {
+            var trails = await _context.TrailRegions
+                .Where(tr => tr.RegionId == regionId)
+                .Select(tr => tr.Trail)
+                .Include(t => t.UserRatings)
+                .Include(t => t.TrailRegions)
+                    .ThenInclude(tr => tr.Region)
+                .ToListAsync();
+
+            foreach (var trail in trails)
+            {
+                if (trail.TrailRegions != null)
+                {
+                    trail.RegionIds = trail.TrailRegions.Select(tr => tr.RegionId).ToList();
+                    trail.RegionNames = trail.TrailRegions
+                        .Where(tr => tr.Region?.Name != null)
+                        .Select(tr => tr.Region!.Name)
+                        .ToList();
+                }
+            }
+
+            return trails;
+        }
     }
 }
