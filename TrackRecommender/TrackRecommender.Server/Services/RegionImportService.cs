@@ -13,6 +13,11 @@ namespace TrackRecommender.Server.Services
         private readonly ILogger<RegionImportService> _logger;
         private readonly GeometryFactory _geometryFactory;
 
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         private const int OVERPASS_TIMEOUT_SECONDS = 180;
         private const string OVERPASS_API_URL = "https://overpass-api.de/api/interpreter";
 
@@ -50,6 +55,7 @@ namespace TrackRecommender.Server.Services
                 if (overpassResponse?.Elements == null || overpassResponse.Elements.Count == 0)
                 {
                     _logger.LogWarning("No counties returned from Overpass API");
+                    return importedRegions;
                 }
 
                 var relations = overpassResponse.Elements.Where(e => e.Type == "relation").ToList();
@@ -108,25 +114,26 @@ namespace TrackRecommender.Server.Services
             Dictionary<long, OverpassElement> ways,
             Dictionary<long, OverpassElement> nodes)
         {
-            if (element.Tags == null)
+            var tags = element.Tags;
+            if (tags == null)
             {
                 _logger.LogWarning($"Element {element.Id} (type: {element.Type}) has no tags, skipping.");
                 return null;
             }
 
-            string? countyName = element.Tags.GetValueOrDefault("name:ro") ??
-                                 element.Tags.GetValueOrDefault("name") ??
-                                 element.Tags.GetValueOrDefault("official_name");
+            string? countyName = tags.GetValueOrDefault("name:ro") ??
+                                 tags.GetValueOrDefault("name") ??
+                                 tags.GetValueOrDefault("official_name");
 
             if (string.IsNullOrWhiteSpace(countyName))
             {
                 _logger.LogWarning($"County element {element.Id} has no recognizable name tag (name:ro, name, official_name). " +
-                    $"Found tags: {string.Join(", ", element.Tags.Select(kv => $"{kv.Key}={kv.Value}"))}");
+                    $"Found tags: {string.Join(", ", tags.Select(kv => $"{kv.Key}={kv.Value}"))}");
                 return null;
             }
 
-            var adminLevel = element.Tags.GetValueOrDefault("admin_level", "");
-            var boundaryType = element.Tags.GetValueOrDefault("boundary", "");
+            var adminLevel = tags.GetValueOrDefault("admin_level", "");
+            var boundaryType = tags.GetValueOrDefault("boundary", "");
 
             if (adminLevel != "4" || boundaryType != "administrative")
             {
@@ -156,10 +163,7 @@ namespace TrackRecommender.Server.Services
                     $"(ID: {element.Id}) is initially Invalid. WKT (original): {boundaryGeometry.AsText()}");
             }
 
-            if (boundaryGeometry != null)
-            {
-                boundaryGeometry.SRID = _geometryFactory.SRID;
-            }
+            boundaryGeometry.SRID = _geometryFactory.SRID;
 
             var existingRegion = await _context.Regions
                 .FirstOrDefaultAsync(r => r.Name == countyName);
@@ -342,7 +346,7 @@ namespace TrackRecommender.Server.Services
                    AreCoordinatesEqual(way1.Last(), way2.Last());
         }
 
-        private List<Coordinate> RemoveConsecutiveDuplicates(List<Coordinate> coords)
+        private static List<Coordinate> RemoveConsecutiveDuplicates(List<Coordinate> coords)
         {
             if (coords.Count <= 1) return coords;
 
@@ -502,16 +506,8 @@ namespace TrackRecommender.Server.Services
 
                     if (response.IsSuccessStatusCode)
                     {
-                        var json = await response.Content.ReadAsStringAsync();
-                        _logger.LogInformation($"Overpass API returned {json.Length} characters");
-
-                        var result = JsonSerializer.Deserialize<OverpassResponse>(
-                            json,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                        );
-
-                        _logger.LogInformation($"Parsed {result?.Elements?.Count ?? 0} elements from response");
-                        return result;
+                        var jsonResponse = await response.Content.ReadAsStringAsync();
+                        return JsonSerializer.Deserialize<OverpassResponse>(jsonResponse, JsonOptions);
                     }
 
                     if ((int)response.StatusCode == 429 || (int)response.StatusCode >= 500)

@@ -14,6 +14,11 @@ namespace TrackRecommender.Server.Services
         private readonly ILogger<TrailImportService> _logger;
         private readonly GeometryFactory _geometryFactory;
 
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         private int _newTrailCounter = 0;
         private int _updatedTrailCounter = 0;
         private Dictionary<int, Region> _regionsCache = [];
@@ -443,7 +448,8 @@ namespace TrackRecommender.Server.Services
 
             return keywords.Any(k => nameLower.Contains(k)) ||
                    tags.Any(t => t.Key.StartsWith("name:") &&
-                           keywords.Any(k => t.Value.ToLowerInvariant().Contains(k)));
+                            keywords.Any(k => t.Value.Contains(k, StringComparison.OrdinalIgnoreCase)));
+
         }
 
         private static string FormatCoordinate(Point point)
@@ -572,11 +578,8 @@ namespace TrackRecommender.Server.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    return JsonSerializer.Deserialize<OverpassResponse>(
-                        json,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                    );
+                    var jsonResponse = await response.Content.ReadAsStringAsync();
+                    return JsonSerializer.Deserialize<OverpassResponse>(jsonResponse, JsonOptions);
                 }
 
                 _logger.LogError($"Overpass API returned {response.StatusCode}");

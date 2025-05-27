@@ -46,13 +46,12 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 EndLocation = entity.EndLocation,
                 Category = entity.Category,
                 Network = entity.Network,
-                Coordinates = entity.Coordinates,
+                Coordinates = entity.Coordinates ?? new LineString([]),
                 GeoJsonData = geoJsonData,
-                RegionNames = entity.TrailRegions? 
-                    .Where(tr => tr.Region != null) 
-                    .Select(tr => tr.Region.Name)
-                    .Where(name => name != null)
-                    .ToList() ?? [],
+                RegionNames = entity.TrailRegions?
+                    .Where(tr => tr.Region?.Name != null)
+                    .Select(tr => tr.Region!.Name)
+                    .ToList() ?? new List<string>(),
                 Tags = entity.Tags ?? [],
                 AverageRating = entity.UserRatings?.Any() == true ? entity.UserRatings.Average(r => r.Rating) : 0,
                 ReviewsCount = entity.UserRatings?.Count ?? 0,
