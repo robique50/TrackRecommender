@@ -15,11 +15,11 @@ import { Trail } from '../../models/trail.model';
 export class TrailsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  public trails: Trail[] = [];
-  public isLoading = false;
-  public error: string | null = null;
+  protected trails: Trail[] = [];
+  protected isLoading = false;
+  protected error: string | null = null;
 
-  constructor(private trailService: TrailService) { }
+  constructor(private trailService: TrailService) {}
 
   ngOnInit(): void {
     this.loadTrails();

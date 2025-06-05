@@ -17,10 +17,7 @@ export class MainNavbarComponent implements OnInit, OnDestroy {
   isUserMenuOpen = false;
   private userSubscription?: Subscription;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-  ) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit(): void {
     this.userSubscription = this.authService.currentUser$.subscribe((user) => {
@@ -42,15 +39,15 @@ export class MainNavbarComponent implements OnInit, OnDestroy {
     return this.userName.charAt(0).toUpperCase();
   }
 
-  toggleUserMenu(): void {
+  protected toggleUserMenu(): void {
     this.isUserMenuOpen = !this.isUserMenuOpen;
   }
 
-  closeUserMenu(): void {
+  protected closeUserMenu(): void {
     this.isUserMenuOpen = false;
   }
 
-  logout(): void {
+  protected logout(): void {
     this.authService.logout().subscribe({
       next: () => {
         this.router.navigate(['/login']);
@@ -64,7 +61,7 @@ export class MainNavbarComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('document:click', ['$event'])
-  onDocumentClick(event: Event): void {
+  protected onDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
     if (!target.closest('.user-menu')) {
       this.isUserMenuOpen = false;

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
+using TrackRecommender.Server.Data;
 
 #nullable disable
 
@@ -97,9 +98,10 @@ namespace TrackRecommender.Server.Migrations
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<LineString>("Coordinates")
+                    b.Property<Geometry>("Coordinates")
                         .IsRequired()
                         .HasColumnType("geometry")
                         .HasAnnotation("Srid", 4326);
@@ -110,7 +112,8 @@ namespace TrackRecommender.Server.Migrations
 
                     b.Property<string>("Difficulty")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<double>("Distance")
                         .HasColumnType("float");
@@ -120,24 +123,28 @@ namespace TrackRecommender.Server.Migrations
 
                     b.Property<string>("EndLocation")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Network")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<long?>("OsmId")
+                    b.Property<long>("OsmId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("StartLocation")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Tags")
                         .IsRequired()
@@ -145,13 +152,13 @@ namespace TrackRecommender.Server.Migrations
 
                     b.Property<string>("TrailType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("OsmId")
-                        .IsUnique()
-                        .HasFilter("[OsmId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("Trails");
                 });

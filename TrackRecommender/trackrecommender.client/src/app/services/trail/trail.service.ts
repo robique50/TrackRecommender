@@ -3,21 +3,25 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { catchError, tap, shareReplay } from 'rxjs/operators';
 import { TrailCache } from '../../helpers/trail.cache';
+import { Trail, TrailFilters } from '../../models/trail.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TrailService {
   private readonly CACHE_DURATION = 5 * 60 * 1000;
-  private trailsCache = new Map<string, TrailCache>();
-  private ongoingRequests = new Map<string, Observable<any[]>>();
+  private trailsCache = new Map<string, TrailCache<Trail>>();
+  private ongoingRequests = new Map<string, Observable<Trail[]>>();
 
   private trailsUpdated$ = new BehaviorSubject<boolean>(false);
   public trailsUpdateNotification$ = this.trailsUpdated$.asObservable();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
-  getTrails(filters?: any, forceRefresh: boolean = false): Observable<any[]> {
+  getTrails(
+    filters?: TrailFilters,
+    forceRefresh: boolean = false
+  ): Observable<Trail[]> {
     const cacheKey = this.getCacheKey(filters);
 
     if (!forceRefresh && this.ongoingRequests.has(cacheKey)) {
@@ -31,58 +35,59 @@ export class TrailService {
     let params = new HttpParams();
     if (filters) {
       Object.keys(filters).forEach((key) => {
-        if (filters[key] !== undefined && filters[key] !== null) {
-          if (Array.isArray(filters[key])) {
-            filters[key].forEach((value: any) => {
+        const filterValue = filters[key as keyof TrailFilters];
+        if (filterValue !== undefined && filterValue !== null) {
+          if (Array.isArray(filterValue)) {
+            filterValue.forEach((value: any) => {
               params = params.append(key, value.toString());
             });
           } else {
-            params = params.append(key, filters[key].toString());
+            params = params.append(key, filterValue.toString());
           }
         }
       });
     }
 
-    const request$ = this.http.get<any[]>('/api/mapdata/trails', { params }).pipe(
-      tap((data) => {
-        this.trailsCache.set(cacheKey, {
-          data,
-          timestamp: Date.now(),
-          filters: cacheKey,
-        });
+    const request$ = this.http
+      .get<Trail[]>('/api/mapdata/trails', { params })
+      .pipe(
+        tap((data) => {
+          this.trailsCache.set(cacheKey, {
+            data,
+            timestamp: Date.now(),
+            filters: cacheKey,
+          });
 
-        this.ongoingRequests.delete(cacheKey);
-
-        this.trailsUpdated$.next(true);
-
-      }),
-      catchError((error) => {
-        this.ongoingRequests.delete(cacheKey);
-        console.error('Error loading trails:', error);
-        return throwError(() => error);
-      }),
-      shareReplay(1)
-    );
+          this.ongoingRequests.delete(cacheKey);
+          this.trailsUpdated$.next(true);
+        }),
+        catchError((error) => {
+          this.ongoingRequests.delete(cacheKey);
+          console.error('Error loading trails:', error);
+          return throwError(() => error);
+        }),
+        shareReplay(1)
+      );
 
     this.ongoingRequests.set(cacheKey, request$);
-
     return request$;
   }
 
-  getTrailById(id: number, forceRefresh: boolean = false): Observable<any> {
+  getTrailById(id: number, forceRefresh: boolean = false): Observable<Trail> {
     const cacheKey = `trail_${id}`;
 
     if (!forceRefresh) {
       for (const [key, cache] of this.trailsCache.entries()) {
-        const trail = cache.data.find(t => t.id === id);
+        const trail = cache.data.find((t) => t.id === id);
         if (trail && this.isCacheValid(key)) {
           return of(trail);
         }
       }
     }
 
-    return this.http.get<any>(`/api/mapdata/trails/${id}`).pipe(
+    return this.http.get<Trail>(`/api/mapdata/trails/${id}`).pipe(
       tap((trail) => {
+        // Optionally cache individual trail
       }),
       catchError((error) => {
         console.error('Error loading trail:', error);
@@ -91,14 +96,14 @@ export class TrailService {
     );
   }
 
-  getRecommendedTrails(forceRefresh: boolean = false): Observable<any[]> {
+  getRecommendedTrails(forceRefresh: boolean = false): Observable<Trail[]> {
     const cacheKey = 'recommended_trails';
 
     if (!forceRefresh && this.isCacheValid(cacheKey)) {
       return of(this.trailsCache.get(cacheKey)!.data);
     }
 
-    return this.http.get<any[]>('/api/mapdata/recommended').pipe(
+    return this.http.get<Trail[]>('/api/mapdata/recommended').pipe(
       tap((data) => {
         this.trailsCache.set(cacheKey, {
           data,
@@ -122,9 +127,9 @@ export class TrailService {
     this.ongoingRequests.clear();
   }
 
-  updateTrailInCache(trailId: number, updates: Partial<any>): void {
+  updateTrailInCache(trailId: number, updates: Partial<Trail>): void {
     for (const [key, cache] of this.trailsCache.entries()) {
-      const trailIndex = cache.data.findIndex(t => t.id === trailId);
+      const trailIndex = cache.data.findIndex((t) => t.id === trailId);
       if (trailIndex !== -1) {
         cache.data[trailIndex] = { ...cache.data[trailIndex], ...updates };
       }
@@ -139,14 +144,14 @@ export class TrailService {
     };
   }
 
-  private getCacheKey(filters?: any): string {
+  private getCacheKey(filters?: TrailFilters): string {
     if (!filters) return 'all_trails';
 
     const sortedKeys = Object.keys(filters).sort();
     const keyParts: string[] = [];
 
-    sortedKeys.forEach(key => {
-      const value = filters[key];
+    sortedKeys.forEach((key) => {
+      const value = filters[key as keyof TrailFilters];
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
           keyParts.push(`${key}:${value.sort().join(',')}`);
@@ -173,7 +178,7 @@ export class TrailService {
     return isValid;
   }
 
-  preloadTrails(): void {
+  public preloadTrails(): void {
     this.getTrails().subscribe({
       error: (error) => console.error('Error preloading trails:', error),
     });

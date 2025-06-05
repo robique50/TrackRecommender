@@ -2,7 +2,7 @@
 using System.Text.Json;
 using TrackRecommender.Server.Models.DTOs;
 
-namespace TrackRecommender.Server.Services.Implementations
+namespace TrackRecommender.Server.Services
 {
     public class WeatherService
     {

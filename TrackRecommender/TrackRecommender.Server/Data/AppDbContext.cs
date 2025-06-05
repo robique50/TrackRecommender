@@ -4,137 +4,137 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Text.Json;
 using TrackRecommender.Server.Models;
 
-public class AppDbContext : DbContext
+namespace TrackRecommender.Server.Data
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options)
-    : base(options) { }
-
-    public DbSet<Trail> Trails { get; set; }
-    public DbSet<Region> Regions { get; set; }
-    public DbSet<TrailRegion> TrailRegions { get; set; }
-    public DbSet<User> Users { get; set; }
-    public DbSet<UserPreferences> UserPreferences { get; set; }
-    public DbSet<UserTrailRating> UserTrailRatings { get; set; }
-    public DbSet<RefreshToken> RefreshTokens { get; set; }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
     {
-        base.OnModelCreating(modelBuilder);
+        public DbSet<Trail> Trails { get; set; }
+        public DbSet<Region> Regions { get; set; }
+        public DbSet<TrailRegion> TrailRegions { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<UserPreferences> UserPreferences { get; set; }
+        public DbSet<UserTrailRating> UserTrailRatings { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
-        var jsonStringListConverter = new ValueConverter<List<string>, string>(
-            v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-            v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()
-        );
+        private static readonly char[] separator = [';'];
 
-        var stringListComparer = new ValueComparer<List<string>>(
-            (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
-            c => c == null ? 0 : c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-            c => c == null ? new List<string>() : c.ToList()
-        );
-
-        var intListConverter = new ValueConverter<List<int>, string>(
-            v => v == null || !v.Any() ? string.Empty : string.Join(";", v),
-            v => string.IsNullOrWhiteSpace(v) ? new List<int>() : v.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
-                                                                .Select(int.Parse)
-                                                                .ToList()
-        );
-
-        var intListComparer = new ValueComparer<List<int>>(
-            (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
-            c => c == null ? 0 : c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-            c => c == null ? new List<int>() : c.ToList()
-        );
-
-        modelBuilder.Entity<Trail>(entity =>
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            entity.HasKey(t => t.Id);
-            entity.HasIndex(t => t.OsmId).IsUnique();
+            base.OnModelCreating(modelBuilder);
 
-            // Configurare explicită cu SRID
-            entity.Property(t => t.Coordinates)
-                  .HasColumnType("geometry")
-                  .HasAnnotation("Srid", 4326)
-                  .IsRequired();
+            var jsonStringListConverter = new ValueConverter<List<string>, string>(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()
+            );
 
-            entity.Property(t => t.Tags)
-                  .HasConversion(jsonStringListConverter)
-                  .Metadata.SetValueComparer(stringListComparer);
-        });
+            var stringListComparer = new ValueComparer<List<string>>(
+                (c1, c2) => c1 == null && c2 == null || c1 != null && c2 != null && c1.SequenceEqual(c2),
+                c => c == null ? 0 : c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c == null ? new List<string>() : c.ToList()
+            );
 
-        modelBuilder.Entity<Region>(entity =>
-        {
-            entity.HasKey(r => r.Id);
-            entity.HasIndex(r => r.Name).IsUnique();
+            var intListConverter = new ValueConverter<List<int>, string>(
+                v => v == null || !v.Any() ? string.Empty : string.Join(";", v),
+                v => string.IsNullOrWhiteSpace(v) ? new List<int>() : v.Split(separator, StringSplitOptions.RemoveEmptyEntries)
+                                                                    .Select(int.Parse)
+                                                                    .ToList()
+            );
 
-            // Configurare explicită cu SRID
-            entity.Property(r => r.Boundary)
-                  .HasColumnType("geometry")
-                  .HasAnnotation("Srid", 4326)
-                  .IsRequired(false);
-        });
+            var intListComparer = new ValueComparer<List<int>>(
+                (c1, c2) => c1 == null && c2 == null || c1 != null && c2 != null && c1.SequenceEqual(c2),
+                c => c == null ? 0 : c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c == null ? new List<int>() : c.ToList()
+            );
 
-        modelBuilder.Entity<TrailRegion>(entity =>
-        {
-            entity.HasKey(tr => new { tr.TrailId, tr.RegionId });
+            modelBuilder.Entity<Trail>(entity =>
+            {
+                entity.HasKey(t => t.Id);
+                entity.HasIndex(t => t.OsmId).IsUnique();
 
-            entity.HasOne(tr => tr.Trail)
-                  .WithMany(t => t.TrailRegions)
-                  .HasForeignKey(tr => tr.TrailId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                entity.Property(t => t.Coordinates)
+                      .HasColumnType("geometry")
+                      .HasAnnotation("Srid", 4326)
+                      .IsRequired();
 
-            entity.HasOne(tr => tr.Region)
-                  .WithMany(r => r.Trails)
-                  .HasForeignKey(tr => tr.RegionId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
+                entity.Property(t => t.Tags)
+                      .HasConversion(jsonStringListConverter)
+                      .Metadata.SetValueComparer(stringListComparer);
+            });
 
-        modelBuilder.Entity<UserPreferences>(entity =>
-        {
-            entity.HasKey(up => up.Id);
-            entity.HasOne(up => up.User)
-                  .WithOne(u => u.Preferences)
-                  .HasForeignKey<UserPreferences>(up => up.UserId)
-                  .IsRequired();
+            modelBuilder.Entity<Region>(entity =>
+            {
+                entity.HasKey(r => r.Id);
+                entity.HasIndex(r => r.Name).IsUnique();
 
-            entity.Property(up => up.PreferredTrailTypes)
-                  .HasConversion(jsonStringListConverter)
-                  .Metadata.SetValueComparer(stringListComparer);
+                entity.Property(r => r.Boundary)
+                      .HasColumnType("geometry")
+                      .HasAnnotation("Srid", 4326)
+                      .IsRequired(false);
+            });
 
-            entity.Property(up => up.PreferredTags)
-                  .HasConversion(jsonStringListConverter)
-                  .Metadata.SetValueComparer(stringListComparer);
+            modelBuilder.Entity<TrailRegion>(entity =>
+            {
+                entity.HasKey(tr => new { tr.TrailId, tr.RegionId });
 
-            entity.Property(up => up.PreferredCategories)
-                  .HasConversion(jsonStringListConverter)
-                  .Metadata.SetValueComparer(stringListComparer);
+                entity.HasOne(tr => tr.Trail)
+                      .WithMany(t => t.TrailRegions)
+                      .HasForeignKey(tr => tr.TrailId)
+                      .OnDelete(DeleteBehavior.Cascade);
 
-            entity.Property(up => up.PreferredRegionIds)
-                  .HasConversion(intListConverter)
-                  .Metadata.SetValueComparer(intListComparer);
-        });
+                entity.HasOne(tr => tr.Region)
+                      .WithMany(r => r.Trails)
+                      .HasForeignKey(tr => tr.RegionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
 
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasIndex(u => u.Username).IsUnique();
-            entity.HasIndex(u => u.Email).IsUnique();
+            modelBuilder.Entity<UserPreferences>(entity =>
+            {
+                entity.HasKey(up => up.Id);
+                entity.HasOne(up => up.User)
+                      .WithOne(u => u.Preferences)
+                      .HasForeignKey<UserPreferences>(up => up.UserId)
+                      .IsRequired();
 
-            entity.HasMany(u => u.TrailRatings)
-                  .WithOne(tr => tr.User)
-                  .HasForeignKey(tr => tr.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
+                entity.Property(up => up.PreferredTrailTypes)
+                      .HasConversion(jsonStringListConverter)
+                      .Metadata.SetValueComparer(stringListComparer);
 
-        modelBuilder.Entity<UserTrailRating>(entity =>
-        {
-            entity.HasIndex(ur => new { ur.UserId, ur.TrailId }).IsUnique();
-        });
+                entity.Property(up => up.PreferredTags)
+                      .HasConversion(jsonStringListConverter)
+                      .Metadata.SetValueComparer(stringListComparer);
 
-        modelBuilder.Entity<RefreshToken>(entity =>
-        {
-            entity.HasOne(rt => rt.User)
-                  .WithMany(u => u.RefreshTokens)
-                  .HasForeignKey(rt => rt.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
+                entity.Property(up => up.PreferredCategories)
+                      .HasConversion(jsonStringListConverter)
+                      .Metadata.SetValueComparer(stringListComparer);
+
+                entity.Property(up => up.PreferredRegionIds)
+                      .HasConversion(intListConverter)
+                      .Metadata.SetValueComparer(intListComparer);
+            });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasIndex(u => u.Username).IsUnique();
+                entity.HasIndex(u => u.Email).IsUnique();
+
+                entity.HasMany(u => u.TrailRatings)
+                      .WithOne(tr => tr.User)
+                      .HasForeignKey(tr => tr.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UserTrailRating>(entity =>
+            {
+                entity.HasIndex(ur => new { ur.UserId, ur.TrailId }).IsUnique();
+            });
+
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasOne(rt => rt.User)
+                      .WithMany(u => u.RefreshTokens)
+                      .HasForeignKey(rt => rt.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
     }
 }

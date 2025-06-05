@@ -27,10 +27,10 @@ import { AuthNavbarComponent } from '../auth-navbar/auth-navbar.component';
   ],
 })
 export class RegisterComponent implements OnInit {
-  registerForm: FormGroup;
-  isLoading = false;
-  error: string | null = null;
-  success = false;
+  protected registerForm: FormGroup;
+  protected isLoading = false;
+  protected error: string | null = null;
+  protected success = false;
 
   constructor(
     private fb: FormBuilder,

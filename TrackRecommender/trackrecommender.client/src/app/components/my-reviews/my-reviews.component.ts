@@ -13,15 +13,12 @@ import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
   imports: [CommonModule, RouterModule, MainNavbarComponent],
 })
 export class MyReviewsComponent implements OnInit {
-  reviews: TrailReview[] = [];
-  isLoading = true;
-  isDeletingReview: number | null = null;
-  error: string | null = null;
+  protected reviews: TrailReview[] = [];
+  protected isLoading = true;
+  protected isDeletingReview: number | null = null;
+  protected error: string | null = null;
 
-  constructor(
-    private reviewService: ReviewService,
-    private router: Router,
-  ) {}
+  constructor(private reviewService: ReviewService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadMyReviews();
@@ -54,10 +51,10 @@ export class MyReviewsComponent implements OnInit {
     });
   }
 
-  deleteReview(review: TrailReview): void {
+  protected deleteReview(review: TrailReview): void {
     if (
       !confirm(
-        `Are you sure you want to delete your review for "${review.trailName}"?`,
+        `Are you sure you want to delete your review for "${review.trailName}"?`
       )
     ) {
       return;
@@ -78,23 +75,23 @@ export class MyReviewsComponent implements OnInit {
     });
   }
 
-  viewTrail(trailId: number): void {
+  protected viewTrail(trailId: number): void {
     this.router.navigate(['/trails', trailId]);
   }
 
-  getStarArray(rating: number): boolean[] {
+  protected getStarArray(rating: number): boolean[] {
     return this.reviewService.getStarArray(rating);
   }
 
-  getDifficultyColor(difficulty?: string): string {
+  protected getDifficultyColor(difficulty?: string): string {
     return this.reviewService.getDifficultyColor(difficulty);
   }
 
-  formatDuration(hours?: number): string {
+  protected formatDuration(hours?: number): string {
     return this.reviewService.formatDuration(hours);
   }
 
-  trackByReviewId(index: number, review: TrailReview): number {
+  protected trackByReviewId(index: number, review: TrailReview): number {
     return review.id;
   }
 }

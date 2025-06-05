@@ -12,11 +12,11 @@ import { WeatherService } from '../../services/weather/weather.service';
   styleUrl: './weather-widget.component.scss',
 })
 export class WeatherWidgetComponent implements OnInit {
-  weatherData: WeatherResponse | null = null;
-  isLoading = false;
-  error: string | null = null;
-  locationQuery = '';
-  currentLocationEnabled = false;
+  protected weatherData: WeatherResponse | null = null;
+  protected isLoading = false;
+  protected error: string | null = null;
+  protected locationQuery = '';
+  protected currentLocationEnabled = false;
 
   constructor(private weatherService: WeatherService) {}
 
@@ -26,7 +26,7 @@ export class WeatherWidgetComponent implements OnInit {
     }
   }
 
-  getLocationWeather(): void {
+  protected getLocationWeather(): void {
     if (!navigator.geolocation) {
       this.error = 'Geolocation is not supported by your browser';
       return;
@@ -40,7 +40,7 @@ export class WeatherWidgetComponent implements OnInit {
         this.weatherService
           .getWeatherByCoordinates(
             position.coords.latitude,
-            position.coords.longitude,
+            position.coords.longitude
           )
           .subscribe({
             next: (data) => {
@@ -60,11 +60,11 @@ export class WeatherWidgetComponent implements OnInit {
         this.error =
           'Could not get your location. Please make sure location services are enabled.';
         this.isLoading = false;
-      },
+      }
     );
   }
 
-  searchLocationWeather(): void {
+  protected searchLocationWeather(): void {
     if (!this.locationQuery.trim()) {
       return;
     }
@@ -89,7 +89,7 @@ export class WeatherWidgetComponent implements OnInit {
     });
   }
 
-  getWeatherIconUrl(): string {
+  protected getWeatherIconUrl(): string {
     if (!this.weatherData || !this.weatherData.current) {
       return '';
     }
@@ -97,17 +97,17 @@ export class WeatherWidgetComponent implements OnInit {
     return this.weatherService.getWeatherIconUrl(this.weatherData.current);
   }
 
-  getWeatherDescription(): string {
+  protected getWeatherDescription(): string {
     if (!this.weatherData || !this.weatherData.current) {
       return '';
     }
 
     return this.weatherService.getDeterminedWeatherDescription(
-      this.weatherData.current,
+      this.weatherData.current
     );
   }
 
-  getDailyWeatherIconUrl(day: any): string {
+  protected getDailyWeatherIconUrl(day: any): string {
     if (!day) {
       return '';
     }
@@ -115,7 +115,7 @@ export class WeatherWidgetComponent implements OnInit {
     return this.weatherService.getWeatherIconUrl(day);
   }
 
-  getDailyWeatherDescription(day: any): string {
+  protected getDailyWeatherDescription(day: any): string {
     if (!day) {
       return '';
     }
@@ -123,7 +123,7 @@ export class WeatherWidgetComponent implements OnInit {
     return this.weatherService.getDeterminedWeatherDescription(day);
   }
 
-  formatDay(timestamp: number): string {
+  protected formatDay(timestamp: number): string {
     return this.weatherService.formatDay(timestamp);
   }
 }

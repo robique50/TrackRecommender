@@ -12,7 +12,7 @@ import { Router } from '@angular/router';
 
 export const authInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
-  next: HttpHandlerFn,
+  next: HttpHandlerFn
 ): Observable<any> => {
   const tokenStorage = inject(TokenStorageService);
   const router = inject(Router);
@@ -48,7 +48,7 @@ export const authInterceptor: HttpInterceptorFn = (
         }
 
         return throwError(() => error);
-      }),
+      })
     );
   }
 

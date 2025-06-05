@@ -1,19 +1,14 @@
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  ViewChild,
-  ElementRef,
-} from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
 import { TrailService } from '../../services/trail/trail.service';
 import { ReviewService } from '../../services/review/review.service';
-import { Subject, BehaviorSubject } from 'rxjs';
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { TrailReviewComponent } from '../trail-review/trail-review.component';
+import { Trail } from '../../models/trail.model';
 
 @Component({
   selector: 'app-map',
@@ -26,22 +21,12 @@ export class MapComponent implements OnInit, OnDestroy {
   private map!: L.Map;
   private markerClusterGroup!: L.MarkerClusterGroup;
   private updateSubject = new Subject<void>();
-  private destroy$ = new Subject<void>();
 
-  private trailsCache$ = new BehaviorSubject<any[]>([]);
-  private lastFetchTime: number = 0;
-  private readonly CACHE_DURATION = 5 * 60 * 1000;
-
-  private activeTrailLayer: L.GeoJSON | null = null;
-  private selectedMarkerId: number | null = null;
-
-  trails: any[] = [];
-  visibleTrails: any[] = [];
-  selectedTrail: any = null;
-  isLoadingTrails = false;
-  showReviewPanel = false;
-
-  @ViewChild('trailsList') trailsListElement!: ElementRef;
+  protected trails: Trail[] = [];
+  protected visibleTrails: Trail[] = [];
+  protected selectedTrail: Trail | null = null;
+  protected isLoadingTrails = true;
+  protected showReviewPanel = false;
 
   constructor(
     private trailService: TrailService,
@@ -50,60 +35,18 @@ export class MapComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.initMap();
-    this.loadTrailsWithCache();
+    this.loadTrails();
     this.setupDebounce();
-    this.setupCacheSubscription();
   }
 
   ngOnDestroy(): void {
     this.updateSubject.complete();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  private setupCacheSubscription(): void {
-    this.trailsCache$.pipe(takeUntil(this.destroy$)).subscribe((trails) => {
-      if (trails.length > 0) {
-        this.trails = trails;
-        this.addTrailsToMap();
-        this.updateVisibleTrails();
-      }
-    });
-  }
-
-  private loadTrailsWithCache(forceRefresh: boolean = false): void {
-    const currentTime = Date.now();
-    const cachedTrails = this.trailsCache$.value;
-
-    if (
-      !forceRefresh &&
-      cachedTrails.length > 0 &&
-      currentTime - this.lastFetchTime < this.CACHE_DURATION
-    ) {
-      return;
-    }
-
-    this.isLoadingTrails = true;
-
-    this.trailService.getTrails().subscribe({
-      next: (trails) => {
-        this.lastFetchTime = currentTime;
-        this.trailsCache$.next(trails);
-        this.isLoadingTrails = false;
-      },
-      error: (error) => {
-        console.error('Error loading trails:', error);
-        this.isLoadingTrails = false;
-      },
-    });
   }
 
   private setupDebounce(): void {
-    this.updateSubject
-      .pipe(debounceTime(300), takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.updateVisibleTrails();
-      });
+    this.updateSubject.pipe(debounceTime(300)).subscribe(() => {
+      this.updateVisibleTrails();
+    });
   }
 
   private initMap(): void {
@@ -132,20 +75,11 @@ export class MapComponent implements OnInit, OnDestroy {
       this.updateSubject.next();
     });
 
-    this.map.on('click', (e: L.LeafletMouseEvent) => {
-      const target = e.originalEvent.target as HTMLElement;
+    this.map.on('click', (e) => {
       if (
-        target.classList.contains('leaflet-container') ||
-        target.closest('.leaflet-tile-pane') ||
-        (target.closest('.leaflet-overlay-pane') &&
-          !target.closest('.leaflet-marker-icon'))
+        (e as any).originalEvent.target ===
+        this.map.getContainer().querySelector('.leaflet-map-pane')
       ) {
-        this.clearTrailSelection();
-      }
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
         this.clearTrailSelection();
       }
     });
@@ -191,53 +125,128 @@ export class MapComponent implements OnInit, OnDestroy {
     });
   }
 
-  private createTrailIcon(
-    difficulty: string,
-    isSelected: boolean = false
-  ): L.DivIcon {
+  private createTrailIcon(difficulty: string): L.DivIcon {
     const color = this.getTrailColor(difficulty);
-    const size = isSelected ? 20 : 16;
-    const borderWidth = isSelected ? 3 : 2;
 
     return L.divIcon({
       html: `<div style="
         background-color: ${color};
-        width: ${size}px;
-        height: ${size}px;
+        width: 16px;
+        height: 16px;
         border-radius: 50%;
-        border: ${borderWidth}px solid white;
+        border: 2px solid white;
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        ${isSelected ? 'animation: pulse 2s infinite;' : ''}
       "></div>`,
       className: 'custom-trail-icon',
-      iconSize: L.point(size, size, true),
-      iconAnchor: L.point(size / 2, size / 2, true),
+      iconSize: L.point(16, 16, true),
+      iconAnchor: L.point(8, 8, true),
     });
+  }
+
+  private loadTrails(): void {
+    this.isLoadingTrails = true;
+
+    this.trailService.getTrails().subscribe({
+      next: (trails: Trail[]) => {
+        this.trails = trails;
+        this.addTrailsToMap();
+        this.updateVisibleTrails();
+        this.isLoadingTrails = false;
+      },
+      error: (error) => {
+        console.error('Error loading trails:', error);
+        this.isLoadingTrails = false;
+      },
+    });
+  }
+
+  private getStartCoordinatesFromGeoJson(geoJsonData: string): L.LatLng | null {
+    try {
+      const geoJson = JSON.parse(geoJsonData);
+
+      if (!geoJson || !geoJson.coordinates) {
+        console.warn('Invalid GeoJSON structure: missing coordinates');
+        return null;
+      }
+
+      let startCoordinates: [number, number] | null = null;
+
+      switch (geoJson.type) {
+        case 'LineString':
+          if (
+            Array.isArray(geoJson.coordinates) &&
+            geoJson.coordinates.length > 0
+          ) {
+            startCoordinates = geoJson.coordinates[0];
+          }
+          break;
+
+        case 'MultiLineString':
+          if (
+            Array.isArray(geoJson.coordinates) &&
+            geoJson.coordinates.length > 0 &&
+            Array.isArray(geoJson.coordinates[0]) &&
+            geoJson.coordinates[0].length > 0
+          ) {
+            startCoordinates = geoJson.coordinates[0][0];
+          }
+          break;
+
+        default:
+          console.warn(`Unsupported geometry type: ${geoJson.type}`);
+          return null;
+      }
+
+      if (
+        startCoordinates &&
+        Array.isArray(startCoordinates) &&
+        startCoordinates.length >= 2
+      ) {
+        return L.latLng(startCoordinates[1], startCoordinates[0]);
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error parsing GeoJSON:', error);
+      return null;
+    }
   }
 
   private addTrailsToMap(): void {
     this.markerClusterGroup.clearLayers();
 
-    this.trails.forEach((trail) => {
+    let successCount = 0;
+    let errorCount = 0;
+
+    this.trails.forEach((trail: Trail) => {
       try {
-        const geoJson = JSON.parse(trail.geoJsonData);
-        const startCoordinates = geoJson.coordinates[0];
-        const startLatLng = L.latLng(startCoordinates[1], startCoordinates[0]);
+        const startLatLng = this.getStartCoordinatesFromGeoJson(
+          trail.geoJsonData
+        );
+
+        if (!startLatLng) {
+          errorCount++;
+          return;
+        }
 
         const marker = L.marker(startLatLng, {
           icon: this.createTrailIcon(trail.difficulty),
         });
 
         (marker as any).trailData = trail;
-        (marker as any).trailId = trail.id;
 
         marker.on('click', () => {
           this.onTrailClick(trail);
         });
 
         this.markerClusterGroup.addLayer(marker);
+        successCount++;
       } catch (error) {
-        console.error(`Error processing trail ${trail.id}:`, error);
+        console.error(
+          `Error processing trail ${trail.id} (${trail.name}):`,
+          error
+        );
+        errorCount++;
       }
     });
   }
@@ -245,112 +254,90 @@ export class MapComponent implements OnInit, OnDestroy {
   private updateVisibleTrails(): void {
     const bounds = this.map.getBounds();
 
-    this.visibleTrails = this.trails.filter((trail) => {
+    this.visibleTrails = this.trails.filter((trail: Trail) => {
       try {
-        const geoJson = JSON.parse(trail.geoJsonData);
-        const startCoordinates = geoJson.coordinates[0];
-        const latLng = L.latLng(startCoordinates[1], startCoordinates[0]);
-        return bounds.contains(latLng);
+        const startLatLng = this.getStartCoordinatesFromGeoJson(
+          trail.geoJsonData
+        );
+        return startLatLng ? bounds.contains(startLatLng) : false;
       } catch {
         return false;
       }
     });
+
+    console.log(
+      `Visible trails: ${this.visibleTrails.length} of ${this.trails.length}`
+    );
   }
 
-  private onTrailClick(trail: any): void {
-    if (this.selectedTrail?.id === trail.id) {
-      this.clearTrailSelection();
-      return;
-    }
-
+  private onTrailClick(trail: Trail): void {
     this.clearTrailSelection();
 
     try {
       const geoJson = JSON.parse(trail.geoJsonData);
-      const highlightLayer = L.geoJSON(geoJson, {
+
+      const feature: GeoJSON.Feature<GeoJSON.Geometry> = {
+        type: 'Feature' as const,
+        geometry: geoJson,
+        properties: {},
+      };
+
+      const highlightLayer = L.geoJSON(feature, {
         style: {
           color: '#FF1744',
-          weight: 5,
+          weight: 4,
           opacity: 0.9,
+          dashArray: '5, 5',
         },
       });
 
-      this.activeTrailLayer = highlightLayer;
+      (highlightLayer as any).isTrailHighlight = true;
       highlightLayer.addTo(this.map);
 
       this.selectedTrail = trail;
-      this.selectedMarkerId = trail.id;
-
-      this.updateMarkerIcon(trail.id, true);
 
       const bounds = highlightLayer.getBounds();
       if (bounds.isValid()) {
         this.map.fitBounds(bounds, {
-          padding: [50, 50],
-          maxZoom: 13,
+          padding: [20, 20],
+          maxZoom: 10,
         });
       }
-
-      this.scrollToSelectedTrail();
     } catch (error) {
       console.error('Error highlighting trail:', error);
     }
   }
 
-  private updateMarkerIcon(trailId: number, isSelected: boolean): void {
-    this.markerClusterGroup.eachLayer((layer) => {
-      if ((layer as any).trailId === trailId) {
-        const marker = layer as L.Marker;
-        const trailData = (marker as any).trailData;
-        marker.setIcon(this.createTrailIcon(trailData.difficulty, isSelected));
+  private clearTrailSelection(): void {
+    const layersToRemove: L.Layer[] = [];
+
+    this.map.eachLayer((layer) => {
+      if (layer instanceof L.GeoJSON && (layer as any).isTrailHighlight) {
+        layersToRemove.push(layer);
       }
     });
-  }
 
-  private clearTrailSelection(): void {
-    if (this.activeTrailLayer) {
-      this.map.removeLayer(this.activeTrailLayer);
-      this.activeTrailLayer = null;
-    }
-
-    if (this.selectedMarkerId) {
-      this.updateMarkerIcon(this.selectedMarkerId, false);
-      this.selectedMarkerId = null;
-    }
+    layersToRemove.forEach((layer) => {
+      this.map.removeLayer(layer);
+    });
 
     this.selectedTrail = null;
-    this.showReviewPanel = false;
   }
 
-  private scrollToSelectedTrail(): void {
-    setTimeout(() => {
-      const selectedElement = document.querySelector('.trail-item.selected');
-      if (selectedElement) {
-        selectedElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }
-    }, 100);
-  }
-
-  clearSelection(): void {
+  protected clearSelection(): void {
     this.clearTrailSelection();
   }
 
-  selectTrailFromSidebar(trail: any): void {
+  protected selectTrailFromSidebar(trail: Trail): void {
     this.markerClusterGroup.eachLayer((layer) => {
       if ((layer as any).trailData?.id === trail.id) {
+        this.onTrailClick(trail);
+
         const marker = layer as L.Marker;
         const markerLatLng = marker.getLatLng();
-
-        this.map.setView(markerLatLng, Math.max(this.map.getZoom(), 12), {
-          animate: true,
-        });
-
-        setTimeout(() => {
-          this.onTrailClick(trail);
-        }, 500);
+        if (!this.map.getBounds().contains(markerLatLng)) {
+          this.map.setView(markerLatLng, Math.max(this.map.getZoom(), 12));
+        }
       }
     });
   }
@@ -372,35 +359,28 @@ export class MapComponent implements OnInit, OnDestroy {
     }
   }
 
-  getDifficultyColor(difficulty: string): string {
+  protected getDifficultyColor(difficulty: string): string {
     return this.getTrailColor(difficulty);
   }
 
-  formatDuration(hours: number): string {
+  protected formatDuration(hours: number): string {
     return this.reviewService.formatDuration(hours);
   }
 
-  trackByTrailId(index: number, trail: any): number {
+  protected trackByTrailId(index: number, trail: Trail): number {
     return trail.id;
   }
 
-  openReviewPanel(): void {
+  protected openReviewPanel(): void {
     this.showReviewPanel = true;
   }
 
-  closeReviewPanel(): void {
+  protected closeReviewPanel(): void {
     this.showReviewPanel = false;
   }
 
-  onReviewSubmitted(review: any): void {
+  protected onReviewSubmitted(review: any): void {
     this.closeReviewPanel();
-    if (this.selectedTrail) {
-      this.selectedTrail.hasReview = true;
-      this.selectedTrail.userRating = review.rating;
-    }
-  }
-
-  refreshTrails(): void {
-    this.loadTrailsWithCache(true);
+    this.loadTrails();
   }
 }

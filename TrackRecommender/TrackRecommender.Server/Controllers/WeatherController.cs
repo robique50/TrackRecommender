@@ -1,18 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TrackRecommender.Server.Services.Implementations;
+using TrackRecommender.Server.Services;
 
 namespace TrackRecommender.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class WeatherController : ControllerBase
+    public class WeatherController(WeatherService weatherService) : ControllerBase
     {
-        private readonly WeatherService _weatherService;
-
-        public WeatherController(WeatherService weatherService)
-        {
-            _weatherService = weatherService;
-        }
+        private readonly WeatherService _weatherService = weatherService;
 
         [HttpGet("coordinates")]
         public async Task<IActionResult> GetWeatherByCoordinates([FromQuery] double latitude, [FromQuery] double longitude)

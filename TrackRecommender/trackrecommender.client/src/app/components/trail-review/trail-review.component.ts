@@ -1,6 +1,14 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+  ValidatorFn,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
 import { ReviewService } from '../../services/review/review.service';
 
 @Component({
@@ -8,7 +16,7 @@ import { ReviewService } from '../../services/review/review.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './trail-review.component.html',
-  styleUrl: './trail-review.component.scss'
+  styleUrl: './trail-review.component.scss',
 })
 export class TrailReviewComponent implements OnInit {
   @Input() trailId: number = 0;
@@ -18,22 +26,22 @@ export class TrailReviewComponent implements OnInit {
   @Output() reviewSubmitted = new EventEmitter<any>();
   @Output() cancelled = new EventEmitter<void>();
 
-  reviewForm: FormGroup;
-  isSubmitting = false;
-  isLoading = true;
-  error: string | null = null;
+  protected reviewForm: FormGroup;
+  protected isSubmitting = false;
+  protected isLoading = true;
+  protected error: string | null = null;
 
-  constructor(
-    private fb: FormBuilder,
-    private reviewService: ReviewService
-  ) {
+  constructor(private fb: FormBuilder, private reviewService: ReviewService) {
     this.reviewForm = this.fb.group({
-      rating: [null, [Validators.required, Validators.min(1), Validators.max(5)]],
+      rating: [
+        null,
+        [Validators.required, Validators.min(1), Validators.max(5)],
+      ],
       comment: ['', Validators.maxLength(1000)],
       hasCompleted: [false],
       completedAt: [null],
       actualDuration: [null, [Validators.min(0.1), Validators.max(48)]],
-      perceivedDifficulty: ['']
+      perceivedDifficulty: [''],
     });
   }
 
@@ -44,26 +52,25 @@ export class TrailReviewComponent implements OnInit {
       next: (response) => {
         this.isLoading = false;
         if (!response.canReview) {
-          this.error = 'You have already reviewed this trail. You need to delete your existing review before adding a new one.';
+          this.error =
+            'You have already reviewed this trail. You need to delete your existing review before adding a new one.';
         }
       },
       error: (err) => {
         this.isLoading = false;
         this.error = 'Could not verify review status. Please try again later.';
         console.error('Error checking review status:', err);
-      }
+      },
     });
 
     const completedAtControl = this.reviewForm.get('completedAt');
     if (completedAtControl) {
-      completedAtControl.setValidators([
-        this.dateValidator()
-      ]);
+      completedAtControl.setValidators([this.dateValidator()]);
       completedAtControl.updateValueAndValidity();
     }
   }
 
-  dateValidator(): ValidatorFn {
+  private dateValidator(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
@@ -87,29 +94,34 @@ export class TrailReviewComponent implements OnInit {
     };
   }
 
-  onSubmit() {
+  protected onSubmit() {
     if (this.reviewForm.invalid) return;
 
     this.isSubmitting = true;
     this.error = null;
 
-    this.reviewService.createReview(this.trailId, this.reviewForm.value).subscribe({
-      next: (review) => {
-        this.isSubmitting = false;
-        this.reviewSubmitted.emit(review);
-      },
-      error: (err) => {
-        this.isSubmitting = false;
-        this.error = typeof err === 'string' ? err : 'An error occurred while saving your review. Please try again later.';
-      }
-    });
+    this.reviewService
+      .createReview(this.trailId, this.reviewForm.value)
+      .subscribe({
+        next: (review) => {
+          this.isSubmitting = false;
+          this.reviewSubmitted.emit(review);
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          this.error =
+            typeof err === 'string'
+              ? err
+              : 'An error occurred while saving your review. Please try again later.';
+        },
+      });
   }
 
-  cancel() {
+  protected cancel() {
     this.cancelled.emit();
   }
 
-  getStarArray(): number[] {
+  protected getStarArray(): number[] {
     return [1, 2, 3, 4, 5];
   }
 }

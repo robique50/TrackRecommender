@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using NetTopologySuite.Geometries;
 using TrackRecommender.Server.Data;
 
 #nullable disable
@@ -12,18 +13,59 @@ using TrackRecommender.Server.Data;
 namespace TrackRecommender.Server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250518073313_RestructureUserAndUserPreferences")]
-    partial class RestructureUserAndUserPreferences
+    [Migration("20250528211211_UpdateTrailLineStringToGeometry")]
+    partial class UpdateTrailLineStringToGeometry
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.15")
+                .HasAnnotation("ProductVersion", "8.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("TrackRecommender.Server.Models.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByIp")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReplacedByToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
 
             modelBuilder.Entity("TrackRecommender.Server.Models.Region", b =>
                 {
@@ -33,11 +75,18 @@ namespace TrackRecommender.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<Geometry>("Boundary")
+                        .HasColumnType("geometry")
+                        .HasAnnotation("Srid", 4326);
+
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Regions");
                 });
@@ -52,7 +101,13 @@ namespace TrackRecommender.Server.Migrations
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Geometry>("Coordinates")
+                        .IsRequired()
+                        .HasColumnType("geometry")
+                        .HasAnnotation("Srid", 4326);
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -60,7 +115,8 @@ namespace TrackRecommender.Server.Migrations
 
                     b.Property<string>("Difficulty")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<double>("Distance")
                         .HasColumnType("float");
@@ -70,22 +126,28 @@ namespace TrackRecommender.Server.Migrations
 
                     b.Property<string>("EndLocation")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("GeoJsonData")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Network")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<long>("OsmId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("StartLocation")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Tags")
                         .IsRequired()
@@ -93,9 +155,13 @@ namespace TrackRecommender.Server.Migrations
 
                     b.Property<string>("TrailType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OsmId")
+                        .IsUnique();
 
                     b.ToTable("Trails");
                 });
@@ -134,10 +200,6 @@ namespace TrackRecommender.Server.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordSalt")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -220,7 +282,8 @@ namespace TrackRecommender.Server.Migrations
                         .HasColumnType("float");
 
                     b.Property<string>("Comment")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
@@ -253,16 +316,27 @@ namespace TrackRecommender.Server.Migrations
                     b.ToTable("UserTrailRatings");
                 });
 
+            modelBuilder.Entity("TrackRecommender.Server.Models.RefreshToken", b =>
+                {
+                    b.HasOne("TrackRecommender.Server.Models.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TrackRecommender.Server.Models.TrailRegion", b =>
                 {
                     b.HasOne("TrackRecommender.Server.Models.Region", "Region")
-                        .WithMany()
+                        .WithMany("Trails")
                         .HasForeignKey("RegionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("TrackRecommender.Server.Models.Trail", "Trail")
-                        .WithMany()
+                        .WithMany("TrailRegions")
                         .HasForeignKey("TrailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -302,14 +376,23 @@ namespace TrackRecommender.Server.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TrackRecommender.Server.Models.Region", b =>
+                {
+                    b.Navigation("Trails");
+                });
+
             modelBuilder.Entity("TrackRecommender.Server.Models.Trail", b =>
                 {
+                    b.Navigation("TrailRegions");
+
                     b.Navigation("UserRatings");
                 });
 
             modelBuilder.Entity("TrackRecommender.Server.Models.User", b =>
                 {
                     b.Navigation("Preferences");
+
+                    b.Navigation("RefreshTokens");
 
                     b.Navigation("TrailRatings");
                 });

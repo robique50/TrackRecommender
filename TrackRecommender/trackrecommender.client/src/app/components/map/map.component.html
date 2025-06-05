@@ -28,14 +28,6 @@
       <h3>Trails in View</h3>
       <div class="header-info">
         <span class="trail-count">{{ visibleTrails.length }} trails</span>
-        <button
-          class="refresh-btn"
-          (click)="refreshTrails()"
-          [disabled]="isLoadingTrails"
-          title="Refresh trails"
-        >
-          <span [class.rotating]="isLoadingTrails">↻</span>
-        </button>
       </div>
     </div>
 

@@ -7,6 +7,7 @@ namespace TrackRecommender.Server.Repositories.Interfaces
         Task<List<Trail>> GetAllTrailsAsync();
         Task<Trail?> GetTrailByIdAsync(int id);
         Task<List<Trail>> GetTrailsByNameAsync(string name);
+        Task<int> GetTrailCountAsync();
         Task<bool> TrailExistsByNameAsync(string name);
         Task AddTrailAsync(Trail trail);
         Task<List<Trail>> GetTrailsByRegionIdAsync(int regionId);

@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
+using TrackRecommender.Server.Data;
 using TrackRecommender.Server.Mappers.Implementations;
 using TrackRecommender.Server.Mappers.Interfaces;
 using TrackRecommender.Server.Models;
@@ -33,7 +34,11 @@ builder.Services.Configure<JsonOptions>(options =>
     options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
-builder.Services.AddHttpClient();
+const int httpClientTimeoutSeconds = 720;
+builder.Services.AddHttpClient("OverpassAPI", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(httpClientTimeoutSeconds);
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ITrailRepository, TrailRepository>();
 builder.Services.AddScoped<IRegionRepository, RegionRepository>();
@@ -52,7 +57,8 @@ builder.Services.AddScoped<UserPreferencesMapper>(provider =>
     new UserPreferencesMapper(provider.GetRequiredService<IRegionRepository>()));
 builder.Services.AddScoped<IMapper<UserPreferences, UserPreferencesDto>>(provider =>
     provider.GetRequiredService<UserPreferencesMapper>());
-builder.Services.AddScoped<IMapper<Trail, TrailDto>, TrailMapper>();
+builder.Services.AddScoped<IMapper<Trail, TrailDto>>(provider =>
+    new TrailMapper(provider.GetRequiredService<ILogger<TrailMapper>>())); 
 builder.Services.AddScoped<ReviewMapper>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];

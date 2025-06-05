@@ -42,7 +42,6 @@ namespace TrackRecommender.Server.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting filtered trails");
                 return StatusCode(500, new { message = "An error occurred while retrieving trails", error = ex.Message });
             }
         }
@@ -61,7 +60,6 @@ namespace TrackRecommender.Server.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting trail with ID {TrailId}", id);
                 return StatusCode(500, new { message = "An error occurred while retrieving the trail", error = ex.Message });
             }
         }
@@ -109,7 +107,6 @@ namespace TrackRecommender.Server.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting recommended trails");
                 return StatusCode(500, new { message = "An error occurred while retrieving recommendations", error = ex.Message });
             }
         }

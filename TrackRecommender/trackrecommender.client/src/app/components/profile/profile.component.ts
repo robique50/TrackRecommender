@@ -13,9 +13,9 @@ import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
   imports: [CommonModule, RouterModule, MainNavbarComponent],
 })
 export class ProfileComponent implements OnInit {
-  userProfile: UserProfile | null = null;
-  isLoading = true;
-  error: string | null = null;
+  protected userProfile: UserProfile | null = null;
+  protected isLoading = true;
+  protected error: string | null = null;
 
   constructor(private authService: AuthService) {}
 
@@ -49,14 +49,14 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  getInitial(): string {
+  protected getInitial(): string {
     if (!this.userProfile?.username) {
       return '?';
     }
     return this.userProfile.username.charAt(0).toUpperCase();
   }
 
-  refreshProfile(): void {
+  protected refreshProfile(): void {
     this.isLoading = true;
     this.error = null;
     this.fetchUserProfile();
