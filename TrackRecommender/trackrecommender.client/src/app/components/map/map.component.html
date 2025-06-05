@@ -1,56 +1,99 @@
 <app-main-navbar></app-main-navbar>
 
 <div class="map-container">
-  <div id="map" class="map-view">
-    <div
-      class="map-loading-overlay"
-      *ngIf="isLoadingTrails && trails.length === 0"
-    >
-      <div class="loading-content">
-        <div class="loading-spinner"></div>
-        <p>Loading trails...</p>
+  <div class="map-header">
+    <div class="map-tabs">
+      <button
+        class="tab-button"
+        [class.active]="currentMode === MapMode.ALL_TRAILS"
+        (click)="setMapMode(MapMode.ALL_TRAILS)"
+      >
+        <i class="tab-icon">📍</i>
+        <span>All Trails</span>
+      </button>
+
+      <button
+        class="tab-button"
+        [class.active]="currentMode === MapMode.REGION_EXPLORER"
+        (click)="setMapMode(MapMode.REGION_EXPLORER)"
+      >
+        <i class="tab-icon">🗺️</i>
+        <span>Explore Regions</span>
+      </button>
+
+      <div
+        class="breadcrumb"
+        *ngIf="currentMode === MapMode.REGION_FOCUSED && selectedRegion"
+      >
+        <span class="breadcrumb-separator">></span>
+        <span class="breadcrumb-item">{{ selectedRegion.name }}</span>
+        <button
+          class="back-button"
+          (click)="goBackToRegionExplorer()"
+          title="Back to regions"
+        >
+          <i>←</i> Back
+        </button>
       </div>
+    </div>
+
+    <div class="loading-indicator" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <span>Loading...</span>
     </div>
   </div>
 
-  <app-trail-review
-    *ngIf="showReviewPanel && selectedTrail"
-    [trailId]="selectedTrail.id"
-    [trailName]="selectedTrail.name"
-    [difficulty]="selectedTrail.difficulty"
-    (reviewSubmitted)="onReviewSubmitted($event)"
-    (cancelled)="closeReviewPanel()"
-  >
-  </app-trail-review>
-
-  <div class="map-sidebar" [class.collapsed]="false">
-    <div class="sidebar-header">
-      <h3>Trails in View</h3>
-      <div class="header-info">
-        <span class="trail-count">{{ visibleTrails.length }} trails</span>
-      </div>
+  <div class="map-content">
+    <div class="map-view">
+      <div id="map"></div>
     </div>
 
-    <div class="sidebar-content">
-      <div class="loading-state" *ngIf="isLoadingTrails && trails.length > 0">
-        <div class="loading-spinner"></div>
-        <p>Updating trails...</p>
+    <div class="map-sidebar" [class.collapsed]="sidebarCollapsed">
+      <button
+        class="sidebar-toggle"
+        (click)="toggleSidebar()"
+        [title]="sidebarCollapsed ? 'Expand' : 'Collapse'"
+      >
+        <span [innerHTML]="sidebarCollapsed ? '&#8250;' : '&#8249;'"></span>
+      </button>
+
+      <div class="sidebar-header" *ngIf="!sidebarCollapsed">
+        <h3 [ngSwitch]="currentMode">
+          <span *ngSwitchCase="MapMode.ALL_TRAILS">Trails in View</span>
+          <span *ngSwitchCase="MapMode.REGION_EXPLORER">Regions</span>
+          <span *ngSwitchCase="MapMode.REGION_FOCUSED"
+            >{{ selectedRegion?.name }} Trails</span
+          >
+        </h3>
+        <div class="header-info">
+          <span class="trail-count" [ngSwitch]="currentMode">
+            <span *ngSwitchCase="MapMode.ALL_TRAILS"
+              >{{ visibleTrails.length }} trails</span
+            >
+            <span *ngSwitchCase="MapMode.REGION_EXPLORER"
+              >{{ regions.length }} regions</span
+            >
+            <span *ngSwitchCase="MapMode.REGION_FOCUSED"
+              >{{ regionTrails.length }} trails</span
+            >
+          </span>
+        </div>
       </div>
 
       <div
-        class="trails-list"
-        #trailsList
-        *ngIf="!isLoadingTrails || trails.length > 0"
+        class="sidebar-content"
+        *ngIf="!sidebarCollapsed"
+        [ngSwitch]="currentMode"
       >
-        <div
-          class="trail-item"
-          *ngFor="let trail of visibleTrails; trackBy: trackByTrailId"
-          [class.selected]="selectedTrail?.id === trail.id"
-          (click)="selectTrailFromSidebar(trail)"
-        >
-          <div class="trail-header">
-            <h4 class="trail-name">{{ trail.name }}</h4>
-            <div class="trail-meta">
+        <div *ngSwitchCase="MapMode.ALL_TRAILS" class="trails-list">
+          <div
+            class="trail-item"
+            *ngFor="let trail of visibleTrails; trackBy: trackByTrailId"
+            [class.selected]="selectedTrail?.id === trail.id"
+            (click)="selectTrailFromSidebar(trail)"
+          >
+            <div class="trail-header">
+              <h4 class="trail-name">{{ trail.name }}</h4>
               <span
                 class="difficulty-badge"
                 [style.background-color]="getDifficultyColor(trail.difficulty)"
@@ -58,59 +101,113 @@
                 {{ trail.difficulty }}
               </span>
             </div>
-          </div>
 
-          <div class="trail-stats">
-            <div class="stat">
-              <span class="stat-icon">📏</span>
-              <span class="stat-value">{{ trail.distance }} km</span>
+            <div class="trail-stats">
+              <div class="stat">
+                <span class="stat-icon">📏</span>
+                <span class="stat-value">{{ trail.distance }} km</span>
+              </div>
+              <div class="stat">
+                <span class="stat-icon">⏱️</span>
+                <span class="stat-value">{{
+                  formatDuration(trail.duration)
+                }}</span>
+              </div>
             </div>
-            <div class="stat">
-              <span class="stat-icon">⏱️</span>
-              <span class="stat-value">
-                {{ formatDuration(trail.duration) }}
+
+            <div class="trail-actions" *ngIf="selectedTrail?.id === trail.id">
+              <button
+                class="btn-secondary"
+                (click)="clearSelection(); $event.stopPropagation()"
+              >
+                <span class="btn-icon">✕</span> Clear
+              </button>
+              <button
+                class="btn-primary"
+                (click)="openReviewPanel(); $event.stopPropagation()"
+              >
+                <span class="btn-icon">⭐</span> Add Review
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngSwitchCase="MapMode.REGION_EXPLORER" class="regions-list">
+          <div
+            class="region-item"
+            *ngFor="let region of getSortedRegions()"
+            (click)="selectRegion(region.id)"
+            [class.selected]="selectedRegion?.id === region.id"
+          >
+            <div class="region-header">
+              <h4 class="region-name">{{ region.name }}</h4>
+              <div class="region-stats">
+                <span class="trail-count-badge"
+                  >{{ region.trailCount }} trails</span
+                >
+              </div>
+            </div>
+            <div
+              class="region-color-indicator"
+              [style.background-color]="getRegionColor(region.trailCount)"
+            ></div>
+          </div>
+        </div>
+
+        <div *ngSwitchCase="MapMode.REGION_FOCUSED" class="trails-list">
+          <div
+            class="trail-item"
+            *ngFor="let trail of regionTrails; let i = index"
+            [class.selected]="selectedTrail?.id === trail.id"
+            (click)="onTrailClick(trail)"
+          >
+            <div class="trail-header">
+              <span class="trail-number">{{ i + 1 }}</span>
+              <h4 class="trail-name">{{ trail.name }}</h4>
+              <span
+                class="difficulty-badge"
+                [style.background-color]="getDifficultyColor(trail.difficulty)"
+              >
+                {{ trail.difficulty }}
               </span>
             </div>
-            <div class="stat">
-              <span class="stat-icon">📍</span>
-              <span class="stat-value">{{ trail.category }}</span>
+            <div class="trail-stats">
+              <div class="stat">
+                <span class="stat-icon">📏</span>
+                <span class="stat-value">{{ trail.distance }} km</span>
+              </div>
+              <div class="stat">
+                <span class="stat-icon">⏱️</span>
+                <span class="stat-value">{{ trail.duration }}h</span>
+              </div>
+            </div>
+
+            <div class="trail-actions" *ngIf="selectedTrail?.id === trail.id">
+              <button
+                class="btn-secondary"
+                (click)="clearSelection(); $event.stopPropagation()"
+              >
+                <span class="btn-icon">✕</span> Clear
+              </button>
+              <button
+                class="btn-primary"
+                (click)="openReviewPanel(); $event.stopPropagation()"
+              >
+                <span class="btn-icon">⭐</span> Add Review
+              </button>
             </div>
           </div>
-
-          <div class="trail-description" *ngIf="trail.description">
-            <p>
-              {{ trail.description | slice : 0 : 100
-              }}{{ trail.description.length > 100 ? "..." : "" }}
-            </p>
-          </div>
-
-          <div class="trail-actions" *ngIf="selectedTrail?.id === trail.id">
-            <button
-              class="btn-secondary"
-              (click)="clearSelection(); $event.stopPropagation()"
-              title="Clear selection"
-            >
-              <span class="btn-icon">✕</span> Clear
-            </button>
-            <button
-              class="btn-review"
-              (click)="openReviewPanel(); $event.stopPropagation()"
-              [disabled]="trail.hasReview"
-            >
-              <span class="btn-icon">⭐</span>
-              {{ trail.hasReview ? "Reviewed" : "Add Review" }}
-            </button>
-          </div>
         </div>
 
-        <div
-          class="empty-trails"
-          *ngIf="visibleTrails.length === 0 && !isLoadingTrails"
+        <app-trail-review
+          *ngIf="showReviewPanel && selectedTrail"
+          [trailId]="selectedTrail.id"
+          [trailName]="selectedTrail.name"
+          [difficulty]="selectedTrail.difficulty"
+          (reviewSubmitted)="onReviewSubmitted($event)"
+          (cancelled)="closeReviewPanel()"
         >
-          <div class="empty-icon">🗺️</div>
-          <h4>No trails in this area</h4>
-          <p>Try zooming out or moving the map to see more trails.</p>
-        </div>
+        </app-trail-review>
       </div>
     </div>
   </div>

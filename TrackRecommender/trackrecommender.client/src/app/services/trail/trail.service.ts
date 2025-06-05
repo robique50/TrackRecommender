@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { catchError, tap, shareReplay } from 'rxjs/operators';
-import { TrailCache } from '../../helpers/trail.cache';
 import { Trail, TrailFilters } from '../../models/trail.model';
+import { TrailCache } from '../../helpers/trail-cache';
 
 @Injectable({
   providedIn: 'root',

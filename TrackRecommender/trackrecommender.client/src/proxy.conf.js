@@ -15,6 +15,7 @@ const PROXY_CONFIG = [
       "/api/trails",
       "/api/reviews",
       "/api/weather",
+      "/api/regions",
     ],
     target: "https://localhost:7219",
     secure: false,
