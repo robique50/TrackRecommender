@@ -18,11 +18,11 @@ namespace TrackRecommender.Server.Models
 
         public UserPreferences()
         {
-            PreferredTrailTypes = new List<string>();
+            PreferredTrailTypes = [];
             PreferredDifficulty = "Easy";
-            PreferredTags = new List<string>();
-            PreferredCategories = new List<string>();
-            PreferredRegionIds = new List<int>();
+            PreferredTags = [];
+            PreferredCategories = [];
+            PreferredRegionIds = [];
             MaxDistance = 20;
             MaxDuration = 8;
             MinimumRating = 0;
@@ -37,8 +37,8 @@ namespace TrackRecommender.Server.Models
             PreferredDifficulty = preferredDifficulty;
             PreferredTags = preferredTags;
             MaxDistance = maxDistance;
-            PreferredCategories = new List<string>();
-            PreferredRegionIds = new List<int>();
+            PreferredCategories = [];
+            PreferredRegionIds = [];
             MaxDuration = 8;
             MinimumRating = 0;
         }

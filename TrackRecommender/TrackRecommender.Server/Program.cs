@@ -51,6 +51,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<WeatherService>();
 builder.Services.AddScoped<RegionImportService>();
+builder.Services.AddScoped<RegionService>();
 
 builder.Services.AddScoped<IMapper<User, UserProfileDto>, UserMapper>();
 builder.Services.AddScoped<UserPreferencesMapper>(provider =>
