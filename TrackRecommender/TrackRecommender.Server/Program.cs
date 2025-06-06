@@ -13,7 +13,6 @@ using TrackRecommender.Server.Models.DTOs;
 using TrackRecommender.Server.Repositories.Implementations;
 using TrackRecommender.Server.Repositories.Interfaces;
 using TrackRecommender.Server.Services;
-using TrackRecommender.Server.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 

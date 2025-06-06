@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TrackRecommender.Server.Models.DTOs;
-using TrackRecommender.Server.Services.Implementations;
+using TrackRecommender.Server.Services;
 
 namespace TrackRecommender.Server.Controllers
 {

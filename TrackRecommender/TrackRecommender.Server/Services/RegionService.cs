@@ -1,15 +1,21 @@
-using TrackRecommender.Server.Models;
 using TrackRecommender.Server.Models.DTOs;
 using TrackRecommender.Server.Repositories.Interfaces;
 using NetTopologySuite.IO;
+using TrackRecommender.Server.Mappers.Interfaces;
+using TrackRecommender.Server.Models;
 
 namespace TrackRecommender.Server.Services
 {
-    public class RegionService(IRegionRepository regionRepository, ILogger<RegionService> logger)
+    public class RegionService(
+        IRegionRepository regionRepository, 
+        ILogger<RegionService> logger,
+        IMapper<Trail, TrailDto> trailMapper
+        )
     {
         private readonly IRegionRepository _regionRepository = regionRepository ?? throw new ArgumentNullException(nameof(regionRepository));
         private readonly ILogger<RegionService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         private readonly GeoJsonWriter _geoJsonWriter = new();
+        private readonly IMapper<Trail, TrailDto> _trailMapper = trailMapper ?? throw new ArgumentNullException(nameof(trailMapper));
 
         public async Task<List<RegionDto>> GetAllRegionsAsync()
         {
@@ -96,18 +102,8 @@ namespace TrackRecommender.Server.Services
             try
             {
                 var trails = await _regionRepository.GetTrailsByRegionIdAsync(regionId);
-                return [.. trails.Select(t => new TrailDto
-                {
-                    Id = t.Id,
-                    Name = t.Name,
-                    Distance = t.Distance,
-                    Difficulty = t.Difficulty,
-                    TrailType = t.TrailType,
-                    Duration = t.Duration,
-                    RegionNames = t.RegionNames,
-                    AverageRating = t.UserRatings?.Count > 0 ? t.UserRatings.Average(r => r.Rating) : 0,
-                    ReviewsCount = t.UserRatings?.Count ?? 0
-                })];
+
+                return [.. trails.Select(t => _trailMapper.ToDto(t))];
             }
             catch (Exception ex)
             {

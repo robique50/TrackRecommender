@@ -1,46 +1,36 @@
-﻿using TrackRecommender.Server.Mappers.Interfaces;
-using TrackRecommender.Server.Mappers.Implementations;
-using TrackRecommender.Server.Models;
+﻿using TrackRecommender.Server.Mappers.Implementations;
 using TrackRecommender.Server.Models.DTOs;
 using TrackRecommender.Server.Repositories.Interfaces;
 
-namespace TrackRecommender.Server.Services.Implementations
+namespace TrackRecommender.Server.Services
 {
-    public class ReviewService
+    public class ReviewService(
+        IReviewRepository reviewRepository,
+        ITrailRepository trailRepository,
+        IUserRepository userRepository,
+        ReviewMapper reviewMapper)
     {
-        private readonly IReviewRepository _reviewRepository;
-        private readonly ITrailRepository _trailRepository;
-        private readonly IUserRepository _userRepository;
-        private readonly ReviewMapper _reviewMapper;
-
-        public ReviewService(
-            IReviewRepository reviewRepository,
-            ITrailRepository trailRepository,
-            IUserRepository userRepository,
-            ReviewMapper reviewMapper)
-        {
-            _reviewRepository = reviewRepository;
-            _trailRepository = trailRepository;
-            _userRepository = userRepository;
-            _reviewMapper = reviewMapper;
-        }
+        private readonly IReviewRepository _reviewRepository = reviewRepository;
+        private readonly ITrailRepository _trailRepository = trailRepository;
+        private readonly IUserRepository _userRepository = userRepository;
+        private readonly ReviewMapper _reviewMapper = reviewMapper;
 
         public async Task<List<TrailReviewDto>> GetUserReviewsAsync(int userId)
         {
             var reviews = await _reviewRepository.GetUserReviewsAsync(userId);
-            return reviews.Select(_reviewMapper.ToDto).ToList();
+            return [.. reviews.Select(_reviewMapper.ToDto)];
         }
 
         public async Task<List<TrailReviewDto>> GetTrailReviewsAsync(int trailId)
         {
             var reviews = await _reviewRepository.GetTrailReviewsAsync(trailId);
-            return reviews.Select(_reviewMapper.ToDto).ToList();
+            return [.. reviews.Select(_reviewMapper.ToDto)];
         }
 
         public async Task<List<TrailReviewDto>> GetRecentReviewsAsync(int count = 10)
         {
             var reviews = await _reviewRepository.GetRecentReviewsAsync(count);
-            return reviews.Select(_reviewMapper.ToDto).ToList();
+            return [.. reviews.Select(_reviewMapper.ToDto)];
         }
 
         public async Task<TrailReviewDto?> GetUserTrailReviewAsync(int userId, int trailId)
@@ -51,14 +41,8 @@ namespace TrackRecommender.Server.Services.Implementations
 
         public async Task<TrailReviewDto> CreateReviewAsync(int userId, int trailId, CreateReviewDto createReviewDto)
         {
-            var trail = await _trailRepository.GetTrailByIdAsync(trailId);
-            if (trail == null)
-                throw new ArgumentException($"Trail with ID {trailId} not found");
-
-            var user = await _userRepository.GetUserByIdAsync(userId);
-            if (user == null)
-                throw new ArgumentException($"User with ID {userId} not found");
-
+            _ = await _trailRepository.GetTrailByIdAsync(trailId) ?? throw new ArgumentException($"Trail with ID {trailId} not found");
+            _ = await _userRepository.GetUserByIdAsync(userId) ?? throw new ArgumentException($"User with ID {userId} not found");
             var existingReview = await _reviewRepository.GetUserTrailReviewAsync(userId, trailId);
             if (existingReview != null)
                 throw new InvalidOperationException("You have already reviewed this trail");
@@ -73,8 +57,7 @@ namespace TrackRecommender.Server.Services.Implementations
             }
 
             var review = _reviewMapper.MapCreateDtoToEntity(createReviewDto, userId, trailId);
-
-            var createdReview = await _reviewRepository.CreateReviewAsync(review);
+            _ = await _reviewRepository.CreateReviewAsync(review);
             await _reviewRepository.SaveChangesAsync();
 
             var fullReview = await _reviewRepository.GetUserTrailReviewAsync(userId, trailId);

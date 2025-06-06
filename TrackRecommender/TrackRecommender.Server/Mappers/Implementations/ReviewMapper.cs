@@ -8,8 +8,7 @@ namespace TrackRecommender.Server.Mappers.Implementations
     {
         public TrailReviewDto ToDto(UserTrailRating entity)
         {
-            if (entity == null)
-                throw new ArgumentNullException(nameof(entity));
+            ArgumentNullException.ThrowIfNull(entity);
 
             return new TrailReviewDto
             {
@@ -30,8 +29,7 @@ namespace TrackRecommender.Server.Mappers.Implementations
 
         public UserTrailRating ToEntity(TrailReviewDto dto)
         {
-            if (dto == null)
-                throw new ArgumentNullException(nameof(dto));
+            ArgumentNullException.ThrowIfNull(dto);
 
             return new UserTrailRating
             {
@@ -50,8 +48,7 @@ namespace TrackRecommender.Server.Mappers.Implementations
 
         public UserTrailRating MapCreateDtoToEntity(CreateReviewDto createDto, int userId, int trailId)
         {
-            if (createDto == null)
-                throw new ArgumentNullException(nameof(createDto));
+            ArgumentNullException.ThrowIfNull(createDto);
 
             return new UserTrailRating
             {

@@ -7,18 +7,12 @@ using TrackRecommender.Server.Models.DTOs;
 using TrackRecommender.Server.Repositories.Interfaces;
 using System.Security.Cryptography;
 
-namespace TrackRecommender.Server.Services.Implementations
+namespace TrackRecommender.Server.Services
 {
-    public class AuthService
+    public class AuthService(IUserRepository userRepository, IConfiguration configuration)
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IConfiguration _configuration;
-
-        public AuthService(IUserRepository userRepository, IConfiguration configuration)
-        {
-            _userRepository = userRepository;
-            _configuration = configuration;
-        }
+        private readonly IUserRepository _userRepository = userRepository;
+        private readonly IConfiguration _configuration = configuration;
 
         public async Task<TokenResponseDto?> AuthenticateAsync(LoginDto loginDto, string ipAddress)
         {
@@ -108,7 +102,7 @@ namespace TrackRecommender.Server.Services.Implementations
             return true;
         }
 
-        private void RemoveOldRefreshTokens(User user)
+        private static void RemoveOldRefreshTokens(User user)
         {
             var activeTokens = user.RefreshTokens
                 .Where(x => x.RevokedAt == null && x.ExpiryDate > DateTime.UtcNow)
@@ -131,7 +125,7 @@ namespace TrackRecommender.Server.Services.Implementations
             }
         }
 
-        private RefreshToken GenerateRefreshToken(string ipAddress)
+        private static RefreshToken GenerateRefreshToken(string ipAddress)
         {
             using var rng = RandomNumberGenerator.Create();
             var randomBytes = new byte[64];
@@ -184,8 +178,7 @@ namespace TrackRecommender.Server.Services.Implementations
 
         private string GenerateJwtToken(User user)
         {
-            if (user == null)
-                throw new ArgumentNullException(nameof(user));
+            ArgumentNullException.ThrowIfNull(user);
 
             var jwtKey = _configuration["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey))
@@ -203,13 +196,13 @@ namespace TrackRecommender.Server.Services.Implementations
 
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
-                    Subject = new ClaimsIdentity(new[]
-                    {
+                    Subject = new ClaimsIdentity(
+                    [
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                         new Claim(ClaimTypes.Name, user.Username),
                         new Claim(ClaimTypes.Email, user.Email),
                         new Claim(ClaimTypes.Role, user.Role)
-                    }),
+                    ]),
                     Expires = DateTime.UtcNow.AddMinutes(expirationMinutes),
                     SigningCredentials = new SigningCredentials(
                         new SymmetricSecurityKey(key),

@@ -279,6 +279,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           this.highlightTrailPath(trail);
         });
 
+        marker.on('dblclick', (e) => {
+          L.DomEvent.stopPropagation(e);
+          this.clearSelection();
+        });
+
         this.regionClustersLayer.addLayer(marker);
       } catch (error) {
         console.error(`Error adding trail ${trail.id} to cluster:`, error);
@@ -315,6 +320,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           this.onTrailClickFromMarker(trail);
         });
 
+        marker.on('dblclick', (e) => {
+          L.DomEvent.stopPropagation(e);
+          this.clearSelection();
+        });
+
         this.markerClusterGroup.addLayer(marker);
         successCount++;
       } catch (error) {
@@ -348,8 +358,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       (highlightLayer as any).isTrailHighlight = true;
-      highlightLayer.addTo(this.map);
 
+      highlightLayer.on('dblclick', (e) => {
+        L.DomEvent.stopPropagation(e);
+        this.clearSelection();
+      });
+
+      highlightLayer.addTo(this.map);
       this.selectedTrail = trail;
     } catch (error) {
       console.error('Error highlighting trail:', error);
@@ -435,11 +450,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       const geoJson = JSON.parse(geoJsonData);
 
-      if (!geoJson || !geoJson.coordinates) {
-        console.warn('Invalid GeoJSON structure: missing coordinates');
-        return null;
-      }
-
       let startCoordinates: [number, number] | null = null;
 
       switch (geoJson.type) {
@@ -505,9 +515,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       (highlightLayer as any).isTrailHighlight = true;
-      highlightLayer.addTo(this.map);
 
+      highlightLayer.on('dblclick', (e) => {
+        L.DomEvent.stopPropagation(e);
+        this.clearSelection();
+      });
+
+      highlightLayer.addTo(this.map);
       this.selectedTrail = trail;
+
+      this.scrollToTrailInSidebar(trail);
 
       const bounds = highlightLayer.getBounds();
       if (bounds.isValid()) {
@@ -519,6 +536,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     } catch (error) {
       console.error('Error highlighting trail:', error);
     }
+  }
+
+  private scrollToTrailInSidebar(trail: Trail): void {
+    setTimeout(() => {
+      const trailElements = document.querySelectorAll('.trail-item');
+      trailElements.forEach((element) => {
+        const nameElement = element.querySelector('.trail-name');
+        if (nameElement && nameElement.textContent?.trim() === trail.name) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    }, 100);
   }
 
   protected selectTrailFromSidebar(trail: Trail): void {
@@ -618,10 +647,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       try {
         const geoJsonLayer = L.geoJSON(JSON.parse(region.boundaryGeoJson), {
           style: {
-            color: '#2196f3',
+            color: '#2e5d32',
             weight: 3,
             opacity: 0.8,
-            fillOpacity: 0.1,
+            fillOpacity: 0,
+            fillColor: 'transparent',
           },
         });
 
@@ -643,6 +673,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected onTrailClick(trail: Trail): void {
     this.selectedTrail = trail;
     this.highlightTrailPath(trail);
+    this.scrollToTrailInSidebar(trail);
   }
 
   protected showTrailPath(trailId: number): void {

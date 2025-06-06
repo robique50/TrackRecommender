@@ -72,7 +72,7 @@ namespace TrackRecommender.Server.Services
                         WindSpeed = currentData.RootElement.GetProperty("wind").GetProperty("speed").GetDouble(),
                         Clouds = currentData.RootElement.GetProperty("clouds").GetProperty("all").GetInt32(),
                         Weather = JsonSerializer.Deserialize<List<WeatherConditionDto>>(
-                            currentData.RootElement.GetProperty("weather").GetRawText()) ?? new List<WeatherConditionDto>()
+                            currentData.RootElement.GetProperty("weather").GetRawText()) ?? []
                     },
                     Daily = ProcessForecastToDaily(forecastData)
                 };
@@ -87,7 +87,7 @@ namespace TrackRecommender.Server.Services
             }
         }
 
-        private List<WeatherDailyDto> ProcessForecastToDaily(JsonDocument forecastData)
+        private static List<WeatherDailyDto> ProcessForecastToDaily(JsonDocument forecastData)
         {
             var dailyForecasts = new Dictionary<string, WeatherDailyAggregation>();
 
@@ -97,25 +97,26 @@ namespace TrackRecommender.Server.Services
                 var dateTime = DateTimeOffset.FromUnixTimeSeconds(dt);
                 var dateKey = dateTime.ToString("yyyy-MM-dd");
 
-                if (!dailyForecasts.ContainsKey(dateKey))
+                if (!dailyForecasts.TryGetValue(dateKey, out WeatherDailyAggregation? value))
                 {
-                    dailyForecasts[dateKey] = new WeatherDailyAggregation
+                    value = new WeatherDailyAggregation
                     {
                         Date = dateTime.Date,
                         Dt = dt,
-                        Temps = new List<double>(),
-                        Humidities = new List<int>(),
-                        WindSpeeds = new List<double>(),
-                        WeatherConditions = new List<WeatherConditionDto>()
+                        Temps = [],
+                        Humidities = [],
+                        WindSpeeds = [],
+                        WeatherConditions = []
                     };
+                    dailyForecasts[dateKey] = value;
                 }
 
                 var main = forecast.GetProperty("main");
-                dailyForecasts[dateKey].Temps.Add(main.GetProperty("temp").GetDouble());
-                dailyForecasts[dateKey].Humidities.Add(main.GetProperty("humidity").GetInt32());
-                dailyForecasts[dateKey].WindSpeeds.Add(forecast.GetProperty("wind").GetProperty("speed").GetDouble());
+                value.Temps.Add(main.GetProperty("temp").GetDouble());
+                value.Humidities.Add(main.GetProperty("humidity").GetInt32());
+                value.WindSpeeds.Add(forecast.GetProperty("wind").GetProperty("speed").GetDouble());
 
-                if (dailyForecasts[dateKey].WeatherConditions.Count == 0)
+                if (value.WeatherConditions.Count == 0)
                 {
                     var weather = JsonSerializer.Deserialize<List<WeatherConditionDto>>(
                         forecast.GetProperty("weather").GetRawText());

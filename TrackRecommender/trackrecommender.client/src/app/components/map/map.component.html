@@ -141,16 +141,15 @@
           >
             <div class="region-header">
               <h4 class="region-name">{{ region.name }}</h4>
-              <div class="region-stats">
-                <span class="trail-count-badge"
-                  >{{ region.trailCount }} trails</span
-                >
+            </div>
+            <div class="region-trail-count">
+              <div
+                class="count-circle"
+                [style.background-color]="getRegionColor(region.trailCount)"
+              >
+                {{ region.trailCount }}
               </div>
             </div>
-            <div
-              class="region-color-indicator"
-              [style.background-color]="getRegionColor(region.trailCount)"
-            ></div>
           </div>
         </div>
 

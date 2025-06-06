@@ -2,21 +2,16 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TrackRecommender.Server.Models.DTOs;
-using TrackRecommender.Server.Services.Implementations;
+using TrackRecommender.Server.Services;
 
 namespace TrackRecommender.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class ReviewsController : ControllerBase
+    public class ReviewsController(ReviewService reviewService) : ControllerBase
     {
-        private readonly ReviewService _reviewService;
-
-        public ReviewsController(ReviewService reviewService)
-        {
-            _reviewService = reviewService;
-        }
+        private readonly ReviewService _reviewService = reviewService;
 
         [HttpGet("my-reviews")]
         public async Task<IActionResult> GetMyReviews()
@@ -101,7 +96,7 @@ namespace TrackRecommender.Server.Controllers
                 var review = await _reviewService.CreateReviewAsync(userId.Value, trailId, createReviewDto);
                 return CreatedAtAction(
                     nameof(GetUserTrailReview),
-                    new { trailId = trailId },
+                    new { trailId },
                     review);
             }
             catch (ArgumentException ex)

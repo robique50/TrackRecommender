@@ -2,26 +2,21 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TrackRecommender.Server.Models.DTOs;
-using TrackRecommender.Server.Services.Implementations;
+using TrackRecommender.Server.Services;
 
 namespace TrackRecommender.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class UserController : ControllerBase
+    public class UserController(UserService userService) : ControllerBase
     {
-        private readonly UserService _userService;
-
-        public UserController(UserService userService)
-        {
-            _userService = userService;
-        }
+        private readonly UserService _userService = userService;
 
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+            _ = Request.Headers.Authorization.FirstOrDefault();
             var userId = GetCurrentUserId();
             if (userId == null)
             {
