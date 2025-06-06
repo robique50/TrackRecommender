@@ -7,6 +7,7 @@ import { AuthGuard } from '../guards/auth.guard';
 import { ProfileComponent } from '../components/profile/profile.component';
 import { MyReviewsComponent } from '../components/my-reviews/my-reviews.component';
 import { TrailsComponent } from '../components/trails/trails.component';
+import { PreferencesComponent } from '../components/preferences/preferences.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'register', pathMatch: 'full' },
@@ -18,6 +19,11 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
+  {
+    path: 'preferences',
+    component: PreferencesComponent,
+    canActivate: [AuthGuard],
+  },
   {
     path: 'my-reviews',
     component: MyReviewsComponent,

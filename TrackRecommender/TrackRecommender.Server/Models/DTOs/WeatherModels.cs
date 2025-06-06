@@ -4,7 +4,7 @@
     {
         public WeatherLocationDto Location { get; set; } = new WeatherLocationDto();
         public WeatherCurrentDto Current { get; set; } = new WeatherCurrentDto();
-        public List<WeatherDailyDto> Daily { get; set; } = new List<WeatherDailyDto>();
+        public List<WeatherDailyDto> Daily { get; set; } = [];
     }
 
     public class WeatherLocationDto
@@ -22,7 +22,7 @@
         public int Humidity { get; set; }
         public double WindSpeed { get; set; }
         public int Clouds { get; set; }
-        public List<WeatherConditionDto> Weather { get; set; } = new List<WeatherConditionDto>();
+        public List<WeatherConditionDto> Weather { get; set; } = [];
     }
 
     public class WeatherDailyDto
@@ -31,7 +31,7 @@
         public WeatherTempDto Temp { get; set; } = new WeatherTempDto();
         public int Humidity { get; set; }
         public double WindSpeed { get; set; }
-        public List<WeatherConditionDto> Weather { get; set; } = new List<WeatherConditionDto>();
+        public List<WeatherConditionDto> Weather { get; set; } = [];
     }
 
     public class WeatherTempDto
@@ -54,9 +54,9 @@
     {
         public DateTime Date { get; set; }
         public long Dt { get; set; }
-        public List<double> Temps { get; set; } = new List<double>();
-        public List<int> Humidities { get; set; } = new List<int>();
-        public List<double> WindSpeeds { get; set; } = new List<double>();
-        public List<WeatherConditionDto> WeatherConditions { get; set; } = new List<WeatherConditionDto>();
+        public List<double> Temps { get; set; } = [];
+        public List<int> Humidities { get; set; } = [];
+        public List<double> WindSpeeds { get; set; } = [];
+        public List<WeatherConditionDto> WeatherConditions { get; set; } = [];
     }
 }

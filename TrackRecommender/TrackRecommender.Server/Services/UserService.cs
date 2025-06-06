@@ -8,19 +8,18 @@ namespace TrackRecommender.Server.Services
 {
     public class UserService(
         IUserRepository userRepository,
-        IRegionRepository regionRepository,
         IMapper<User, UserProfileDto> userMapper,
         UserPreferencesMapper preferencesMapper)
     {
         private readonly IUserRepository _userRepository = userRepository;
-        private readonly IRegionRepository _regionRepository = regionRepository;
         private readonly IMapper<User, UserProfileDto> _userMapper = userMapper;
         private readonly UserPreferencesMapper _preferencesMapper = preferencesMapper;
 
         public async Task<UserProfileDto> GetUserProfileAsync(int userId)
         {
-            var user = await _userRepository.GetUserByIdAsync(userId, includePreferences: true);
-            return user == null ? throw new KeyNotFoundException($"User with ID {userId} not found") : _userMapper.ToDto(user);
+            var user = await _userRepository.GetUserByIdAsync(userId, includePreferences: true) ??
+                throw new KeyNotFoundException($"User with ID {userId} not found");
+            return _userMapper.ToDto(user);
         }
 
         public async Task<UserPreferencesDto> GetUserPreferencesAsync(int userId)

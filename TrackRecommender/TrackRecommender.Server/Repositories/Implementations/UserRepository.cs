@@ -57,7 +57,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(email))
                 return false;
 
-            return await _context.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower());
+            return await _context.Users.AnyAsync(u => u.Email.Equals(email, StringComparison.CurrentCultureIgnoreCase));
         }
 
         public async Task CreateUserAsync(User user)

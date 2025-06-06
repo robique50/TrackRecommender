@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+﻿using Microsoft.AspNetCore.Mvc;
 using TrackRecommender.Server.Mappers.Interfaces;
 using TrackRecommender.Server.Models;
 using TrackRecommender.Server.Models.DTOs;
@@ -62,90 +60,6 @@ namespace TrackRecommender.Server.Controllers
             {
                 return StatusCode(500, new { message = "An error occurred while retrieving the trail", error = ex.Message });
             }
-        }
-
-        [HttpGet("recommended")]
-        [Authorize]
-        public async Task<IActionResult> GetRecommendedTrails()
-        {
-            try
-            {
-                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-                    return Unauthorized(new { message = "User not authenticated or invalid user ID" });
-
-                var preferences = await _userRepository.GetUserPreferencesAsync(userId);
-                if (preferences == null)
-                    return Ok(new List<TrailDto>()); 
-
-                var trails = await _trailRepository.FilterTrailsAsync(
-                    preferences.PreferredRegionIds,
-                    preferences.PreferredDifficulty,
-                    preferences.MaxDistance,
-                    null, 
-                    null, 
-                    preferences.MaxDuration,
-                    preferences.PreferredTags);
-
-                if (preferences.PreferredTrailTypes != null && preferences.PreferredTrailTypes.Count > 0)
-                {
-                    trails = [.. trails.Where(t =>
-                        preferences.PreferredTrailTypes.Any(type =>
-                            t.TrailType.Contains(type, StringComparison.OrdinalIgnoreCase)))];
-                }
-
-                var trailDtos = trails.Select(t =>
-                {
-                    var dto = _trailMapper.ToDto(t);
-                    dto.MatchScore = CalculateMatchScore(t, preferences);
-                    return dto;
-                })
-                .OrderByDescending(t => t.MatchScore)
-                .ToList();
-
-                return Ok(trailDtos);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while retrieving recommendations", error = ex.Message });
-            }
-        }
-
-        private static int CalculateMatchScore(Trail trail, UserPreferences preferences)
-        {
-            int score = 0;
-
-            if (preferences.PreferredDifficulty == trail.Difficulty)
-                score += 2;
-
-            if (preferences.PreferredTrailTypes?.Any(type =>
-                trail.TrailType.Contains(type, StringComparison.OrdinalIgnoreCase)) == true)
-                score += 2;
-
-            if (trail.Distance <= preferences.MaxDistance)
-                score += 1;
-
-            if (trail.Duration <= preferences.MaxDuration)
-                score += 1;
-
-            if (preferences.PreferredRegionIds?.Any(id =>
-                trail.RegionIds.Contains(id)) == true)
-                score += 2;
-
-            if (preferences.PreferredTags != null && preferences.PreferredTags.Count > 0 && trail.Tags.Count != 0)
-            {
-                bool hasMatchingTag = trail.Tags.Any(tag =>
-                    preferences.PreferredTags.Any(prefTag =>
-                        tag.Contains(prefTag, StringComparison.OrdinalIgnoreCase)));
-
-                if (hasMatchingTag)
-                    score += 1;
-            }
-
-            if (preferences.PreferredCategories?.Contains(trail.Category) == true)
-                score += 1;
-
-            return score;
         }
     }
 }

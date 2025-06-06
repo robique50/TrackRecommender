@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import { UserPreferences, Region } from '../../models/user-preferences.model';
+import { tap, catchError } from 'rxjs/operators';
+import {
+  UserPreferences,
+  PreferenceOptions,
+} from '../../models/user-preferences.model';
 
 @Injectable({
   providedIn: 'root',
@@ -15,23 +18,42 @@ export class UserPreferencesService {
 
   constructor(private http: HttpClient) {}
 
-  getUserPreferences(): Observable<UserPreferences> {
+  public getUserPreferences(): Observable<UserPreferences> {
+    return this.http.get<UserPreferences>('/api/userpreferences').pipe(
+      tap((preferences) => this.preferencesSubject.next(preferences)),
+      catchError((error) => {
+        console.error('Error loading user preferences:', error);
+        throw error;
+      })
+    );
+  }
+
+  public saveUserPreferences(preferences: UserPreferences): Observable<any> {
+    return this.http.post('/api/userpreferences', preferences).pipe(
+      tap(() => this.preferencesSubject.next(preferences)),
+      catchError((error) => {
+        console.error('Error saving user preferences:', error);
+        throw error;
+      })
+    );
+  }
+
+  public getPreferenceOptions(): Observable<PreferenceOptions> {
     return this.http
-      .get<UserPreferences>('/api/user/preferences')
-      .pipe(tap((preferences) => this.preferencesSubject.next(preferences)));
+      .get<PreferenceOptions>('/api/userpreferences/options')
+      .pipe(
+        catchError((error) => {
+          console.error('Error loading preference options:', error);
+          throw error;
+        })
+      );
   }
 
-  saveUserPreferences(preferences: UserPreferences): Observable<any> {
-    return this.http
-      .post('/api/user/preferences', preferences)
-      .pipe(tap(() => this.preferencesSubject.next(preferences)));
-  }
-
-  getAllRegions(): Observable<Region[]> {
-    return this.http.get<Region[]>('/api/regions');
-  }
-
-  clearPreferencesCache(): void {
+  public clearPreferencesCache(): void {
     this.preferencesSubject.next(null);
+  }
+
+  public getCurrentPreferences(): UserPreferences | null {
+    return this.preferencesSubject.value;
   }
 }

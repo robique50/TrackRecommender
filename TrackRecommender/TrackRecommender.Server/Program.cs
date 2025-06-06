@@ -44,6 +44,7 @@ builder.Services.AddScoped<IRegionRepository, RegionRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 
+builder.Services.AddScoped<UserPreferencesService>();
 builder.Services.AddScoped<TrailImportService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();

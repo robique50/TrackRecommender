@@ -5,14 +5,9 @@ using TrackRecommender.Server.Repositories.Interfaces;
 
 namespace TrackRecommender.Server.Mappers.Implementations
 {
-    public class UserPreferencesMapper : IMapper<UserPreferences, UserPreferencesDto>
+    public class UserPreferencesMapper(IRegionRepository regionRepository) : IMapper<UserPreferences, UserPreferencesDto>
     {
-        private readonly IRegionRepository _regionRepository;
-
-        public UserPreferencesMapper(IRegionRepository regionRepository)
-        {
-            _regionRepository = regionRepository;
-        }
+        private readonly IRegionRepository _regionRepository = regionRepository;
 
         public async Task<UserPreferencesDto> ToDtoAsync(UserPreferences entity)
         {
@@ -27,7 +22,7 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 MinimumRating = entity.MinimumRating
             };
 
-            if (_regionRepository != null && entity.PreferredRegionIds?.Any() == true)
+            if (_regionRepository != null && entity.PreferredRegionIds?.Count>0)
             {
                 var allRegions = await _regionRepository.GetAllRegionsAsync();
                 var regionIdToName = allRegions.ToDictionary(r => r.Id, r => r.Name);
@@ -76,7 +71,7 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 PreferredRegionIds = []
             };
 
-            if (_regionRepository != null && dto.PreferredRegionNames?.Any() == true)
+            if (_regionRepository != null && dto.PreferredRegionNames?.Count > 0)
             {
                 var allRegions = await _regionRepository.GetAllRegionsAsync();
                 var regionNameToId = allRegions.ToDictionary(r => r.Name.ToLower(), r => r.Id);
@@ -121,7 +116,7 @@ namespace TrackRecommender.Server.Mappers.Implementations
             entity.PreferredCategories = dto.PreferredCategories ?? entity.PreferredCategories;
             entity.MinimumRating = dto.MinimumRating ?? entity.MinimumRating;
 
-            if (_regionRepository != null && dto.PreferredRegionNames?.Any() == true)
+            if (_regionRepository != null && dto.PreferredRegionNames?.Count>0)
             {
                 var allRegions = await _regionRepository.GetAllRegionsAsync();
                 var regionNameToId = allRegions.ToDictionary(r => r.Name.ToLower(), r => r.Id);

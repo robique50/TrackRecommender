@@ -17,7 +17,7 @@ namespace TrackRecommender.Server.Models
         public string Role { get; set; } = "User";
         public UserPreferences? Preferences { get; set; }
         public ICollection<UserTrailRating> TrailRatings { get; set; }
-        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
 
         public User()
         {
@@ -25,7 +25,7 @@ namespace TrackRecommender.Server.Models
             Email = string.Empty;
             PasswordHash = string.Empty;
             CreatedAt = DateTime.UtcNow;
-            TrailRatings = new List<UserTrailRating>();
+            TrailRatings = [];
         }
 
         public User(string username, string email)
@@ -35,7 +35,7 @@ namespace TrackRecommender.Server.Models
             PasswordHash = string.Empty;
             CreatedAt = DateTime.UtcNow;
             Role = "User";
-            TrailRatings = new List<UserTrailRating>();
+            TrailRatings = [];
         }
 
         public void AddRefreshToken(string token, string ipAddress, DateTime expiryDate)

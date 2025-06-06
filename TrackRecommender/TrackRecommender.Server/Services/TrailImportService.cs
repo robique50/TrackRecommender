@@ -1257,7 +1257,7 @@ namespace TrackRecommender.Server.Services
         {
             var relevantKeys = new HashSet<string>
             {
-                "name", "ref", "network", "route", "operator", "sac_scale",
+                "ref", "network", "route", "operator", "sac_scale",
                 "surface", "smoothness", "mtb:scale", "highway", "tourism",
                 "historic", "marking", "symbol", "osmc:symbol",
 
