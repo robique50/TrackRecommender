@@ -32,14 +32,13 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 var allRegions = await _regionRepository.GetAllRegionsAsync();
                 var regionIdToName = allRegions.ToDictionary(r => r.Id, r => r.Name);
 
-                dto.PreferredRegionNames = entity.PreferredRegionIds
+                dto.PreferredRegionNames = [.. entity.PreferredRegionIds
                     .Where(id => regionIdToName.ContainsKey(id))
-                    .Select(id => regionIdToName[id])
-                    .ToList();
+                    .Select(id => regionIdToName[id])];
             }
             else
             {
-                dto.PreferredRegionNames = new List<string>();
+                dto.PreferredRegionNames = [];
             }
 
             return dto;
@@ -56,7 +55,7 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 MaxDuration = entity.MaxDuration,
                 PreferredCategories = entity.PreferredCategories,
                 MinimumRating = entity.MinimumRating,
-                PreferredRegionNames = new List<string>() 
+                PreferredRegionNames = [] 
             };
 
             return dto;
@@ -67,14 +66,14 @@ namespace TrackRecommender.Server.Mappers.Implementations
             var entity = new UserPreferences
             {
                 UserId = userId,
-                PreferredTrailTypes = dto.PreferredTrailTypes ?? new List<string>(),
+                PreferredTrailTypes = dto.PreferredTrailTypes ?? [],
                 PreferredDifficulty = dto.PreferredDifficulty ?? "Easy",
-                PreferredTags = dto.PreferredTags ?? new List<string>(),
+                PreferredTags = dto.PreferredTags ?? [],
                 MaxDistance = dto.MaxDistance ?? 20,
                 MaxDuration = dto.MaxDuration ?? 8,
-                PreferredCategories = dto.PreferredCategories ?? new List<string>(),
+                PreferredCategories = dto.PreferredCategories ?? [],
                 MinimumRating = dto.MinimumRating ?? 0,
-                PreferredRegionIds = new List<int>()
+                PreferredRegionIds = []
             };
 
             if (_regionRepository != null && dto.PreferredRegionNames?.Any() == true)
@@ -82,11 +81,10 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 var allRegions = await _regionRepository.GetAllRegionsAsync();
                 var regionNameToId = allRegions.ToDictionary(r => r.Name.ToLower(), r => r.Id);
 
-                entity.PreferredRegionIds = dto.PreferredRegionNames
+                entity.PreferredRegionIds = [.. dto.PreferredRegionNames
                     .Where(name => !string.IsNullOrWhiteSpace(name) &&
                            regionNameToId.ContainsKey(name.ToLower()))
-                    .Select(name => regionNameToId[name.ToLower()])
-                    .ToList();
+                    .Select(name => regionNameToId[name.ToLower()])];
             }
 
             return entity;
@@ -102,14 +100,14 @@ namespace TrackRecommender.Server.Mappers.Implementations
             return new UserPreferences
             {
                 UserId = userId,
-                PreferredTrailTypes = dto.PreferredTrailTypes ?? new List<string>(),
+                PreferredTrailTypes = dto.PreferredTrailTypes ?? [],
                 PreferredDifficulty = dto.PreferredDifficulty ?? "Easy",
-                PreferredTags = dto.PreferredTags ?? new List<string>(),
+                PreferredTags = dto.PreferredTags ?? [],
                 MaxDistance = dto.MaxDistance ?? 20,
                 MaxDuration = dto.MaxDuration ?? 8,
-                PreferredCategories = dto.PreferredCategories ?? new List<string>(),
+                PreferredCategories = dto.PreferredCategories ?? [],
                 MinimumRating = dto.MinimumRating ?? 0,
-                PreferredRegionIds = new List<int>() 
+                PreferredRegionIds = [] 
             };
         }
 
@@ -128,11 +126,10 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 var allRegions = await _regionRepository.GetAllRegionsAsync();
                 var regionNameToId = allRegions.ToDictionary(r => r.Name.ToLower(), r => r.Id);
 
-                entity.PreferredRegionIds = dto.PreferredRegionNames
+                entity.PreferredRegionIds = [.. dto.PreferredRegionNames
                     .Where(name => !string.IsNullOrWhiteSpace(name) &&
                            regionNameToId.ContainsKey(name.ToLower()))
-                    .Select(name => regionNameToId[name.ToLower()])
-                    .ToList();
+                    .Select(name => regionNameToId[name.ToLower()])];
             }
         }
 

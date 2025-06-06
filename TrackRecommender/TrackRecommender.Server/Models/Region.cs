@@ -7,19 +7,19 @@ namespace TrackRecommender.Server.Models
         public int Id { get; set; }
         public string Name { get; set; }
         public Geometry? Boundary { get; set; }
-        public virtual ICollection<TrailRegion> Trails { get; set; } = new List<TrailRegion>();
+        public virtual ICollection<TrailRegion> Trails { get; set; } = [];
 
         public Region(int id, string name)
         {
             Id = id;
             Name = name;
-            Trails = new List<TrailRegion>();
+            Trails = [];
         }
 
         public Region()
         {
             Name = string.Empty;
-            Trails = new List<TrailRegion>();
+            Trails = [];
         }
     }
 }

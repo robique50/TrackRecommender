@@ -5,14 +5,9 @@ using TrackRecommender.Server.Repositories.Interfaces;
 
 namespace TrackRecommender.Server.Repositories.Implementations
 {
-    public class ReviewRepository : IReviewRepository
+    public class ReviewRepository(AppDbContext context) : IReviewRepository
     {
-        private readonly AppDbContext _context;
-
-        public ReviewRepository(AppDbContext context)
-        {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-        }
+        private readonly AppDbContext _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task<List<UserTrailRating>> GetUserReviewsAsync(int userId)
         {
@@ -52,8 +47,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
 
         public async Task<UserTrailRating> CreateReviewAsync(UserTrailRating review)
         {
-            if (review == null)
-                throw new ArgumentNullException(nameof(review));
+            ArgumentNullException.ThrowIfNull(review);
 
             var existingReview = await GetUserTrailReviewAsync(review.UserId, review.TrailId);
             if (existingReview != null)
@@ -83,7 +77,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 .Select(r => r.Rating)
                 .ToListAsync();
 
-            return ratings.Any() ? ratings.Average() : 0.0;
+            return ratings.Count != 0 ? ratings.Average() : 0.0;
         }
 
         public async Task<int> GetTrailReviewCountAsync(int trailId)

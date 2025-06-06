@@ -50,7 +50,7 @@ namespace TrackRecommender.Server.Services
             (._;>;);
             out geom;";
 
-                _logger.LogInformation($"Executing Overpass query: {query}");
+                _logger.LogInformation("Executing Overpass query: {Query}", query);
                 var overpassResponse = await ExecuteOverpassQueryAsync(query);
 
                 if (overpassResponse?.Elements == null || overpassResponse.Elements.Count == 0)
@@ -63,14 +63,14 @@ namespace TrackRecommender.Server.Services
                 var ways = overpassResponse.Elements.Where(e => e.Type == "way").ToDictionary(w => w.Id, w => w);
                 var nodes = overpassResponse.Elements.Where(e => e.Type == "node").ToDictionary(n => n.Id, n => n);
 
-                _logger.LogInformation($"Found {relations.Count} potential counties to process");
-                _logger.LogInformation($"Found {ways.Count} ways and {nodes.Count} nodes");
+                _logger.LogInformation("Found {RelationCount} potential counties to process", relations.Count);
+                _logger.LogInformation("Found {WayCount} ways and {NodeCount} nodes", ways.Count, nodes.Count);
 
                 foreach (var rel in relations.Take(5))
                 {
                     var name = rel.Tags?.GetValueOrDefault("name", "Unknown");
                     var adminLevel = rel.Tags?.GetValueOrDefault("admin_level", "Unknown");
-                    _logger.LogInformation($"Found relation: ID={rel.Id}, Name={name}, AdminLevel={adminLevel}");
+                    _logger.LogInformation("Found relation: ID={RelationId}, Name={Name}, AdminLevel={AdminLevel}", rel.Id, name, adminLevel);
                 }
 
                 foreach (var element in relations)
@@ -81,20 +81,20 @@ namespace TrackRecommender.Server.Services
                         if (region != null)
                         {
                             importedRegions.Add(region);
-                            _logger.LogInformation($"Successfully processed county: {region.Name}");
+                            _logger.LogInformation("Successfully processed county: {CountyName}", region.Name);
                         }
                     }
                     catch (Exception ex)
                     {
                         var name = element.Tags?.GetValueOrDefault("name", "Unknown");
-                        _logger.LogError(ex, $"Error processing county '{name}' with ID {element.Id}");
+                        _logger.LogError(ex, "Error processing county '{CountyName}' with ID {ElementId}", name, element.Id);
                     }
                 }
 
                 if (importedRegions.Count != 0)
                 {
                     await SaveRegionsToDatabase(importedRegions);
-                    _logger.LogInformation($"Successfully imported {importedRegions.Count} counties");
+                    _logger.LogInformation("Successfully imported {ImportedCount} counties", importedRegions.Count);
                 }
                 else
                 {
@@ -118,7 +118,7 @@ namespace TrackRecommender.Server.Services
             var tags = element.Tags;
             if (tags == null)
             {
-                _logger.LogWarning($"Element {element.Id} (type: {element.Type}) has no tags, skipping.");
+                _logger.LogWarning("Element {ElementId} (type: {ElementType}) has no tags, skipping.", element.Id, element.Type);
                 return null;
             }
 
@@ -128,8 +128,8 @@ namespace TrackRecommender.Server.Services
 
             if (string.IsNullOrWhiteSpace(countyName))
             {
-                _logger.LogWarning($"County element {element.Id} has no recognizable name tag (name:ro, name, official_name). " +
-                    $"Found tags: {string.Join(", ", tags.Select(kv => $"{kv.Key}={kv.Value}"))}");
+                _logger.LogWarning("County element {ElementId} has no recognizable name tag (name:ro, name, official_name). " +
+                    "Found tags: {Tags}", element.Id, string.Join(", ", tags.Select(kv => $"{kv.Key}={kv.Value}")));
                 return null;
             }
 
@@ -138,30 +138,32 @@ namespace TrackRecommender.Server.Services
 
             if (adminLevel != "4" || boundaryType != "administrative")
             {
-                _logger.LogInformation($"Skipping element '{countyName}' (ID: {element.Id}) - not a valid county (expected admin_level=4, " +
-                    $"got '{adminLevel}'; expected boundary=administrative, got '{boundaryType}')");
+                _logger.LogInformation("Skipping element '{CountyName}' (ID: {ElementId}) - not a valid county " +
+                    "(expected admin_level=4, got '{AdminLevel}'; expected boundary=administrative, " +
+                    "got '{BoundaryType}')", countyName, element.Id, adminLevel, boundaryType);
                 return null;
             }
 
-            _logger.LogInformation($"Processing county: {countyName} (ID: {element.Id}), " +
-                $"AdminLevel: {adminLevel}, Boundary: {boundaryType}");
+            _logger.LogInformation("Processing county: {CountyName} (ID: {ElementId}), " +
+                "AdminLevel: {AdminLevel}, Boundary: {BoundaryType}", countyName, element.Id, adminLevel, boundaryType);
 
             var boundaryGeometry = BuildCountyBoundary(element, ways, nodes);
 
             if (boundaryGeometry == null)
             {
-                _logger.LogWarning($"Could not build boundary for county {countyName} (ID: {element.Id}).");
+                _logger.LogWarning("Could not build boundary for county {CountyName} (ID: {ElementId}).", countyName, element.Id);
                 return null;
             }
 
-            _logger.LogInformation($"Successfully geometry built for {countyName} (ID: {element.Id}). " +
-                $"Type: {boundaryGeometry.GeometryType}, IsValid: " +
-                $"{boundaryGeometry.IsValid}, IsEmpty: {boundaryGeometry.IsEmpty}.");
+            _logger.LogInformation("Successfully geometry built for {CountyName} (ID: {ElementId}). Type: {GeometryType}, " +
+                "IsValid: {IsValid}, IsEmpty: {IsEmpty}.", countyName, element.Id, boundaryGeometry.GeometryType, boundaryGeometry.IsValid, boundaryGeometry.IsEmpty);
+
 
             if (!boundaryGeometry.IsValid)
             {
-                _logger.LogWarning($"Geometry for {countyName} " +
-                    $"(ID: {element.Id}) is initially Invalid. WKT (original): {boundaryGeometry.AsText()}");
+                _logger.LogWarning("Geometry for {CountyName} (ID: {ElementId}) is initially Invalid. " +
+                    "WKT (original): {Wkt}", countyName, element.Id, boundaryGeometry.AsText());
+
             }
 
             boundaryGeometry.SRID = _geometryFactory.SRID;
@@ -171,13 +173,15 @@ namespace TrackRecommender.Server.Services
 
             if (existingRegion != null)
             {
-                _logger.LogInformation($"County {countyName} (ID: {existingRegion.Id}) already exists. Updating boundary. New geometry IsValid: {boundaryGeometry.IsValid}");
+                _logger.LogInformation("County {CountyName} (ID: {RegionId}) already exists. " +
+                    "Updating boundary. New geometry IsValid: {IsValid}", countyName, existingRegion.Id, boundaryGeometry.IsValid);
                 existingRegion.Boundary = boundaryGeometry;
                 return existingRegion;
             }
             else
             {
-                _logger.LogInformation($"Creating new region entry for {countyName}. Geometry IsValid: {boundaryGeometry.IsValid}");
+                _logger.LogInformation("Creating new region entry for {CountyName}. " +
+                    "Geometry IsValid: {IsValid}", countyName, boundaryGeometry.IsValid);
                 var newRegion = new Region
                 {
                     Name = countyName,
@@ -194,11 +198,11 @@ namespace TrackRecommender.Server.Services
         {
             if (element.Members == null || element.Members.Count == 0)
             {
-                _logger.LogWarning($"No members found for element {element.Id}");
+                _logger.LogWarning("No members found for element {ElementId}", element.Id);
                 return null;
             }
 
-            _logger.LogInformation($"Building boundary for element {element.Id} with {element.Members.Count} members");
+            _logger.LogInformation("Building boundary for element {ElementId} with {MemberCount} members", element.Id, element.Members.Count);
 
             var outerWays = new List<(long id, List<Coordinate> coords)>();
             var innerWays = new List<(long id, List<Coordinate> coords)>();
@@ -207,7 +211,7 @@ namespace TrackRecommender.Server.Services
             {
                 if (!ways.TryGetValue(member.Ref, out var way))
                 {
-                    _logger.LogDebug($"Way {member.Ref} not found in ways dictionary");
+                    _logger.LogDebug("Way {WayRef} not found in ways dictionary", member.Ref);
                     continue;
                 }
 
@@ -230,7 +234,7 @@ namespace TrackRecommender.Server.Services
 
                 if (wayCoords.Count < 2)
                 {
-                    _logger.LogDebug($"Way {member.Ref} has insufficient coordinates");
+                    _logger.LogDebug("Way {WayRef} has insufficient coordinates", member.Ref);
                     continue;
                 }
 
@@ -246,14 +250,14 @@ namespace TrackRecommender.Server.Services
 
             if (outerWays.Count == 0)
             {
-                _logger.LogWarning($"No valid outer ways found for element {element.Id}");
+                _logger.LogWarning("No valid outer ways found for element {ElementId}", element.Id);
                 return null;
             }
 
             var outerRing = BuildRingFromWays(outerWays, element.Id);
             if (outerRing == null)
             {
-                _logger.LogWarning($"Could not build outer ring for element {element.Id}");
+                _logger.LogWarning("Could not build outer ring for element {ElementId}", element.Id);
                 return null;
             }
 
@@ -284,14 +288,14 @@ namespace TrackRecommender.Server.Services
 
                 if (!polygon.IsValid)
                 {
-                    _logger.LogWarning($"Polygon for element {element.Id} is invalid");
+                    _logger.LogWarning("Polygon for element {ElementId} is invalid", element.Id);
                 }
 
                 return polygon;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to create polygon for element {element.Id}");
+                _logger.LogError(ex, "Failed to create polygon for element {ElementId}", element.Id);
                 return null;
             }
         }
@@ -375,8 +379,7 @@ namespace TrackRecommender.Server.Services
 
             var orderedCoords = new List<Coordinate>();
             var remainingWays = new List<(long id, List<Coordinate> coords)>(ways);
-
-            var (id, coords) = remainingWays[0];
+            var (_, coords) = remainingWays[0];
             orderedCoords.AddRange(coords);
             remainingWays.RemoveAt(0);
 
@@ -433,7 +436,8 @@ namespace TrackRecommender.Server.Services
 
                 if (!foundConnection)
                 {
-                    _logger.LogWarning($"Could not find connection for remaining {remainingWays.Count} ways in element {elementId}");
+                    _logger.LogWarning("Could not find connection for remaining {RemainingWaysCount} " +
+                        "ways in element {ElementId}", remainingWays.Count, elementId);
                     break;
                 }
             }
@@ -458,7 +462,7 @@ namespace TrackRecommender.Server.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, $"Failed to create linear ring for element {elementId}");
+                        _logger.LogError(ex, "Failed to create linear ring for element {ElementId}", elementId);
                     }
                 }
             }
@@ -473,13 +477,13 @@ namespace TrackRecommender.Server.Services
             if (newRegions.Count != 0)
             {
                 await _context.Regions.AddRangeAsync(newRegions);
-                _logger.LogInformation($"Adding {newRegions.Count} new regions to database");
+                _logger.LogInformation("Adding {NewRegionCount} new regions to database", newRegions.Count);
             }
 
             var existingRegions = regions.Where(r => r.Id != 0).ToList();
             if (existingRegions.Count != 0)
             {
-                _logger.LogInformation($"Updating {existingRegions.Count} existing regions");
+                _logger.LogInformation("Updating {ExistingRegionCount} existing regions", existingRegions.Count);
             }
 
             await _context.SaveChangesAsync();
@@ -495,7 +499,7 @@ namespace TrackRecommender.Server.Services
             {
                 try
                 {
-                    _logger.LogInformation($"Executing Overpass query (attempt {currentRetry + 1}/{maxRetries + 1})");
+                    _logger.LogInformation("Executing Overpass query (attempt {Attempt}/{MaxAttempts})", currentRetry + 1, maxRetries + 1);
 
                     var content = new StringContent(
                         $"data={Uri.EscapeDataString(query)}",
@@ -516,7 +520,7 @@ namespace TrackRecommender.Server.Services
                         currentRetry++;
                         if (currentRetry <= maxRetries)
                         {
-                            _logger.LogWarning($"Overpass API returned {response.StatusCode}, retrying in {retryDelay.TotalSeconds} seconds...");
+                            _logger.LogWarning("Overpass API returned {StatusCode}, retrying in {RetryDelaySeconds} seconds...", response.StatusCode, retryDelay.TotalSeconds);
                             await Task.Delay(retryDelay);
                             retryDelay = TimeSpan.FromSeconds(retryDelay.TotalSeconds * 2);
                             continue;
@@ -524,8 +528,7 @@ namespace TrackRecommender.Server.Services
                     }
 
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogError($"Overpass API request failed with status {response.StatusCode}. Response: {errorContent}");
-                    return null;
+                    _logger.LogError("Overpass API request failed with status {StatusCode}. Response: {ErrorContent}", response.StatusCode, errorContent);
                 }
                 catch (TaskCanceledException)
                 {

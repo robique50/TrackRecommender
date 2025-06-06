@@ -5,14 +5,9 @@ using TrackRecommender.Server.Repositories.Interfaces;
 
 namespace TrackRecommender.Server.Repositories.Implementations
 {
-    public class UserRepository : IUserRepository
+    public class UserRepository(AppDbContext context) : IUserRepository
     {
-        private readonly AppDbContext _context;
-
-        public UserRepository(AppDbContext context)
-        {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-        }
+        private readonly AppDbContext _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task<User?> GetUserByIdAsync(int id, bool includePreferences = false)
         {
@@ -38,7 +33,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 query = query.Include(u => u.Preferences);
             }
 
-            return await query.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+            return await query.FirstOrDefaultAsync(u => u.Username.Equals(username, StringComparison.CurrentCultureIgnoreCase));
         }
 
         public async Task<User?> GetUserByEmailAsync(string email)
@@ -46,7 +41,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(email))
                 return null;
 
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(email, StringComparison.CurrentCultureIgnoreCase));
         }
 
         public async Task<bool> UsernameExistsAsync(string username)
@@ -54,7 +49,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(username))
                 return false;
 
-            return await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower());
+            return await _context.Users.AnyAsync(u => u.Username.Equals(username, StringComparison.CurrentCultureIgnoreCase));
         }
 
         public async Task<bool> EmailExistsAsync(string email)
@@ -67,16 +62,14 @@ namespace TrackRecommender.Server.Repositories.Implementations
 
         public async Task CreateUserAsync(User user)
         {
-            if (user == null)
-                throw new ArgumentNullException(nameof(user));
+            ArgumentNullException.ThrowIfNull(user);
 
             await _context.Users.AddAsync(user);
         }
 
         public Task UpdateUserAsync(User user)
         {
-            if (user == null)
-                throw new ArgumentNullException(nameof(user));
+            ArgumentNullException.ThrowIfNull(user);
 
             _context.Users.Update(user);
             return Task.CompletedTask;
@@ -89,8 +82,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
 
         public async Task CreateUserPreferencesAsync(UserPreferences preferences)
         {
-            if (preferences == null)
-                throw new ArgumentNullException(nameof(preferences));
+            ArgumentNullException.ThrowIfNull(preferences);
 
             if (await _context.UserPreferences.AnyAsync(up => up.UserId == preferences.UserId))
             {
@@ -102,8 +94,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
 
         public Task UpdateUserPreferencesAsync(UserPreferences preferences)
         {
-            if (preferences == null)
-                throw new ArgumentNullException(nameof(preferences));
+            ArgumentNullException.ThrowIfNull(preferences);
 
             _context.UserPreferences.Update(preferences);
             return Task.CompletedTask;
@@ -116,7 +107,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
                        && r.ExpiryDate > DateTime.UtcNow)
                 .ToListAsync();
 
-            if (!activeTokens.Any())
+            if (activeTokens.Count == 0)
                 return null;
 
             return await _context.Users
