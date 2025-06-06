@@ -28,6 +28,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected regions: Region[] = [];
   protected selectedRegion: Region | null = null;
   protected regionTrails: Trail[] = [];
+  private regionDifficultyCache: Map<number, string> = new Map();
 
   protected visibleTrails: Trail[] = [];
   protected selectedTrail: Trail | null = null;
@@ -139,14 +140,35 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       iconCreateFunction: (cluster) => {
         const markers = cluster.getAllChildMarkers();
         let totalTrails = 0;
+        const difficulties: string[] = [];
 
         markers.forEach((marker) => {
           totalTrails += (marker as any).trailCount || 0;
+          const trailData = (marker as any).trailData;
+          if (trailData?.difficulty) {
+            difficulties.push(trailData.difficulty);
+          }
         });
+
+        const difficultyCount: { [key: string]: number } = {};
+        difficulties.forEach(diff => {
+          difficultyCount[diff] = (difficultyCount[diff] || 0) + 1;
+        });
+
+        let predominant = 'Easy';
+        let maxCount = 0;
+        Object.entries(difficultyCount).forEach(([difficulty, count]) => {
+          if (count > maxCount) {
+            maxCount = count;
+            predominant = difficulty;
+          }
+        });
+
+        const color = this.getDifficultyColor(predominant);
 
         return L.divIcon({
           html: `<div style="
-          background: linear-gradient(135deg, #2e5d32, #4a8c50);
+          background: ${color};
           width: 50px;
           height: 50px;
           border-radius: 50%;
@@ -157,12 +179,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           font-weight: bold;
           font-size: 16px;
           border: 3px solid white;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         ">${totalTrails}</div>`,
           className: 'custom-cluster-icon',
           iconSize: L.point(50, 50, true),
         });
-      },
+      }
     });
   }
 
@@ -538,6 +560,29 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private getPredominantDifficulty(trails: Trail[]): string {
+    if (!trails || trails.length === 0) return 'Easy';
+
+    const difficultyCount: { [key: string]: number } = {};
+
+    trails.forEach(trail => {
+      const difficulty = trail.difficulty || 'Unknown';
+      difficultyCount[difficulty] = (difficultyCount[difficulty] || 0) + 1;
+    });
+
+    let predominant = 'Easy';
+    let maxCount = 0;
+
+    Object.entries(difficultyCount).forEach(([difficulty, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        predominant = difficulty;
+      }
+    });
+
+    return predominant;
+  }
+
   private scrollToTrailInSidebar(trail: Trail): void {
     setTimeout(() => {
       const trailElements = document.querySelectorAll('.trail-item');
@@ -582,6 +627,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private addRegionBoundariesToMap(): void {
     this.regionBoundariesLayer.clearLayers();
+    this.regionMarkersLayer.clearLayers();
 
     this.regions.forEach((region) => {
       if (region.boundaryGeoJson) {
@@ -592,38 +638,50 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
               color: '#4a8c50',
               weight: 2,
               opacity: 0.8,
-              fillOpacity: 0.2,
-              fillColor: this.getRegionColor(region.trailCount),
-            },
+              fillOpacity: 0.1,
+              fillColor: '#4a8c50'
+            }
           });
-
-          if (region.trailCount > 0) {
-            const center = this.getRegionCenter(geoJsonLayer);
-            const marker = L.marker(center, {
-              icon: L.divIcon({
-                className: 'region-count-marker',
-                html: `<div class="region-count-circle" style="background-color: ${this.getRegionColor(
-                  region.trailCount
-                )}">
-                         <span class="count">${region.trailCount}</span>
-                         <span class="label">trails</span>
-                       </div>`,
-                iconSize: [60, 60],
-                iconAnchor: [30, 30],
-              }),
-            });
-
-            marker.on('click', () => this.selectRegion(region.id));
-            this.regionMarkersLayer.addLayer(marker);
-          }
 
           geoJsonLayer.on('click', () => this.selectRegion(region.id));
           this.regionBoundariesLayer.addLayer(geoJsonLayer);
+
+          if (region.trailCount > 0) {
+            const center = this.getRegionCenter(geoJsonLayer);
+
+            if (this.regionDifficultyCache.has(region.id)) {
+              const color = this.getDifficultyColor(this.regionDifficultyCache.get(region.id)!);
+              this.addRegionMarker(center, region, color);
+            } else {
+              this.regionService.getTrailsByRegionId(region.id).subscribe(trails => {
+                const predominantDifficulty = this.getPredominantDifficulty(trails);
+                this.regionDifficultyCache.set(region.id, predominantDifficulty);
+                const color = this.getDifficultyColor(predominantDifficulty);
+                this.addRegionMarker(center, region, color);
+              });
+            }
+          }
         } catch (error) {
           console.error(`Error parsing region ${region.id} boundary:`, error);
         }
       }
     });
+  }
+
+  private addRegionMarker(center: L.LatLng, region: Region, color: string): void {
+    const marker = L.marker(center, {
+      icon: L.divIcon({
+        className: 'region-count-marker',
+        html: `<div class="region-count-circle" style="background-color: ${color}">
+               <span class="count">${region.trailCount}</span>
+             </div>`,
+        iconSize: [50, 50],
+        iconAnchor: [25, 25]
+      })
+    });
+
+    marker.on('click', () => this.selectRegion(region.id));
+    this.regionMarkersLayer.addLayer(marker);
   }
 
   private getRegionCenter(geoJsonLayer: L.GeoJSON): L.LatLng {
