@@ -1,182 +1,329 @@
 <app-main-navbar></app-main-navbar>
 
 <div class="preferences-container">
-  <div class="preferences-content-wrapper">
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <p>Loading your preferences...</p>
+    </div>
+  </div>
+
+  <div
+    class="no-preferences-state"
+    *ngIf="!isLoading && !hasPreferences && !isEditing"
+  >
+    <div class="empty-state-card">
+      <div class="empty-icon">🎯</div>
+      <h2>Welcome to Trail Preferences!</h2>
+      <p>
+        You haven't set up your trail preferences yet. Let's customize your
+        trail recommendations to match your hiking style!
+      </p>
+      <button class="btn-primary btn-large" (click)="startConfiguration()">
+        <span class="btn-icon">⚙️</span>
+        Configure Preferences
+      </button>
+    </div>
+  </div>
+
+  <div
+    class="view-preferences-state"
+    *ngIf="!isLoading && hasPreferences && !isEditing"
+  >
     <div class="preferences-header">
-      <h1>Trail Preferences</h1>
-      <p>Customize your trail recommendations</p>
-    </div>
-
-    <div class="loading-state" *ngIf="isLoading">
-      <div class="loading-spinner"></div>
-      <p>Loading preferences...</p>
-    </div>
-
-    <div class="error-state" *ngIf="error">
-      <p class="error-message">{{ error }}</p>
-    </div>
-
-    <form
-      *ngIf="!isLoading && preferencesForm"
-      [formGroup]="preferencesForm"
-      (ngSubmit)="onSubmit()"
-      class="preferences-form"
-    >
-      <div class="form-section">
-        <h3>Preferred Trail Types</h3>
-        <div class="checkbox-group">
-          <label *ngFor="let type of options.trailTypes" class="checkbox-label">
-            <input
-              type="checkbox"
-              [value]="type"
-              (change)="onTrailTypeChange($event, type)"
-            />
-            <span>{{ type }}</span>
-          </label>
-        </div>
+      <h1>Your Trail Preferences</h1>
+      <div class="header-actions">
+        <button class="btn-secondary" (click)="editPreferences()">
+          <span class="btn-icon">✏️</span>
+          Edit
+        </button>
+        <button class="btn-danger" (click)="showResetConfirmation()">
+          <span class="btn-icon">🔄</span>
+          Reset
+        </button>
       </div>
+    </div>
 
-      <div class="form-section">
-        <h3>Preferred Difficulty</h3>
-        <div class="radio-group">
-          <label
-            *ngFor="let difficulty of options.difficulties"
-            class="radio-label"
-          >
-            <input
-              type="radio"
-              formControlName="preferredDifficulty"
-              [value]="difficulty"
-            />
+    <div class="preferences-summary">
+      <div class="pref-card">
+        <div class="card-header">
+          <span class="card-icon">🥾</span>
+          <h3>Trail Types</h3>
+        </div>
+        <div class="card-content">
+          <div class="tag-list">
             <span
-              class="difficulty-indicator"
-              [style.background-color]="getDifficultyColor(difficulty)"
-            ></span>
-            <span>{{ difficulty }}</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h3>Trail Categories</h3>
-        <div class="checkbox-group">
-          <label
-            *ngFor="let category of options.categories"
-            class="checkbox-label"
-          >
-            <input
-              type="checkbox"
-              [value]="category"
-              (change)="onCategoryChange($event, category)"
-            />
-            <span>{{ category }}</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h3>Maximum Distance (km)</h3>
-        <div class="slider-container">
-          <input
-            type="range"
-            formControlName="maxDistance"
-            [min]="options.minDistance"
-            [max]="options.maxDistance"
-            step="0.5"
-            class="distance-slider"
-          />
-          <div class="slider-value">
-            {{ preferencesForm.get("maxDistance")?.value }} km
+              class="tag"
+              *ngFor="let type of currentPreferences.preferredTrailTypes"
+            >
+              {{ type }}
+            </span>
+            <span
+              class="empty-message"
+              *ngIf="!currentPreferences.preferredTrailTypes?.length"
+            >
+              All trail types
+            </span>
           </div>
         </div>
       </div>
 
-      <div class="form-section">
-        <h3>Maximum Duration (hours)</h3>
-        <div class="slider-container">
-          <input
-            type="range"
-            formControlName="maxDuration"
-            [min]="options.minDuration"
-            [max]="options.maxDuration"
-            step="0.5"
-            class="duration-slider"
-          />
-          <div class="slider-value">
-            {{ formatDuration(preferencesForm.get("maxDuration")?.value) }}
+      <div class="pref-card">
+        <div class="card-header">
+          <span class="card-icon">⛰️</span>
+          <h3>Preferred Difficulty</h3>
+        </div>
+        <div class="card-content">
+          <div class="difficulty-display">
+            <span
+              class="difficulty-badge"
+              [style.background-color]="
+                getDifficultyColor(currentPreferences.preferredDifficulty)
+              "
+            >
+              {{ currentPreferences.preferredDifficulty || "Not set" }}
+            </span>
           </div>
         </div>
       </div>
 
-      <div class="form-section">
-        <h3>Preferred Regions</h3>
-        <div class="regions-grid">
-          <div
-            *ngFor="let region of options.regions"
-            class="region-card"
-            [class.selected]="isRegionSelected(region.name)"
-            (click)="toggleRegion(region.name)"
-          >
-            <div class="region-name">{{ region.name }}</div>
-            <div class="region-trails">{{ region.trailCount }} trails</div>
-          </div>
+      <div class="pref-card">
+        <div class="card-header">
+          <span class="card-icon">📏</span>
+          <h3>Distance & Duration</h3>
         </div>
-      </div>
-
-      <div class="form-section">
-        <h3>Trail Features & Tags</h3>
-        <div class="tags-container">
-          <div *ngFor="let tag of groupedTags" class="tag-group">
-            <h4>{{ tag.category }}</h4>
-            <div class="tag-chips">
-              <div
-                *ngFor="let tagValue of tag.tags"
-                class="tag-chip"
-                [class.selected]="isTagSelected(tagValue)"
-                (click)="toggleTag(tagValue)"
+        <div class="card-content">
+          <div class="metrics">
+            <div class="metric">
+              <span class="metric-label">Max Distance:</span>
+              <span class="metric-value"
+                >{{ currentPreferences.maxDistance }} km</span
               >
-                {{ formatTag(tagValue) }}
-              </div>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Max Duration:</span>
+              <span class="metric-value">{{
+                formatDuration(currentPreferences.maxDuration)
+              }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="form-section">
-        <h3>Minimum Trail Rating</h3>
-        <div class="rating-selector">
-          <div class="star-rating">
-            <button
-              type="button"
-              *ngFor="let star of [1, 2, 3, 4, 5]"
-              class="star-button"
-              [class.active]="
-                (preferencesForm.get('minimumRating')?.value || 0) >= star
-              "
-              (click)="setMinimumRating(star)"
+      <div class="pref-card full-width">
+        <div class="card-header">
+          <span class="card-icon">🗺️</span>
+          <h3>Preferred Regions</h3>
+        </div>
+        <div class="card-content">
+          <div class="regions-display">
+            <div
+              class="region-chip"
+              *ngFor="let region of currentPreferences.preferredRegionNames"
             >
-              ★
-            </button>
+              {{ region }}
+            </div>
+            <span
+              class="empty-message"
+              *ngIf="!currentPreferences.preferredRegionNames?.length"
+            >
+              All regions
+            </span>
           </div>
-          <span class="rating-text">
-            {{ preferencesForm.get("minimumRating")?.value || 0 }} stars minimum
-          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-preferences-state" *ngIf="!isLoading && isEditing">
+    <form [formGroup]="preferencesForm" (ngSubmit)="savePreferences()">
+      <div class="edit-header">
+        <h1>{{ hasPreferences ? "Edit" : "Configure" }} Your Preferences</h1>
+        <button type="button" class="btn-text" (click)="cancelEdit()">
+          Cancel
+        </button>
+      </div>
+
+      <div class="preference-section">
+        <div class="section-header">
+          <h3>🥾 What type of trails do you enjoy?</h3>
+          <p class="section-description">Select all that apply</p>
+        </div>
+        <div class="option-grid">
+          <label
+            class="option-card"
+            *ngFor="let type of availableTrailTypes"
+            [class.selected]="isTrailTypeSelected(type)"
+          >
+            <input
+              type="checkbox"
+              [checked]="isTrailTypeSelected(type)"
+              (change)="toggleTrailType(type)"
+            />
+            <span class="option-content">
+              <span class="option-icon">{{ getTrailTypeIcon(type) }}</span>
+              <span class="option-label">{{ type }}</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="preference-section">
+        <div class="section-header">
+          <h3>⛰️ Preferred Difficulty Level</h3>
+          <p class="section-description">Choose your comfort zone</p>
+        </div>
+        <div class="difficulty-selector">
+          <label
+            class="difficulty-option"
+            *ngFor="let diff of availableDifficulties"
+            [class.selected]="
+              preferencesForm.get('preferredDifficulty')?.value === diff
+            "
+          >
+            <input
+              type="radio"
+              formControlName="preferredDifficulty"
+              [value]="diff"
+            />
+            <span
+              class="difficulty-card"
+              [style.border-color]="getDifficultyColor(diff)"
+            >
+              <span
+                class="diff-indicator"
+                [style.background-color]="getDifficultyColor(diff)"
+              ></span>
+              <span class="diff-label">{{ diff }}</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="preference-section">
+        <div class="section-header">
+          <h3>📏 Trail Length Preferences</h3>
+          <p class="section-description">Set your limits</p>
+        </div>
+        <div class="sliders-container">
+          <div class="slider-group">
+            <label>Maximum Distance</label>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                formControlName="maxDistance"
+                min="1"
+                max="100"
+                step="0.5"
+                class="modern-slider"
+              />
+              <span class="slider-value"
+                >{{ preferencesForm.get("maxDistance")?.value }} km</span
+              >
+            </div>
+          </div>
+          <div class="slider-group">
+            <label>Maximum Duration</label>
+            <div class="slider-wrapper">
+              <input
+                type="range"
+                formControlName="maxDuration"
+                min="0.5"
+                max="24"
+                step="0.5"
+                class="modern-slider"
+              />
+              <span class="slider-value">{{
+                formatDuration(preferencesForm.get("maxDuration")?.value)
+              }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preference-section">
+        <div class="section-header">
+          <h3>🗺️ Preferred Regions</h3>
+          <p class="section-description">Where do you like to explore?</p>
+        </div>
+
+        <div class="region-search">
+          <input
+            type="text"
+            placeholder="Search regions..."
+            [(ngModel)]="regionSearchQuery"
+            [ngModelOptions]="{ standalone: true }"
+            (input)="filterRegions()"
+            class="search-input"
+          />
+        </div>
+
+        <div class="regions-carousel">
+          <button
+            type="button"
+            class="carousel-arrow left"
+            (click)="scrollRegions('left')"
+            [disabled]="regionScrollIndex === 0"
+          >
+            ←
+          </button>
+
+          <div class="regions-container" #regionsContainer>
+            <div
+              class="region-card"
+              *ngFor="let region of visibleRegions"
+              [class.selected]="isRegionSelected(region.name)"
+              (click)="toggleRegion(region.name)"
+            >
+              <div class="region-name">{{ region.name }}</div>
+              <div class="region-trails">{{ region.trailCount }} trails</div>
+              <div class="region-check" *ngIf="isRegionSelected(region.name)">
+                ✓
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="carousel-arrow right"
+            (click)="scrollRegions('right')"
+            [disabled]="regionScrollIndex >= maxRegionScroll"
+          >
+            →
+          </button>
         </div>
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn-secondary" (click)="resetForm()">
-          Reset to Defaults
+        <button type="button" class="btn-secondary" (click)="cancelEdit()">
+          Cancel
         </button>
         <button type="submit" class="btn-primary" [disabled]="isSaving">
           <span *ngIf="!isSaving">Save Preferences</span>
-          <span *ngIf="isSaving" class="loading-spinner"></span>
+          <span *ngIf="isSaving" class="saving-spinner">Saving...</span>
         </button>
       </div>
-
-      <div class="success-message" *ngIf="successMessage">
-        {{ successMessage }}
-      </div>
     </form>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showResetModal" (click)="closeResetModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>🔄 Reset Preferences?</h3>
+      <p>
+        Are you sure you want to reset all your preferences? This action cannot
+        be undone.
+      </p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeResetModal()">
+          Cancel
+        </button>
+        <button class="btn-danger" (click)="confirmReset()">Yes, Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="success-toast" *ngIf="showSuccessMessage" [@slideIn]>
+    <span class="toast-icon">✅</span>
+    <span>{{ successMessage }}</span>
   </div>
 </div>

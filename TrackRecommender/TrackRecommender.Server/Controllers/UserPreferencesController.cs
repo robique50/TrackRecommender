@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using TrackRecommender.Server.Models;
 using TrackRecommender.Server.Models.DTOs;
 using TrackRecommender.Server.Services;
 
@@ -73,6 +74,25 @@ namespace TrackRecommender.Server.Controllers
             {
                 _logger.LogError(ex, "Error retrieving preference options");
                 return StatusCode(500, new { message = "An error occurred while retrieving preference options" });
+            }
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> ResetUserPreferences()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized(new { message = "User not authenticated" });
+
+            try
+            {
+                await _preferencesService.ResetUserPreferencesAsync(userId.Value);
+                return Ok(new { message = "Preferences reset successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting user preferences for user {UserId}", userId);
+                return StatusCode(500, new { message = "An error occurred while resetting preferences" });
             }
         }
 

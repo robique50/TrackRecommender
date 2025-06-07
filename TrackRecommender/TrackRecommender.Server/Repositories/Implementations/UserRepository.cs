@@ -115,6 +115,14 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 .FirstOrDefaultAsync(u => u.Id == activeTokens.First().UserId);
         }
 
+        public Task DeleteUserPreferencesAsync(UserPreferences preferences)
+        {
+            ArgumentNullException.ThrowIfNull(preferences);
+
+            _context.UserPreferences.Remove(preferences);
+            return Task.CompletedTask;
+        }
+
         public async Task<int> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync();

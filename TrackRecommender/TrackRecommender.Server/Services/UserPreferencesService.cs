@@ -1,31 +1,25 @@
 ﻿using TrackRecommender.Server.Mappers.Implementations;
 using TrackRecommender.Server.Models.DTOs;
 using TrackRecommender.Server.Repositories.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using TrackRecommender.Server.Data;
 
 namespace TrackRecommender.Server.Services
 {
     public class UserPreferencesService(
         IUserRepository userRepository,
         IRegionRepository regionRepository,
-        AppDbContext context,
-        UserPreferencesMapper preferencesMapper,
-        ILogger<UserPreferencesService> logger)
+        ITrailRepository trailRepository,
+        UserPreferencesMapper preferencesMapper)
     {
         private readonly IUserRepository _userRepository = userRepository;
         private readonly IRegionRepository _regionRepository = regionRepository;
-        private readonly AppDbContext _context = context;
+        private readonly ITrailRepository _trailRepository = trailRepository;
         private readonly UserPreferencesMapper _preferencesMapper = preferencesMapper;
-        private readonly ILogger<UserPreferencesService> _logger = logger;
-
         public async Task<UserPreferencesDto?> GetUserPreferencesAsync(int userId)
         {
             var preferences = await _userRepository.GetUserPreferencesAsync(userId);
-            if (preferences == null)
-                return null;
-
-            return await _preferencesMapper.ToDtoAsync(preferences);
+            return preferences != null
+                ? await _preferencesMapper.ToDtoAsync(preferences)
+                : new UserPreferencesDto();
         }
 
         public async Task SaveUserPreferencesAsync(int userId, UserPreferencesDto preferencesDto)
@@ -46,126 +40,40 @@ namespace TrackRecommender.Server.Services
             await _userRepository.SaveChangesAsync();
         }
 
+        public async Task ResetUserPreferencesAsync(int userId)
+        {
+            var existingPreferences = await _userRepository.GetUserPreferencesAsync(userId);
+
+            if (existingPreferences != null)
+            {
+                await _userRepository.DeleteUserPreferencesAsync(existingPreferences);
+                await _userRepository.SaveChangesAsync();
+            }
+        }
+
         public async Task<PreferenceOptionsDto> GetPreferenceOptionsAsync()
         {
-            try
+            var trailTypes = await _trailRepository.GetDistinctTrailTypesAsync();
+
+            var regions = await _regionRepository.GetAllRegionsAsync();
+
+            var regionOptions = new List<RegionOptionDto>();
+            foreach (var region in regions)
             {
-                var trails = await _context.Trails.AsNoTracking().ToListAsync();
+                int trailCount = await _regionRepository.GetTrailCountForRegionAsync(region.Id);
 
-                var trailTypes = trails
-                    .Select(t => t.TrailType)
-                    .Where(tt => !string.IsNullOrEmpty(tt))
-                    .Distinct()
-                    .OrderBy(tt => tt)
-                    .ToList();
-
-                var difficulties = trails
-                    .Select(t => t.Difficulty)
-                    .Where(d => !string.IsNullOrEmpty(d))
-                    .Distinct()
-                    .OrderBy(d => GetDifficultyOrder(d))
-                    .ToList();
-
-                var categories = trails
-                    .Select(t => t.Category)
-                    .Where(c => !string.IsNullOrEmpty(c))
-                    .Distinct()
-                    .OrderBy(c => GetCategoryOrder(c))
-                    .ToList();
-
-                var allTags = new HashSet<string>();
-                foreach (var trail in trails)
+                regionOptions.Add(new RegionOptionDto
                 {
-                    if (trail.Tags != null)
-                    {
-                        foreach (var tag in trail.Tags)
-                        {
-                            if (tag.Contains('='))
-                            {
-                                var parts = tag.Split('=', 2);
-                                var key = parts[0].Trim();
-                                var value = parts[1].Trim();
-
-                                switch (key)
-                                {
-                                    case "route":
-                                    case "network":
-                                    case "symbol":
-                                    case "operator":
-                                    case "osmc:symbol":
-                                        allTags.Add(tag);
-                                        break;
-                                    case "mountain_feature":
-                                    case "tourist_feature":
-                                    case "seasonal_access":
-                                    case "technical_difficulty":
-                                        allTags.Add(tag);
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                var regions = await _regionRepository.GetAllRegionsAsync();
-                var regionOptions = regions
-                    .OrderBy(r => r.Name)
-                    .Select(r => new RegionOptionDto
-                    {
-                        Id = r.Id,
-                        Name = r.Name,
-                        TrailCount = 0
-                    })
-                    .ToList();
-
-                foreach (var region in regionOptions)
-                {
-                    region.TrailCount = await _context.TrailRegions
-                        .CountAsync(tr => tr.RegionId == region.Id);
-                }
-
-                return new PreferenceOptionsDto
-                {
-                    TrailTypes = trailTypes,
-                    Difficulties = difficulties,
-                    Categories = categories,
-                    AvailableTags = [.. allTags.OrderBy(t => t)],
-                    Regions = regionOptions,
-                    MinDistance = 0.5,
-                    MaxDistance = trails.Count != 0 ? trails.Max(t => t.Distance) : 500,
-                    MinDuration = 0.25,
-                    MaxDuration = trails.Count != 0 ? trails.Max(t => t.Duration) : 48
-                };
+                    Id = region.Id,
+                    Name = region.Name,
+                    TrailCount = trailCount
+                });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving preference options");
-                throw;
-            }
-        }
 
-        private static int GetDifficultyOrder(string difficulty)
-        {
-            return difficulty switch
+            return new PreferenceOptionsDto
             {
-                "Easy" => 1,
-                "Moderate" => 2,
-                "Difficult" => 3,
-                "Very Difficult" => 4,
-                "Expert" => 5,
-                _ => 6
-            };
-        }
-
-        private static int GetCategoryOrder(string category)
-        {
-            return category switch
-            {
-                "International" => 1,
-                "National" => 2,
-                "Regional" => 3,
-                "Local" => 4,
-                _ => 5
+                TrailTypes = trailTypes,
+                Regions = [.. regionOptions.OrderBy(r => r.Name)]
             };
         }
     }

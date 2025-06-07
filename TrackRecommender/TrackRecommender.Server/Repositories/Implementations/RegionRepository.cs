@@ -149,5 +149,12 @@ namespace TrackRecommender.Server.Repositories.Implementations
             {
                 throw new InvalidOperationException($"Failed to retrieve trails for region with ID {regionId}. ");            }
         }
+
+        public async Task<int> GetTrailCountForRegionAsync(int regionId)
+        {
+            return await _context.TrailRegions
+                .Where(tr => tr.RegionId == regionId)
+                .CountAsync();
+        }
     }
 }

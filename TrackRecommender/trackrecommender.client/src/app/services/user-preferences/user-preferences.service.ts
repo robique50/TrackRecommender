@@ -49,11 +49,11 @@ export class UserPreferencesService {
       );
   }
 
-  public clearPreferencesCache(): void {
-    this.preferencesSubject.next(null);
-  }
-
   public getCurrentPreferences(): UserPreferences | null {
     return this.preferencesSubject.value;
+  }
+
+  public resetUserPreferences(): Observable<any> {
+    return this.http.delete('/api/userpreferences');
   }
 }

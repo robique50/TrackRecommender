@@ -14,6 +14,7 @@ namespace TrackRecommender.Server.Repositories.Interfaces
         Task<UserPreferences?> GetUserPreferencesAsync(int userId);
         Task CreateUserPreferencesAsync(UserPreferences preferences);
         Task UpdateUserPreferencesAsync(UserPreferences preferences);
+        Task DeleteUserPreferencesAsync(UserPreferences preferences);
         Task<User?> GetUserByRefreshTokenAsync(string refreshToken);
         Task<int> SaveChangesAsync();
     }

@@ -343,5 +343,14 @@ namespace TrackRecommender.Server.Repositories.Implementations
         {
             return await _context.Trails.CountAsync();
         }
+
+        public async Task<List<string>> GetDistinctTrailTypesAsync()
+        {
+            return await _context.Trails
+                .Select(t => t.TrailType)
+                .Where(tt => !string.IsNullOrWhiteSpace(tt))
+                .Distinct()
+                .ToListAsync();
+        }
     }
 }

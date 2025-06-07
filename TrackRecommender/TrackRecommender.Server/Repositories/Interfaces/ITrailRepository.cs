@@ -29,6 +29,7 @@ namespace TrackRecommender.Server.Repositories.Interfaces
         Task DeleteTrailAsync(int trailId);
         Task<bool> TrailExistsByOsmIdAsync(long osmId);
         Task<Trail?> GetTrailByOsmIdAsync(long osmId);
+        Task<List<string>> GetDistinctTrailTypesAsync();
         Task<int> SaveChangesAsync();
     }
 }
