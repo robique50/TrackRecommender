@@ -46,7 +46,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
             }
 
             return await query
-                .FirstOrDefaultAsync(r => r.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefaultAsync(r => r.Name.ToLower() == name.ToLower());
         }
 
         public async Task AddRegionAsync(Region region)
@@ -54,8 +54,8 @@ namespace TrackRecommender.Server.Repositories.Implementations
             ArgumentNullException.ThrowIfNull(region);
 
             bool nameExists = await _context.Regions
-                .AnyAsync(r => r.Name.Equals(region.Name, StringComparison.OrdinalIgnoreCase) && r.Id != region.Id);
-            
+                .AnyAsync(r => r.Name.ToLower() == region.Name.ToLower() && r.Id != region.Id);
+
             if (nameExists)
             {
                 throw new InvalidOperationException($"A region with the name '{region.Name}' already exists.");

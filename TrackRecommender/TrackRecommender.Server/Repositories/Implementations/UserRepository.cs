@@ -33,7 +33,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 query = query.Include(u => u.Preferences);
             }
 
-            return await query.FirstOrDefaultAsync(u => u.Username.Equals(username, StringComparison.CurrentCultureIgnoreCase));
+            return await query.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
         }
 
         public async Task<User?> GetUserByEmailAsync(string email)
@@ -41,7 +41,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(email))
                 return null;
 
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(email, StringComparison.CurrentCultureIgnoreCase));
+    return await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
         }
 
         public async Task<bool> UsernameExistsAsync(string username)
@@ -49,7 +49,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(username))
                 return false;
 
-            return await _context.Users.AnyAsync(u => u.Username.Equals(username, StringComparison.CurrentCultureIgnoreCase));
+            return await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower());
         }
 
         public async Task<bool> EmailExistsAsync(string email)
@@ -57,7 +57,7 @@ namespace TrackRecommender.Server.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(email))
                 return false;
 
-            return await _context.Users.AnyAsync(u => u.Email.Equals(email, StringComparison.CurrentCultureIgnoreCase));
+            return await _context.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower());
         }
 
         public async Task CreateUserAsync(User user)

@@ -145,7 +145,13 @@
             <div class="region-trail-count">
               <div
                 class="count-circle"
-                [style.background-color]="getRegionColor(region.trailCount)"
+                [style.background]="
+                  region.trailCount > 0
+                    ? getDifficultyColor(
+                        regionDifficultyCache.get(region.id) || 'Easy'
+                      )
+                    : '#cccccc'
+                "
               >
                 {{ region.trailCount }}
               </div>

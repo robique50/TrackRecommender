@@ -28,7 +28,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected regions: Region[] = [];
   protected selectedRegion: Region | null = null;
   protected regionTrails: Trail[] = [];
-  private regionDifficultyCache: Map<number, string> = new Map();
+  protected regionDifficultyCache: Map<number, string> = new Map();
 
   protected visibleTrails: Trail[] = [];
   protected selectedTrail: Trail | null = null;
@@ -151,7 +151,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         });
 
         const difficultyCount: { [key: string]: number } = {};
-        difficulties.forEach(diff => {
+        difficulties.forEach((diff) => {
           difficultyCount[diff] = (difficultyCount[diff] || 0) + 1;
         });
 
@@ -184,7 +184,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           className: 'custom-cluster-icon',
           iconSize: L.point(50, 50, true),
         });
-      }
+      },
     });
   }
 
@@ -565,7 +565,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const difficultyCount: { [key: string]: number } = {};
 
-    trails.forEach(trail => {
+    trails.forEach((trail) => {
       const difficulty = trail.difficulty || 'Unknown';
       difficultyCount[difficulty] = (difficultyCount[difficulty] || 0) + 1;
     });
@@ -639,8 +639,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
               weight: 2,
               opacity: 0.8,
               fillOpacity: 0.1,
-              fillColor: '#4a8c50'
-            }
+              fillColor: '#4a8c50',
+            },
           });
 
           geoJsonLayer.on('click', () => this.selectRegion(region.id));
@@ -650,15 +650,23 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             const center = this.getRegionCenter(geoJsonLayer);
 
             if (this.regionDifficultyCache.has(region.id)) {
-              const color = this.getDifficultyColor(this.regionDifficultyCache.get(region.id)!);
+              const color = this.getDifficultyColor(
+                this.regionDifficultyCache.get(region.id)!
+              );
               this.addRegionMarker(center, region, color);
             } else {
-              this.regionService.getTrailsByRegionId(region.id).subscribe(trails => {
-                const predominantDifficulty = this.getPredominantDifficulty(trails);
-                this.regionDifficultyCache.set(region.id, predominantDifficulty);
-                const color = this.getDifficultyColor(predominantDifficulty);
-                this.addRegionMarker(center, region, color);
-              });
+              this.regionService
+                .getTrailsByRegionId(region.id)
+                .subscribe((trails) => {
+                  const predominantDifficulty =
+                    this.getPredominantDifficulty(trails);
+                  this.regionDifficultyCache.set(
+                    region.id,
+                    predominantDifficulty
+                  );
+                  const color = this.getDifficultyColor(predominantDifficulty);
+                  this.addRegionMarker(center, region, color);
+                });
             }
           }
         } catch (error) {
@@ -668,19 +676,39 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private addRegionMarker(center: L.LatLng, region: Region, color: string): void {
+  private addRegionMarker(
+    center: L.LatLng,
+    region: Region,
+    color?: string
+  ): void {
+    const markerColor = color || this.getRegionColor(region.trailCount);
+
     const marker = L.marker(center, {
       icon: L.divIcon({
-        className: 'region-count-marker',
-        html: `<div class="region-count-circle" style="background-color: ${color}">
-               <span class="count">${region.trailCount}</span>
-             </div>`,
-        iconSize: [50, 50],
-        iconAnchor: [25, 25]
-      })
+        html: `<div style="
+        background: ${markerColor};
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      ">${region.trailCount}</div>`,
+        className: 'custom-region-marker',
+        iconSize: L.point(50, 50, true),
+        iconAnchor: L.point(25, 25, true),
+      }),
     });
 
-    marker.on('click', () => this.selectRegion(region.id));
+    marker.on('click', () => {
+      this.selectRegion(region.id);
+    });
+
     this.regionMarkersLayer.addLayer(marker);
   }
 
