@@ -76,5 +76,34 @@ namespace TrackRecommender.Server.Services
                 Regions = [.. regionOptions.OrderBy(r => r.Name)]
             };
         }
+
+        public async Task SaveMarkingPreferencesAsync(int userId, List<TrailMarkingDto> preferences)
+        {
+            var userPreferences = await _userRepository.GetUserPreferencesAsync(userId);
+
+            if (userPreferences == null)
+            {
+                var dto = new UserPreferencesDto
+                {
+                    PreferredMarkings = preferences
+                };
+                await SaveUserPreferencesAsync(userId, dto);
+            }
+            else
+            {
+                var currentPreferences = await GetUserPreferencesAsync(userId);
+
+                if (currentPreferences != null)
+                {
+                    currentPreferences.PreferredMarkings = preferences;
+                    await SaveUserPreferencesAsync(userId, currentPreferences);
+                }
+            }
+        }
+        public async Task<List<TrailMarkingDto>> GetMarkingPreferencesAsync(int userId)
+        {
+            var preferences = await GetUserPreferencesAsync(userId);
+            return preferences?.PreferredMarkings ?? [];
+        }
     }
 }

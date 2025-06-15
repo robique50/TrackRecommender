@@ -3,14 +3,26 @@ using TrackRecommender.Server.Models;
 using TrackRecommender.Server.Models.DTOs;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
+using TrackRecommender.Server.Services;
 
 namespace TrackRecommender.Server.Mappers.Implementations
 {
-    public class TrailMapper(ILogger<TrailMapper> logger) : IMapper<Trail, TrailDto>
+    public class TrailMapper(ILogger<TrailMapper> logger, TrailMarkingService markingService) : IMapper<Trail, TrailDto>
     {
         private readonly GeoJsonWriter _geoJsonWriter = new();
         private readonly GeoJsonReader _geoJsonReader = new();
         private readonly ILogger<TrailMapper> _logger = logger;
+        private readonly TrailMarkingService _markingService = markingService;
+
+
+        private static string? FindOsmcSymbol(Trail entity)
+        {
+            if (entity.Tags == null || entity.Tags.Count == 0)
+                return null;
+
+            var osmcSymbol = entity.Tags.FirstOrDefault(tag => tag.StartsWith("osmc:symbol="));
+            return osmcSymbol;
+        }
 
         public TrailDto ToDto(Trail entity)
         {
@@ -63,7 +75,9 @@ namespace TrackRecommender.Server.Mappers.Implementations
                     entity.UserRatings.Average(r => r.Rating) : 0,
                 ReviewsCount = entity.UserRatings?.Count ?? 0,
                 LastUpdated = entity.LastUpdated,
-                Coordinates = entity.Coordinates
+                Coordinates = entity.Coordinates,
+                TrailMarking = _markingService.ParseOsmcSymbol(FindOsmcSymbol(entity))
+
             };
         }
 

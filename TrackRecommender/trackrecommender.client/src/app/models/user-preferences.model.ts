@@ -1,3 +1,5 @@
+import { TrailMarking } from './trail-marking.model';
+
 export interface UserPreferences {
   preferredTrailTypes?: string[];
   preferredDifficulty?: string;
@@ -7,6 +9,7 @@ export interface UserPreferences {
   preferredCategories?: string[];
   minimumRating?: number;
   preferredRegionNames?: string[];
+  preferredMarkings?: TrailMarking[];
 }
 
 export interface PreferenceOptions {

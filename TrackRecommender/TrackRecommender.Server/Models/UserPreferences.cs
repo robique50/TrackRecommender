@@ -14,6 +14,7 @@ namespace TrackRecommender.Server.Models
         public double MaxDuration { get; set; }
         public List<string> PreferredCategories { get; set; }
         public List<int> PreferredRegionIds { get; set; }
+        public string? MarkingPreferences { get; set; }
         public int MinimumRating { get; set; }
 
         public UserPreferences()

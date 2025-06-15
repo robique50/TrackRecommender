@@ -96,6 +96,44 @@ namespace TrackRecommender.Server.Controllers
             }
         }
 
+        [HttpGet("markings")]
+        public async Task<IActionResult> GetMarkingPreferences()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized(new { message = "User not authenticated" });
+
+            try
+            {
+                var preferences = await _preferencesService.GetMarkingPreferencesAsync(userId.Value);
+                return Ok(preferences);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving marking preferences for user {UserId}", userId);
+                return StatusCode(500, new { message = "An error occurred while retrieving marking preferences" });
+            }
+        }
+
+        [HttpPost("markings")]
+        public async Task<IActionResult> SaveMarkingPreferences([FromBody] List<TrailMarkingDto> preferences)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+                return Unauthorized(new { message = "User not authenticated" });
+
+            try
+            {
+                await _preferencesService.SaveMarkingPreferencesAsync(userId.Value, preferences);
+                return Ok(new { message = "Marking preferences saved successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving marking preferences for user {UserId}", userId);
+                return StatusCode(500, new { message = "An error occurred while saving marking preferences" });
+            }
+        }
+
         private int? GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);

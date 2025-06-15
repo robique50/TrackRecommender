@@ -30,6 +30,7 @@ namespace TrackRecommender.Server.Repositories.Interfaces
         Task<bool> TrailExistsByOsmIdAsync(long osmId);
         Task<Trail?> GetTrailByOsmIdAsync(long osmId);
         Task<List<string>> GetDistinctTrailTypesAsync();
+        Task<List<string>> GetUniqueTagsAsync(string tagPrefix);
         Task<int> SaveChangesAsync();
     }
 }

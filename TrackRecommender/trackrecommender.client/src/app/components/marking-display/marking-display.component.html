@@ -1,0 +1,146 @@
+<div class="marking-container">
+  <div
+    class="marking-visual"
+    [style.background-color]="marking.backgroundColor"
+    [class.white-background]="marking.backgroundColor === '#FFFFFF'"
+  >
+    <svg
+      *ngIf="marking.shapeType === ShapeType.Svg"
+      viewBox="0 0 100 100"
+      width="100%"
+      height="100%"
+      class="marking-svg"
+      [ngSwitch]="marking.shape.toLowerCase()"
+    >
+      <rect
+        *ngSwitchCase="'stripe'"
+        x="35"
+        y="10"
+        width="30"
+        height="80"
+        [attr.fill]="marking.shapeColor || marking.foregroundColor"
+        rx="2"
+      />
+
+      <circle
+        *ngSwitchCase="'dot'"
+        cx="50"
+        cy="50"
+        r="15"
+        [attr.fill]="marking.shapeColor || marking.foregroundColor"
+      />
+
+      <circle
+        *ngSwitchCase="'circle'"
+        cx="50"
+        cy="50"
+        r="25"
+        fill="none"
+        stroke-width="6"
+        [attr.stroke]="marking.shapeColor || marking.foregroundColor"
+      />
+
+      <g *ngSwitchCase="'cross'">
+        <rect
+          x="40"
+          y="15"
+          width="20"
+          height="70"
+          [attr.fill]="marking.shapeColor || marking.foregroundColor"
+          rx="2"
+        />
+        <rect
+          x="15"
+          y="40"
+          width="70"
+          height="20"
+          [attr.fill]="marking.shapeColor || marking.foregroundColor"
+          rx="2"
+        />
+      </g>
+
+      <polygon
+        *ngSwitchCase="'triangle'"
+        points="50,20 80,75 20,75"
+        [attr.fill]="marking.shapeColor || marking.foregroundColor"
+      />
+
+      <rect
+        *ngSwitchCase="'bar'"
+        x="15"
+        y="40"
+        width="70"
+        height="20"
+        [attr.fill]="marking.shapeColor || marking.foregroundColor"
+        rx="2"
+      />
+
+      <rect
+        *ngSwitchCase="'frame'"
+        x="20"
+        y="20"
+        width="60"
+        height="60"
+        fill="none"
+        stroke-width="6"
+        [attr.stroke]="marking.shapeColor || marking.foregroundColor"
+        rx="3"
+      />
+
+      <polygon
+        *ngSwitchCase="'diamond'"
+        points="50,20 75,50 50,80 25,50"
+        [attr.fill]="marking.shapeColor || marking.foregroundColor"
+      />
+
+      <g *ngSwitchCase="'fork'">
+        <path
+          d="M50,70 L50,40 M35,30 L50,40 L65,30"
+          stroke-width="6"
+          stroke-linecap="round"
+          fill="none"
+          [attr.stroke]="marking.shapeColor || marking.foregroundColor"
+        />
+      </g>
+
+      <path
+        *ngSwitchCase="'corner'"
+        d="M30,30 L30,70 L70,70"
+        stroke-width="8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"
+        [attr.stroke]="marking.shapeColor || marking.foregroundColor"
+      />
+
+      <text
+        *ngSwitchDefault
+        x="50"
+        y="55"
+        text-anchor="middle"
+        font-size="30"
+        font-weight="bold"
+        [attr.fill]="marking.foregroundColor"
+      >
+        {{ marking.shape.substring(0, 2).toUpperCase() }}
+      </text>
+    </svg>
+
+    <div
+      *ngIf="
+        marking.shapeType === ShapeType.Emoji ||
+        marking.shapeType === ShapeType.Text
+      "
+      class="text-marking"
+      [style.color]="marking.shapeColor || marking.foregroundColor"
+    >
+      {{ marking.shape }}
+    </div>
+
+    <div class="marking-shine"></div>
+  </div>
+
+  <div class="marking-tooltip">
+    {{ marking.displayName }}
+  </div>
+</div>

@@ -1,13 +1,16 @@
-﻿using TrackRecommender.Server.Mappers.Interfaces;
+﻿using System.Text.Json;
+using TrackRecommender.Server.Mappers.Interfaces;
 using TrackRecommender.Server.Models;
 using TrackRecommender.Server.Models.DTOs;
 using TrackRecommender.Server.Repositories.Interfaces;
+using TrackRecommender.Server.Services;
 
 namespace TrackRecommender.Server.Mappers.Implementations
 {
-    public class UserPreferencesMapper(IRegionRepository regionRepository) : IMapper<UserPreferences, UserPreferencesDto>
+    public class UserPreferencesMapper(IRegionRepository regionRepository, TrailMarkingService markingService) : IMapper<UserPreferences, UserPreferencesDto>
     {
         private readonly IRegionRepository _regionRepository = regionRepository;
+        private readonly TrailMarkingService _markingService = markingService;
 
         public async Task<UserPreferencesDto> ToDtoAsync(UserPreferences entity)
         {
@@ -19,10 +22,24 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 MaxDistance = entity.MaxDistance,
                 MaxDuration = entity.MaxDuration,
                 PreferredCategories = entity.PreferredCategories,
-                MinimumRating = entity.MinimumRating
+                MinimumRating = entity.MinimumRating,
+                PreferredMarkings = []
             };
 
-            if (_regionRepository != null && entity.PreferredRegionIds?.Count>0)
+            if (!string.IsNullOrEmpty(entity.MarkingPreferences))
+            {
+                try
+                {
+                    dto.PreferredMarkings = JsonSerializer.Deserialize<List<TrailMarkingDto>>(
+                        entity.MarkingPreferences) ?? [];
+                }
+                catch (Exception)
+                {
+                    dto.PreferredMarkings = [];
+                }
+            }
+
+            if (_regionRepository != null && entity.PreferredRegionIds?.Count > 0)
             {
                 var allRegions = await _regionRepository.GetAllRegionsAsync();
                 var regionIdToName = allRegions.ToDictionary(r => r.Id, r => r.Name);
@@ -50,8 +67,22 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 MaxDuration = entity.MaxDuration,
                 PreferredCategories = entity.PreferredCategories,
                 MinimumRating = entity.MinimumRating,
-                PreferredRegionNames = [] 
+                PreferredRegionNames = [],
+                PreferredMarkings = []
             };
+
+            if (!string.IsNullOrEmpty(entity.MarkingPreferences))
+            {
+                try
+                {
+                    dto.PreferredMarkings = JsonSerializer.Deserialize<List<TrailMarkingDto>>(
+                        entity.MarkingPreferences) ?? [];
+                }
+                catch (Exception)
+                {
+                    dto.PreferredMarkings = [];
+                }
+            }
 
             return dto;
         }
@@ -70,6 +101,20 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 MinimumRating = dto.MinimumRating ?? 0,
                 PreferredRegionIds = []
             };
+
+            if (dto.PreferredMarkings?.Count > 0)
+            {
+                entity.MarkingPreferences = JsonSerializer.Serialize(dto.PreferredMarkings);
+
+                foreach (var marking in dto.PreferredMarkings)
+                {
+                    if (!string.IsNullOrEmpty(marking.Symbol) &&
+                        !entity.PreferredTags.Contains($"osmc:symbol={marking.Symbol}"))
+                    {
+                        entity.PreferredTags.Add($"osmc:symbol={marking.Symbol}");
+                    }
+                }
+            }
 
             if (_regionRepository != null && dto.PreferredRegionNames?.Count > 0)
             {
@@ -92,7 +137,7 @@ namespace TrackRecommender.Server.Mappers.Implementations
 
         public UserPreferences ToEntity(UserPreferencesDto dto, int userId)
         {
-            return new UserPreferences
+            var entity = new UserPreferences
             {
                 UserId = userId,
                 PreferredTrailTypes = dto.PreferredTrailTypes ?? [],
@@ -102,8 +147,24 @@ namespace TrackRecommender.Server.Mappers.Implementations
                 MaxDuration = dto.MaxDuration ?? 8,
                 PreferredCategories = dto.PreferredCategories ?? [],
                 MinimumRating = dto.MinimumRating ?? 0,
-                PreferredRegionIds = [] 
+                PreferredRegionIds = []
             };
+
+            if (dto.PreferredMarkings?.Count > 0)
+            {
+                entity.MarkingPreferences = JsonSerializer.Serialize(dto.PreferredMarkings);
+
+                foreach (var marking in dto.PreferredMarkings)
+                {
+                    if (!string.IsNullOrEmpty(marking.Symbol) &&
+                        !entity.PreferredTags.Contains($"osmc:symbol={marking.Symbol}"))
+                    {
+                        entity.PreferredTags.Add($"osmc:symbol={marking.Symbol}");
+                    }
+                }
+            }
+
+            return entity;
         }
 
         public async Task UpdateEntityAsync(UserPreferences entity, UserPreferencesDto dto)
@@ -116,7 +177,31 @@ namespace TrackRecommender.Server.Mappers.Implementations
             entity.PreferredCategories = dto.PreferredCategories ?? entity.PreferredCategories;
             entity.MinimumRating = dto.MinimumRating ?? entity.MinimumRating;
 
-            if (_regionRepository != null && dto.PreferredRegionNames?.Count>0)
+            if (dto.PreferredMarkings != null)
+            {
+                if (dto.PreferredMarkings.Count > 0)
+                {
+                    entity.MarkingPreferences = JsonSerializer.Serialize(dto.PreferredMarkings);
+
+                    entity.PreferredTags.RemoveAll(t => t.StartsWith("osmc:symbol="));
+
+                    foreach (var marking in dto.PreferredMarkings)
+                    {
+                        if (!string.IsNullOrEmpty(marking.Symbol) &&
+                            !entity.PreferredTags.Contains($"osmc:symbol={marking.Symbol}"))
+                        {
+                            entity.PreferredTags.Add($"osmc:symbol={marking.Symbol}");
+                        }
+                    }
+                }
+                else
+                {
+                    entity.MarkingPreferences = null;
+                    entity.PreferredTags.RemoveAll(t => t.StartsWith("osmc:symbol="));
+                }
+            }
+
+            if (_regionRepository != null && dto.PreferredRegionNames?.Count > 0)
             {
                 var allRegions = await _regionRepository.GetAllRegionsAsync();
                 var regionNameToId = allRegions.ToDictionary(r => r.Name.ToLower(), r => r.Id);
@@ -137,6 +222,30 @@ namespace TrackRecommender.Server.Mappers.Implementations
             entity.MaxDuration = dto.MaxDuration ?? entity.MaxDuration;
             entity.PreferredCategories = dto.PreferredCategories ?? entity.PreferredCategories;
             entity.MinimumRating = dto.MinimumRating ?? entity.MinimumRating;
+
+            if (dto.PreferredMarkings != null)
+            {
+                if (dto.PreferredMarkings.Count > 0)
+                {
+                    entity.MarkingPreferences = JsonSerializer.Serialize(dto.PreferredMarkings);
+
+                    entity.PreferredTags.RemoveAll(t => t.StartsWith("osmc:symbol="));
+
+                    foreach (var marking in dto.PreferredMarkings)
+                    {
+                        if (!string.IsNullOrEmpty(marking.Symbol) &&
+                            !entity.PreferredTags.Contains($"osmc:symbol={marking.Symbol}"))
+                        {
+                            entity.PreferredTags.Add($"osmc:symbol={marking.Symbol}");
+                        }
+                    }
+                }
+                else
+                {
+                    entity.MarkingPreferences = null;
+                    entity.PreferredTags.RemoveAll(t => t.StartsWith("osmc:symbol="));
+                }
+            }
         }
     }
 }

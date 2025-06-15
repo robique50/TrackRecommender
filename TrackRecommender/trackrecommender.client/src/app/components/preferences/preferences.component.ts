@@ -9,11 +9,14 @@ import {
 import { Router } from '@angular/router';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { UserPreferencesService } from '../../services/user-preferences/user-preferences.service';
+import { TrailMarkingService } from '../../services/trail-marking/trail-marking.service';
 import { trigger, transition, style, animate } from '@angular/animations';
 import {
   RegionOption,
   UserPreferences,
 } from '../../models/user-preferences.model';
+import { TrailMarking } from '../../models/trail-marking.model';
+import { MarkingDisplayComponent } from '../marking-display/marking-display.component';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -26,6 +29,7 @@ import { firstValueFrom } from 'rxjs';
     ReactiveFormsModule,
     FormsModule,
     MainNavbarComponent,
+    MarkingDisplayComponent,
   ],
   animations: [
     trigger('slideIn', [
@@ -61,7 +65,24 @@ export class PreferencesComponent implements OnInit {
     'Very Difficult',
     'Expert',
   ];
+  protected availableCategories: string[] = [
+    'International',
+    'National',
+    'Regional',
+    'Local',
+  ];
   protected availableRegions: RegionOption[] = [];
+
+  // Trail markings
+  protected allMarkings: TrailMarking[] = [];
+  protected filteredMarkings: TrailMarking[] = [];
+  protected selectedMarkings = new Set<string>();
+  protected markingSearchQuery = '';
+  protected markingFilterColor = '';
+  protected markingFilterShape = '';
+  protected uniqueColors: string[] = [];
+  protected uniqueShapes: string[] = [];
+  protected isLoadingMarkings = false;
 
   protected regionSearchQuery = '';
   protected visibleRegions: RegionOption[] = [];
@@ -72,10 +93,12 @@ export class PreferencesComponent implements OnInit {
 
   private selectedTrailTypes = new Set<string>();
   private selectedRegions = new Set<string>();
+  private selectedCategories = new Set<string>();
 
   constructor(
     private fb: FormBuilder,
     private preferencesService: UserPreferencesService,
+    private trailMarkingService: TrailMarkingService,
     private router: Router
   ) {}
 
@@ -83,6 +106,7 @@ export class PreferencesComponent implements OnInit {
     this.initializeForm();
     this.loadPreferences();
     this.loadAvailableOptions();
+    this.loadMarkings();
   }
 
   initializeForm(): void {
@@ -93,6 +117,8 @@ export class PreferencesComponent implements OnInit {
       maxDuration: [8],
       minimumRating: [0],
       preferredRegionNames: [[]],
+      preferredCategories: [[]],
+      preferredMarkings: [[]],
     });
   }
 
@@ -145,6 +171,137 @@ export class PreferencesComponent implements OnInit {
         this.currentPreferences.preferredRegionNames
       );
     }
+
+    if (this.currentPreferences.preferredCategories) {
+      this.selectedCategories = new Set(
+        this.currentPreferences.preferredCategories
+      );
+    }
+
+    if (this.currentPreferences.preferredMarkings) {
+      this.selectedMarkings = new Set(
+        this.currentPreferences.preferredMarkings.map((m) => m.symbol)
+      );
+    }
+  }
+
+  // Metode pentru marcaje
+  async loadMarkings(): Promise<void> {
+    this.isLoadingMarkings = true;
+    try {
+      this.allMarkings = await firstValueFrom(
+        this.trailMarkingService.loadAllMarkings()
+      );
+      this.filteredMarkings = [...this.allMarkings];
+
+      // Obține culori și forme unice
+      this.uniqueColors = await firstValueFrom(
+        this.trailMarkingService.getUniqueColors()
+      );
+      this.uniqueShapes = await firstValueFrom(
+        this.trailMarkingService.getUniqueShapes()
+      );
+    } catch (error) {
+      console.error('Error loading markings:', error);
+    } finally {
+      this.isLoadingMarkings = false;
+    }
+  }
+
+  protected filterMarkings(): void {
+    let filtered = [...this.allMarkings];
+
+    if (this.markingSearchQuery) {
+      const query = this.markingSearchQuery.toLowerCase();
+      filtered = filtered.filter((m) =>
+        m.displayName.toLowerCase().includes(query)
+      );
+    }
+
+    if (this.markingFilterColor) {
+      filtered = filtered.filter(
+        (m) =>
+          m.foregroundColor === this.markingFilterColor ||
+          m.backgroundColor === this.markingFilterColor ||
+          m.shapeColor === this.markingFilterColor
+      );
+    }
+
+    if (this.markingFilterShape) {
+      filtered = filtered.filter(
+        (m) => m.shape.toLowerCase() === this.markingFilterShape.toLowerCase()
+      );
+    }
+
+    this.filteredMarkings = filtered;
+  }
+
+  protected isMarkingSelected(marking: TrailMarking): boolean {
+    return this.selectedMarkings.has(marking.symbol);
+  }
+
+  protected toggleMarking(marking: TrailMarking): void {
+    if (this.selectedMarkings.has(marking.symbol)) {
+      this.selectedMarkings.delete(marking.symbol);
+    } else {
+      this.selectedMarkings.add(marking.symbol);
+    }
+    this.updateMarkingsInForm();
+  }
+
+  private updateMarkingsInForm(): void {
+    const selectedMarkingObjects = this.allMarkings.filter((m) =>
+      this.selectedMarkings.has(m.symbol)
+    );
+    this.preferencesForm.patchValue({
+      preferredMarkings: selectedMarkingObjects,
+    });
+  }
+
+  protected getColorName(color: string): string {
+    const colorMap: { [key: string]: string } = {
+      '#FF0000': 'Red',
+      '#0000FF': 'Blue',
+      '#FFFF00': 'Yellow',
+      '#008000': 'Green',
+      '#FFFFFF': 'White',
+      '#000000': 'Black',
+      '#FFA500': 'Orange',
+      '#800080': 'Purple',
+      '#A52A2A': 'Brown',
+    };
+    return colorMap[color.toUpperCase()] || color;
+  }
+
+  // Metode pentru categorii
+  protected isCategorySelected(category: string): boolean {
+    return this.selectedCategories.has(category);
+  }
+
+  protected toggleCategory(category: string): void {
+    if (this.selectedCategories.has(category)) {
+      this.selectedCategories.delete(category);
+    } else {
+      this.selectedCategories.add(category);
+    }
+    this.preferencesForm.patchValue({
+      preferredCategories: Array.from(this.selectedCategories),
+    });
+  }
+
+  protected getCategoryIcon(category: string): string {
+    const icons: { [key: string]: string } = {
+      International: '🌍',
+      National: '🏴',
+      Regional: '📍',
+      Local: '🏘️',
+    };
+    return icons[category] || '📍';
+  }
+
+  // Metodă pentru minimum rating
+  protected setMinimumRating(rating: number): void {
+    this.preferencesForm.patchValue({ minimumRating: rating });
   }
 
   protected startConfiguration(): void {
@@ -169,10 +326,16 @@ export class PreferencesComponent implements OnInit {
     try {
       this.isSaving = true;
 
+      const selectedMarkingObjects = this.allMarkings.filter((m) =>
+        this.selectedMarkings.has(m.symbol)
+      );
+
       const preferences: UserPreferences = {
         ...this.preferencesForm.value,
         preferredTrailTypes: Array.from(this.selectedTrailTypes),
         preferredRegionNames: Array.from(this.selectedRegions),
+        preferredCategories: Array.from(this.selectedCategories),
+        preferredMarkings: selectedMarkingObjects,
       };
 
       await firstValueFrom(
@@ -208,6 +371,8 @@ export class PreferencesComponent implements OnInit {
           this.showResetModal = false;
           this.selectedTrailTypes.clear();
           this.selectedRegions.clear();
+          this.selectedCategories.clear();
+          this.selectedMarkings.clear();
           this.initializeForm();
           this.showSuccess('Preferences reset successfully!');
         },

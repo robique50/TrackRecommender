@@ -352,5 +352,20 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 .Distinct()
                 .ToListAsync();
         }
+
+        public async Task<List<string>> GetUniqueTagsAsync(string tagPrefix)
+        {
+            var trails = await _context.Trails
+                .AsNoTracking()
+                .ToListAsync();
+
+            var uniqueTags = trails
+                .SelectMany(t => t.Tags ?? [])
+                .Where(tag => tag.StartsWith(tagPrefix, StringComparison.OrdinalIgnoreCase))
+                .Distinct()
+                .ToList();
+
+            return uniqueTags;
+        }
     }
 }

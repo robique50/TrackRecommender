@@ -27,5 +27,7 @@ namespace TrackRecommender.Server.Models.DTOs
         public int ReviewsCount { get; set; }
         public long OsmId { get; set; }
         public DateTime LastUpdated { get; set; }
+        public TrailMarkingDto? TrailMarking { get; set; }
+        public bool HasMarking => TrailMarking != null;
     }
 }

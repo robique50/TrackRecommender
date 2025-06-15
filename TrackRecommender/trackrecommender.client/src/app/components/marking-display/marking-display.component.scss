@@ -1,0 +1,164 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.marking-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.marking-visual {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &.white-background {
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.05) 100%
+    );
+    pointer-events: none;
+  }
+}
+
+.marking-svg {
+  width: 90%;
+  height: 90%;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.text-marking {
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 1px rgba(0, 0, 0, 0.1);
+
+  &:has(> :not(:empty)) {
+    font-size: 32px;
+  }
+}
+
+.marking-shine {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 70%
+  );
+  transform: rotate(45deg) translateX(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.marking-visual:hover .marking-shine {
+  transform: rotate(45deg) translateX(100%);
+}
+
+@media (max-width: 768px) {
+  .marking-visual {
+    width: 50px;
+    height: 50px;
+  }
+
+  .text-marking {
+    font-size: 24px;
+
+    &:has(> :not(:empty)) {
+      font-size: 28px;
+    }
+  }
+}
+
+.preferences-summary .markings-preview {
+  .marking-visual {
+    width: 45px;
+    height: 45px;
+  }
+
+  .text-marking {
+    font-size: 20px;
+  }
+}
+
+.marking-item {
+  .marking-visual {
+    width: 100%;
+    height: 100%;
+    min-height: 50px;
+    border-radius: 6px;
+  }
+}
+
+.marking-tooltip {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  z-index: 10;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 4px solid rgba(0, 0, 0, 0.85);
+  }
+}
+
+.marking-container:hover .marking-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) scale(1) translateY(5px);
+}

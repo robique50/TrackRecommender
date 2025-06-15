@@ -132,6 +132,90 @@
           </div>
         </div>
       </div>
+
+      <div class="pref-card">
+        <div class="card-header">
+          <span class="card-icon">🎯</span>
+          <h3>Trail Markings</h3>
+        </div>
+        <div class="card-content">
+          <div
+            class="markings-preview"
+            *ngIf="currentPreferences.preferredMarkings?.length"
+          >
+            <app-marking-display
+              *ngFor="
+                let marking of currentPreferences.preferredMarkings
+                  | slice : 0 : 3
+              "
+              [marking]="marking"
+              class="marking-preview-item"
+            >
+            </app-marking-display>
+            <span
+              class="markings-count"
+              *ngIf="
+                currentPreferences.preferredMarkings &&
+                currentPreferences.preferredMarkings.length > 3
+              "
+            >
+              +{{ currentPreferences.preferredMarkings.length - 3 }} more
+            </span>
+          </div>
+          <span
+            class="empty-message"
+            *ngIf="!currentPreferences.preferredMarkings?.length"
+          >
+            No marking preferences
+          </span>
+        </div>
+      </div>
+
+      <div class="pref-card">
+        <div class="card-header">
+          <span class="card-icon">📊</span>
+          <h3>Categories</h3>
+        </div>
+        <div class="card-content">
+          <div class="tag-list">
+            <span
+              class="tag"
+              *ngFor="let cat of currentPreferences.preferredCategories"
+            >
+              {{ cat }}
+            </span>
+            <span
+              class="empty-message"
+              *ngIf="!currentPreferences.preferredCategories?.length"
+            >
+              All categories
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pref-card">
+        <div class="card-header">
+          <span class="card-icon">⭐</span>
+          <h3>Minimum Rating</h3>
+        </div>
+        <div class="card-content">
+          <div class="rating-display">
+            <span class="stars">
+              <span
+                *ngFor="let star of [1, 2, 3, 4, 5]"
+                class="star"
+                [class.filled]="star <= (currentPreferences.minimumRating || 0)"
+              >
+                ★
+              </span>
+            </span>
+            <span class="rating-text">
+              {{ currentPreferences.minimumRating || 0 }}/5
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -291,6 +375,128 @@
           >
             →
           </button>
+        </div>
+      </div>
+
+      <div class="preference-section">
+        <div class="section-header">
+          <h3>🎯 Trail Markings</h3>
+          <p class="section-description">
+            Select your preferred trail markings
+          </p>
+        </div>
+
+        <div class="markings-controls">
+          <input
+            type="text"
+            placeholder="Search markings..."
+            [(ngModel)]="markingSearchQuery"
+            [ngModelOptions]="{ standalone: true }"
+            (input)="filterMarkings()"
+            class="search-input"
+          />
+          <select
+            [(ngModel)]="markingFilterColor"
+            [ngModelOptions]="{ standalone: true }"
+            (change)="filterMarkings()"
+            class="filter-select"
+          >
+            <option value="">All colors</option>
+            <option *ngFor="let color of uniqueColors" [value]="color">
+              {{ getColorName(color) }}
+            </option>
+          </select>
+          <select
+            [(ngModel)]="markingFilterShape"
+            [ngModelOptions]="{ standalone: true }"
+            (change)="filterMarkings()"
+            class="filter-select"
+          >
+            <option value="">All shapes</option>
+            <option *ngFor="let shape of uniqueShapes" [value]="shape">
+              {{ shape }}
+            </option>
+          </select>
+        </div>
+
+        <div class="markings-grid" *ngIf="!isLoadingMarkings">
+          <div
+            class="marking-item"
+            *ngFor="let marking of filteredMarkings"
+            [class.selected]="isMarkingSelected(marking)"
+            (click)="toggleMarking(marking)"
+          >
+            <app-marking-display [marking]="marking"></app-marking-display>
+            <div class="marking-name">{{ marking.displayName }}</div>
+            <div class="marking-checkbox">
+              <input
+                type="checkbox"
+                [checked]="isMarkingSelected(marking)"
+                (click)="$event.stopPropagation()"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="loading-markings" *ngIf="isLoadingMarkings">
+          <div class="spinner-small"></div>
+          <p>Loading trail markings...</p>
+        </div>
+
+        <div class="selected-count" *ngIf="selectedMarkings.size > 0">
+          {{ selectedMarkings.size }} marking(s) selected
+        </div>
+      </div>
+
+      <div class="preference-section">
+        <div class="section-header">
+          <h3>📊 Trail Categories</h3>
+          <p class="section-description">
+            Choose your preferred trail categories
+          </p>
+        </div>
+        <div class="categories-grid">
+          <label
+            class="category-option"
+            *ngFor="let category of availableCategories"
+            [class.selected]="isCategorySelected(category)"
+          >
+            <input
+              type="checkbox"
+              [checked]="isCategorySelected(category)"
+              (change)="toggleCategory(category)"
+            />
+            <span class="category-card">
+              <span class="category-icon">{{ getCategoryIcon(category) }}</span>
+              <span class="category-name">{{ category }}</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="preference-section">
+        <div class="section-header">
+          <h3>⭐ Minimum Trail Rating</h3>
+          <p class="section-description">
+            Only show trails with this rating or higher
+          </p>
+        </div>
+        <div class="rating-selector">
+          <div class="stars-container">
+            <span
+              *ngFor="let star of [1, 2, 3, 4, 5]"
+              class="star-selector"
+              [class.filled]="
+                star <= preferencesForm.get('minimumRating')?.value
+              "
+              (click)="setMinimumRating(star)"
+            >
+              ★
+            </span>
+          </div>
+          <div class="rating-text">
+            {{ preferencesForm.get("minimumRating")?.value || 0 }} stars minimum
+          </div>
         </div>
       </div>
 

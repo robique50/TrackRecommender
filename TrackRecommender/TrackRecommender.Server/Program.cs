@@ -52,14 +52,15 @@ builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<WeatherService>();
 builder.Services.AddScoped<RegionImportService>();
 builder.Services.AddScoped<RegionService>();
+builder.Services.AddScoped<TrailMarkingService>();
 
 builder.Services.AddScoped<IMapper<User, UserProfileDto>, UserMapper>();
 builder.Services.AddScoped<UserPreferencesMapper>(provider =>
-    new UserPreferencesMapper(provider.GetRequiredService<IRegionRepository>()));
-builder.Services.AddScoped<IMapper<UserPreferences, UserPreferencesDto>>(provider =>
-    provider.GetRequiredService<UserPreferencesMapper>());
-builder.Services.AddScoped<IMapper<Trail, TrailDto>>(provider =>
-    new TrailMapper(provider.GetRequiredService<ILogger<TrailMapper>>())); 
+    new UserPreferencesMapper(
+        provider.GetRequiredService<IRegionRepository>(),
+        provider.GetRequiredService<TrailMarkingService>()
+    ));
+builder.Services.AddScoped<IMapper<Trail, TrailDto>, TrailMapper>();
 builder.Services.AddScoped<ReviewMapper>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
