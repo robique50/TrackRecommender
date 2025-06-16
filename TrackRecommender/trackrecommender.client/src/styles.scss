@@ -1,14 +1,29 @@
-*,
-*::before,
-*::after {
+@use "../src/app/styles/variables.scss" as *;
+
+* {
   box-sizing: border-box;
 }
 
 html,
 body {
-  width: 100%;
-  overflow-x: hidden;
   margin: 0;
   padding: 0;
+  width: 100%;
   height: 100%;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Helvetica", "Arial", sans-serif;
+}
+
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+app-root {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }

@@ -16,9 +16,5 @@ namespace TrackRecommender.Server.Models.DTOs
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{8,}$",
         ErrorMessage = "Password must include at least one uppercase letter, one lowercase letter, one digit, and one special character")]
         public string Password { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Confirm Password is required")]
-        [Compare("Password", ErrorMessage = "Passwords do not match")]
-        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

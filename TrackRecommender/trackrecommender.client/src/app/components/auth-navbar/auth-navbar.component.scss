@@ -1,64 +1,173 @@
+@use "../../styles/variables.scss" as *;
+
 .auth-navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 var(--space-6);
-  background: var(--auth-header-gradient, linear-gradient(to right, #2E5D32, #4A8C50));
-  color: var(--white, #FFFFFF);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--gradient-forest);
+  color: var(--color-white);
+  box-shadow: var(--shadow-navbar);
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
-  height: 48px;
+  z-index: var(--z-index-fixed);
+  height: var(--navbar-height);
   width: 100%;
   box-sizing: border-box;
+  transition: all var(--transition-normal);
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px
+    );
+    background-size: 3rem 3rem;
+    pointer-events: none;
+  }
 }
 
 .logo-container {
+  position: relative;
+  z-index: 1;
+
   a {
     text-decoration: none;
-    color: white;
+    color: var(--color-white);
     display: flex;
     align-items: center;
-    font-weight: bold;
-    font-size: 18px;
+    gap: var(--space-3);
+    transition: opacity var(--transition-fast);
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &::before {
+      content: "⛰️";
+      font-size: 24px;
+    }
   }
 
   .logo-text {
-    font-weight: bold;
-    font-size: 18px;
+    font-family: var(--font-family-heading);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-xl);
+    letter-spacing: -0.02em;
+    background: linear-gradient(
+      135deg,
+      var(--color-white) 0%,
+      rgba(255, 255, 255, 0.9) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    span {
+      color: var(--color-accent-300);
+    }
   }
 }
 
 .auth-links {
   display: flex;
-  gap: 24px;
-  margin-right: 16px;
+  gap: var(--space-8);
+  position: relative;
+  z-index: 1;
 
   a {
-    color: white;
+    color: var(--color-white);
     text-decoration: none;
-    font-weight: 500;
-    padding: 4px 0;
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-base);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
     position: relative;
-    font-size: 16px;
-
-    &:after {
-      content: '';
+    transition: all var(--transition-normal);
+    &::before {
+      content: "";
       position: absolute;
-      width: 0;
-      height: 2px;
-      bottom: 0;
+      top: 0;
       left: 0;
-      background-color: white;
-      transition: width 0.3s ease;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 80%;
+      height: 3px;
+      background: var(--color-accent-300);
+      border-radius: var(--radius-full);
+      transition: transform var(--transition-normal);
     }
 
-    &:hover:after,
-    &.active:after {
-      width: 100%;
+    &:hover {
+      &::before {
+        opacity: 1;
+      }
+    }
+
+    &.active {
+      font-weight: var(--font-weight-semibold);
+
+      &::after {
+        transform: translateX(-50%) scaleX(1);
+      }
+
+      &::before {
+        opacity: 0.15;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-navbar {
+    height: var(--navbar-height-mobile);
+    padding: 0 var(--space-4);
+  }
+
+  .logo-container {
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+
+      &::before {
+        font-size: 20px;
+      }
+    }
+
+    .logo-text {
+      font-size: var(--font-size-lg);
+    }
+  }
+
+  .auth-links {
+    gap: var(--space-4);
+
+    a {
+      font-size: var(--font-size-sm);
+      padding: var(--space-1) var(--space-3);
     }
   }
 }

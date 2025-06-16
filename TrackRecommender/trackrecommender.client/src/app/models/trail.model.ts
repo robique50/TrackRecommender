@@ -36,7 +36,7 @@ export interface Trail {
   averageRating: number;
   reviewsCount: number;
   lastUpdated: Date;
-  hasReview?: boolean; // Adaugă această proprietate
+  hasReview?: boolean;
 }
 
 export interface TrailFilters {

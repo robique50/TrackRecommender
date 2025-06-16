@@ -15,14 +15,12 @@
             id="username"
             type="text"
             formControlName="username"
+            placeholder="Enter your username"
             [ngClass]="{
-              invalid: f['username'].invalid && f['username'].touched,
+              invalid: hasError('username'),
             }"
           />
-          <span
-            class="error-message"
-            *ngIf="f['username'].invalid && f['username'].touched"
-          >
+          <span class="error-message" *ngIf="hasError('username')" @slideIn>
             Username is required
           </span>
         </div>
@@ -33,14 +31,12 @@
             id="password"
             type="password"
             formControlName="password"
+            placeholder="Enter your password"
             [ngClass]="{
-              invalid: f['password'].invalid && f['password'].touched,
+              invalid: hasError('password'),
             }"
           />
-          <span
-            class="error-message"
-            *ngIf="f['password'].invalid && f['password'].touched"
-          >
+          <span class="error-message" *ngIf="hasError('password')" @slideIn>
             Password is required
           </span>
         </div>
@@ -52,15 +48,15 @@
           </label>
         </div>
 
-        <div class="auth-error" *ngIf="error">
+        <div class="auth-error" *ngIf="error && !showSuccess" @slideIn>
           {{ error }}
         </div>
 
-        <button
-          type="submit"
-          class="btn-primary"
-          [disabled]="loginForm.invalid || isLoading"
-        >
+        <div class="auth-success" *ngIf="showSuccess" @slideIn>
+          {{ successMessage }}
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="isLoading">
           <span *ngIf="!isLoading">Log in</span>
           <span *ngIf="isLoading" class="loading-spinner"></span>
         </button>

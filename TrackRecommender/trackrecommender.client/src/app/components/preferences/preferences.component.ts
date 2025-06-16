@@ -73,7 +73,6 @@ export class PreferencesComponent implements OnInit {
   ];
   protected availableRegions: RegionOption[] = [];
 
-  // Trail markings
   protected allMarkings: TrailMarking[] = [];
   protected filteredMarkings: TrailMarking[] = [];
   protected selectedMarkings = new Set<string>();
@@ -185,7 +184,6 @@ export class PreferencesComponent implements OnInit {
     }
   }
 
-  // Metode pentru marcaje
   async loadMarkings(): Promise<void> {
     this.isLoadingMarkings = true;
     try {
@@ -194,7 +192,6 @@ export class PreferencesComponent implements OnInit {
       );
       this.filteredMarkings = [...this.allMarkings];
 
-      // Obține culori și forme unice
       this.uniqueColors = await firstValueFrom(
         this.trailMarkingService.getUniqueColors()
       );

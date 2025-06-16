@@ -1,136 +1,148 @@
 :root {
-  // Base colors - Mountain Theme
-  --primary: #2e5d32;
-  --primary-light: #4a8c50;
-  --primary-dark: #1b3e20;
-  --secondary: #1e5285;
-  --tertiary: #7d5d3b;
-  // Additional nature colors
-  --mountain-gray: #8d9ca6;
-  --sky-blue: #6fb1fc;
-  --forest-dark: #263a29;
-  --sunset-orange: #e67e22;
-  --alpine-meadow: #88b04b;
-  // Neutral colors
-  --white: #ffffff;
-  --gray-100: #f5f5f5;
-  --gray-200: #e0e0e0;
-  --gray-500: #9e9e9e;
-  --gray-800: #424242;
-  --gray-900: #212121;
-  // Semantic colors - trail difficulty
-  --trail-easy: #66bb6a;
-  --trail-moderate: #ffc107;
-  --trail-difficult: #ff9800;
-  --trail-expert: #f44336;
-  // UI Elements
-  --background: var(--white);
-  --card-background: var(--white);
-  --text-primary: var(--gray-900);
-  --text-secondary: var(--gray-800);
-  --text-tertiary: var(--gray-500);
-  --border-color: #cad9c5;
-  --navbar-bg: var(--primary);
-  --navbar-text: var(--white);
-  --input-bg: var(--gray-100);
-  --error-color: #e53e3e;
-  --success-color: #38a169;
+  // Primary Colors
+  --color-primary-50: #e8f5e9;
+  --color-primary-100: #c8e6c9;
+  --color-primary-200: #a5d6a7;
+  --color-primary-300: #81c784;
+  --color-primary-400: #66bb6a;
+  --color-primary-500: #4caf50;
+  --color-primary-600: #43a047;
+  --color-primary-700: #388e3c;
+  --color-primary-800: #2e7d32;
+  --color-primary-900: #1b5e20;
+  // Secondary Colors
+  --color-secondary-50: #efebe9;
+  --color-secondary-100: #d7ccc8;
+  --color-secondary-200: #bcaaa4;
+  --color-secondary-300: #a1887f;
+  --color-secondary-400: #8d6e63;
+  --color-secondary-500: #795548;
+  --color-secondary-600: #6d4c41;
+  --color-secondary-700: #5d4037;
+  --color-secondary-800: #4e342e;
+  --color-secondary-900: #3e2723;
+  // Accent Colors
+  --color-accent-50: #e3f2fd;
+  --color-accent-100: #bbdefb;
+  --color-accent-200: #90caf9;
+  --color-accent-300: #64b5f6;
+  --color-accent-400: #42a5f5;
+  --color-accent-500: #2196f3;
+  --color-accent-600: #1e88e5;
+  --color-accent-700: #1976d2;
+  --color-accent-800: #1565c0;
+  --color-accent-900: #0d47a1;
+  // Trail Difficulty Colors
+  --color-trail-easy: #4caf50;
+  --color-trail-moderate: #ff9800;
+  --color-trail-difficult: #f44336;
+  --color-trail-expert: #9c27b0;
+  // Semantic Colors
+  --color-success: #4caf50;
+  --color-warning: #ff9800;
+  --color-error: #f44336;
+  --color-info: #2196f3;
+  // Neutral Colors
+  --color-white: #ffffff;
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #eeeeee;
+  --color-gray-300: #e0e0e0;
+  --color-gray-400: #bdbdbd;
+  --color-gray-500: #9e9e9e;
+  --color-gray-600: #757575;
+  --color-gray-700: #616161;
+  --color-gray-800: #424242;
+  --color-gray-900: #212121;
+  --color-black: #000000;
+  // Background Colors
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-bg-tertiary: #f5f5f5;
+  --color-bg-dark: #263238;
+  // Text Colors
+  --color-text-primary: #212121;
+  --color-text-secondary: #757575;
+  --color-text-disabled: #9e9e9e;
+  --color-text-inverse: #ffffff;
   // Typography
-  --font-family:
-    "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Oxygen, Ubuntu,
-    Cantarell, "Open Sans", sans-serif;
+  --font-family-primary: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-family-heading: "Poppins", "Inter", sans-serif;
+  --font-family-mono: "Fira Code", "Consolas", monospace;
+  // Font Sizes
   --font-size-xs: 0.75rem; // 12px
+  --font-size-xs-plus: 0.8125rem; // 13px
   --font-size-sm: 0.875rem; // 14px
+  --font-size-sm-plus: 0.9375rem; // 15px
   --font-size-base: 1rem; // 16px
   --font-size-lg: 1.125rem; // 18px
   --font-size-xl: 1.25rem; // 20px
   --font-size-2xl: 1.5rem; // 24px
   --font-size-3xl: 1.875rem; // 30px
+  --font-size-4xl: 2.25rem; // 36px
+  --font-size-5xl: 3rem; // 48px
+  // Font Weights
+  --font-weight-light: 300;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  // Line Heights
   --line-height-tight: 1.25;
   --line-height-normal: 1.5;
-  --line-height-loose: 1.75;
-  // Spacing - use these consistently across the app
+  --line-height-relaxed: 1.75;
+  --line-height-loose: 2;
+  // Spacing Scale
+  --space-0: 0;
+  --space-0-5: 0.125rem; // 2px
   --space-1: 0.25rem; // 4px
   --space-2: 0.5rem; // 8px
+  --space-2-5: 0.625rem; // 10px
   --space-3: 0.75rem; // 12px
+  --space-3-5: 0.875rem; // 14px
   --space-4: 1rem; // 16px
   --space-5: 1.25rem; // 20px
   --space-6: 1.5rem; // 24px
+  --space-7: 1.75rem; // 28px
   --space-8: 2rem; // 32px
   --space-10: 2.5rem; // 40px
   --space-12: 3rem; // 48px
   --space-16: 4rem; // 64px
-  // Component sizes
-  --input-height: 2.75rem; // 44px
-  --input-padding: var(--space-3);
-  --button-height: 2.75rem; // 44px
-  --auth-card-padding: var(--space-4);
-  --button-padding: var(--space-4) var(--space-6);
-  --form-width-sm: 20rem; // 320px
-  --form-width-md: 24rem; // 384px
-  --form-width-lg: 28rem; // 448px
-  --form-max-width: 30rem; // 480px
-  --header-height: 4rem; // 64px
-  // Auth-specific variables
-  --auth-card-width: 22rem; // 350px
-  --auth-navbar-height: 48px;
-  --auth-input-height: 36px;
-  --auth-button-height: 36px;
-  --auth-form-spacing: var(--space-3);
-  --auth-content-padding: var(--space-3) var(--space-4);
-  --auth-error-padding: var(--space-2) var(--space-3);
-  --auth-border-width: 3px;
-  --auth-background-decoration: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23263A29' fill-opacity='0.1' d='M0,224L60,213.3C120,203,240,181,360,181.3C480,181,600,203,720,218.7C840,235,960,245,1080,234.7C1200,224,1320,192,1380,176L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
-  // Shadows
-  --shadow-sm: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 0.625rem 0.9375rem rgba(0, 0, 0, 0.1);
-  --auth-card-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  --auth-card-inner-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-  // Border radius
-  --radius-sm: 0.125rem;
-  --radius-md: 0.25rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
+  --space-20: 5rem; // 80px
+  --space-24: 6rem; // 96px
+  // Border Radius
+  --radius-none: 0;
+  --radius-sm: 0.25rem; // 4px
+  --radius-md: 0.375rem; // 6px
+  --radius-lg: 0.5rem; // 8px
+  --radius-xl: 0.75rem; // 12px
+  --radius-2xl: 1rem; // 16px
+  --radius-3xl: 1.5rem; // 24px
   --radius-full: 9999px;
-  // Transition timing
-  --transition-fast: 150ms;
-  --transition-normal: 250ms;
-  --transition-slow: 350ms;
-  // Trail-specific gradients
-  --gradient-forest: linear-gradient(
-    135deg,
-    #2c3e50 0%,
-    var(--primary-light) 100%
-  );
-  --gradient-header: linear-gradient(
-    to right,
-    var(--primary),
-    var(--primary-light)
-  );
-  --gradient-sunset: linear-gradient(to right, #f27121, #e94057);
-  --gradient-mountain: linear-gradient(to bottom, #757f9a, #d7dde8);
-  --auth-gradient: linear-gradient(
-    135deg,
-    var(--forest-dark) 0%,
-    var(--primary) 100%
-  );
-  --auth-header-gradient: linear-gradient(
-    to right,
-    var(--primary-dark),
-    var(--primary)
-  );
-  --auth-bg-gradient: linear-gradient(
-    135deg,
-    var(--gray-100) 0%,
-    var(--gray-200) 100%
-  );
-  // Z-index layers
+  // Shadows - Mountain-inspired depth
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07),
+    0 2px 4px -1px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.12),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  // Component-specific shadows
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
+  --shadow-navbar: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-auth-card: 0 10px 25px rgba(0, 0, 0, 0.15);
+  // Transitions
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+  // Z-index Scale
   --z-index-dropdown: 1000;
   --z-index-sticky: 1020;
   --z-index-fixed: 1030;
@@ -138,32 +150,157 @@
   --z-index-modal: 1050;
   --z-index-popover: 1060;
   --z-index-tooltip: 1070;
+  // Component Sizes
+  --navbar-height: 3.5rem;
+  --navbar-height-mobile: 3.5rem;
+  --sidebar-width: 250px;
+  --sidebar-width-collapsed: 64px;
+  // Form Elements
+  --input-height-sm: 2rem;
+  --input-height-md: 2.5rem;
+  --input-height-lg: 3rem;
+  --input-padding-x: var(--space-3);
+  --input-padding-y: var(--space-2);
+  --input-border-width: 1px;
+  --input-border-color: var(--color-gray-300);
+  --input-border-color-hover: var(--color-gray-400);
+  --input-border-color-focus: var(--color-primary-500);
+  --input-bg: var(--color-white);
+  --input-bg-disabled: var(--color-gray-100);
+  // Buttons
+  --btn-padding-x-sm: var(--space-3);
+  --btn-padding-x-md: var(--space-4);
+  --btn-padding-x-lg: var(--space-6);
+  --btn-padding-y-sm: var(--space-1);
+  --btn-padding-y-md: var(--space-2);
+  --btn-padding-y-lg: var(--space-3);
+  --btn-font-size-sm: var(--font-size-sm);
+  --btn-font-size-md: var(--font-size-base);
+  --btn-font-size-lg: var(--font-size-lg);
+  --btn-border-radius: var(--radius-md);
+  // Gradients - Mountain-inspired
+  --gradient-primary: linear-gradient(
+    135deg,
+    var(--color-primary-800) 0%,
+    var(--color-primary-500) 100%
+  );
+  --gradient-secondary: linear-gradient(
+    135deg,
+    var(--color-secondary-700) 0%,
+    var(--color-secondary-400) 100%
+  );
+  --gradient-forest: linear-gradient(135deg, #1b5e20 0%, #4caf50 100%);
+  --gradient-mountain: linear-gradient(135deg, #37474f 0%, #78909c 100%);
+  --gradient-sky: linear-gradient(180deg, #0d47a1 0%, #42a5f5 100%);
+  --gradient-sunset: linear-gradient(135deg, #ff6f00 0%, #ffab00 100%);
+  --gradient-earth: linear-gradient(135deg, #3e2723 0%, #795548 100%);
+  // Auth Page Specific
+  --auth-card-width: 400px;
+  --auth-card-padding: var(--space-6);
+  --auth-header-height: 120px;
+  --auth-card-login-max-width: 380px;
+  --auth-card-border-color: rgba(0, 0, 0, 0.08);
+  --auth-header-icon-font-size: var(--space-10);
+  --auth-header-h2-font-size: 1.75rem; // ~28px
+  --auth-header-p-font-size: 0.9rem; // ~14.4px
+  --auth-input-height: 3rem; // ~48px
+  --auth-input-border-width: 0.15rem; // ~1.5px
+  --auth-input-padding-y: var(--space-1-5);
+  --auth-input-padding-x: var(--space-3);
+  --auth-card-register-max-width: 420px;
+  --auth-card-deco-size: 80px;
+  --auth-card-deco-opacity: 0.05;
+  --auth-btn-icon-opacity: 0.3;
+  --auth-btn-icon-opacity-hover: 0.6;
+  --auth-btn-icon-opacity-disabled: 0.1;
+  --auth-footer-trail-width: 3px;
+  --auth-footer-trail-height: 25px;
+  --auth-footer-trail-opacity: 0.3;
+  --breakpoint-register-mobile: 480px;
+  --auth-input-focus-shadow-primary: 0 0 0 4px rgba(76, 175, 80, 0.15); // Umbra focus pentru tema primară (verde)
+  --auth-input-error-bg: #fff5f5;
+  --auth-input-error-focus-shadow: 0 0 0 4px rgba(244, 67, 54, 0.15);
+  --auth-checkbox-size: 1.15rem; // ~18.4px
+  --auth-password-req-bg: linear-gradient(
+    135deg,
+    var(--color-accent-50) 0%,
+    rgba(33, 150, 243, 0.05) 100%
+  );
+  --auth-input-focus-shadow-accent: 0 0 0 4px rgba(33, 150, 243, 0.15);
+  --auth-btn-accent-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+  --auth-btn-accent-shadow-hover: 0 6px 20px rgba(33, 150, 243, 0.4);
+  --auth-btn-accent-shadow-active: 0 2px 10px rgba(33, 150, 243, 0.3);
+  --auth-checkbox-border-color: var(--color-primary-400);
+  --auth-checkbox-border-color-hover: var(--color-primary-600);
+  --auth-checkbox-bg-hover: var(--color-primary-50);
+  --auth-checkbox-checked-bg: var(--color-primary-500);
+  --auth-checkbox-checked-icon-color: var(--color-white);
+  --auth-feedback-padding-y: var(--space-2-5);
+  --auth-feedback-padding-x: var(--space-3-5);
+  --auth-feedback-border-accent-width: 4px;
+  --auth-error-text-color-dark: #c62828;
+  --auth-error-bg-light: rgba(244, 67, 54, 0.1);
+  --auth-error-border-light: rgba(244, 67, 54, 0.3);
+  --auth-success-text-color-dark: var(--color-primary-800);
+  --auth-success-bg-light: rgba(76, 175, 80, 0.1);
+  --auth-success-border-light: rgba(76, 175, 80, 0.3);
+  --auth-btn-height: 2.75rem; // ~44px
+  --auth-btn-padding-y: var(--space-1-5);
+  --auth-btn-padding-x: var(--space-5);
+  --auth-btn-primary-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+  --auth-btn-primary-shadow-hover: 0 6px 20px rgba(46, 125, 50, 0.4);
+  --auth-btn-primary-shadow-active: 0 2px 10px rgba(46, 125, 50, 0.3);
+  --auth-spinner-size: 0.875rem; // ~14px
+  --auth-spinner-border-width: 0.125rem; // ~2px
+  --color-white-alpha-30: rgba(255, 255, 255, 0.3);
+  --password-req-line-height: var(--line-height-tight);
+  --mountain-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%231b5e20' fill-opacity='0.1' d='M0,128L48,138.7C96,149,192,171,288,170.7C384,171,480,149,576,128C672,107,768,85,864,101.3C960,117,1056,171,1152,181.3C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  // Animation Keyframes Names
+  --animation-slide-in: slideIn;
+  --animation-fade-in: fadeIn;
+  --animation-pulse: pulse;
+  --animation-bounce: bounce;
+  --animation-float-mountains: 20s ease-in-out infinite;
+  --animation-float-mountains-alt: 25s ease-in-out infinite;
+  --animation-walk: 3s ease-in-out infinite;
+  --transition-auth-card-slide: 0.6s ease-out;
+  --animation-bounce-duration: 2s;
+  --animation-slidein-duration: 0.3s;
+  // Breakpoints
+  --breakpoint-xs: 0;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1400px;
+  // Auth Page Specific
+  --auth-form-padding: var(--space-6);
+  --auth-icon-size-mobile: 28px;
+  --auth-icon-size: 32px;
+  --auth-form-gap: var(--space-4);
+  --auth-link-padding: var(--space-2) var(--space-4);
 }
 
-// Dark Mode
-.dark-mode {
-  --primary: #4caf50;
-  --primary-light: #81c784;
-  --primary-dark: #388e3c;
-  // Reverse neutral colors
-  --background: #121212;
-  --card-background: #1e1e1e;
-  --text-primary: #f5f5f5;
-  --text-secondary: #e0e0e0;
-  --text-tertiary: #bdbdbd;
-  --border-color: #333333;
-  --navbar-bg: #1b5e20;
-  --navbar-text: #ffffff;
-  --input-bg: #2d2d2d;
-  // Dark mode auth gradients
-  --auth-gradient: linear-gradient(
-    135deg,
-    #1a2a1d 0%,
-    var(--primary-dark) 100%
-  );
-  --auth-header-gradient: linear-gradient(to right, #1a2a1d, var(--primary));
-  // Adjusts for shadows in dark mode
-  --shadow-sm: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.15);
-  --shadow-md: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 0.625rem 0.9375rem rgba(0, 0, 0, 0.25);
+@mixin glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@mixin mountain-decoration {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background-image: var(--mountain-pattern);
+    background-size: cover;
+    background-position: bottom;
+    opacity: 0.5;
+    z-index: -1;
+  }
 }

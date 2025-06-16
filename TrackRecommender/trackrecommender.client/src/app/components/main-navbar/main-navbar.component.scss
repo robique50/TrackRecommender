@@ -1,10 +1,16 @@
-.auth-navbar {
+@use "../../styles/variables.scss" as *;
+
+// Standalone main-navbar.component.scss - Same style as auth navbar
+
+// Use .main-navbar if your HTML has class="main-navbar"
+// Use .auth-navbar if your HTML has class="auth-navbar"
+.main-navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 var(--space-6, 24px);
-  background: linear-gradient(to right, #2e5d32, #4a8c50);
-  color: white;
+  padding: 0 2rem;
+  background: linear-gradient(135deg, #1b5e20 0%, #4caf50 100%);
+  color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: fixed;
   top: 0;
@@ -14,25 +20,66 @@
   height: 64px;
   width: 100%;
   box-sizing: border-box;
+
+  // Subtle texture overlay
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px
+    );
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
 }
 
 .logo-container {
+  position: relative;
+  z-index: 1;
+
   a {
     text-decoration: none;
-    color: white;
+    color: #ffffff;
     display: flex;
     align-items: center;
-    font-weight: bold;
-    font-size: 20px;
+    gap: 0.75rem;
+    transition: opacity 150ms ease-in-out;
 
     &:hover {
       opacity: 0.9;
     }
   }
 
+  // Mountain icon
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &::before {
+      content: "⛰️";
+      font-size: 24px;
+    }
+  }
+
   .logo-text {
-    font-weight: bold;
-    font-size: 20px;
+    font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+
+    span {
+      color: #a5d6a7;
+    }
   }
 }
 
@@ -40,73 +87,123 @@
   flex: 1;
   display: flex;
   justify-content: center;
+  position: relative;
+  z-index: 1;
 
   .nav-links {
     display: flex;
-    gap: 32px;
+    gap: 2rem;
 
     a {
-      color: white;
+      color: #ffffff;
       text-decoration: none;
       font-weight: 500;
-      padding: 8px 16px;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
       border-radius: 6px;
       position: relative;
-      font-size: 16px;
-      transition: all 0.3s ease;
+      transition: all 300ms ease-in-out;
+
+      // Hover background
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        opacity: 0;
+        transition: opacity 300ms ease-in-out;
+      }
+
+      // Active underline
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        transform: translateX(-50%) scaleX(0);
+        width: 80%;
+        height: 3px;
+        background: #a5d6a7;
+        border-radius: 9999px;
+        transition: transform 300ms ease-in-out;
+      }
 
       &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        &::before {
+          opacity: 1;
+        }
       }
 
       &.active {
-        background-color: rgba(255, 255, 255, 0.2);
         font-weight: 600;
+
+        &::after {
+          transform: translateX(-50%) scaleX(1);
+        }
+
+        &::before {
+          opacity: 0.15;
+        }
       }
     }
   }
 }
 
 .nav-right {
+  position: relative;
+  z-index: 1;
+
   .user-menu {
     position: relative;
 
     .user-btn {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 0.5rem;
       background: rgba(255, 255, 255, 0.1);
-      border: none;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      padding: 0.5rem 0.75rem;
+      padding-right: 1rem;
+      border-radius: 9999px;
       cursor: pointer;
-      font-size: 14px;
-      transition: all 0.3s ease;
+      font-size: 1rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      transition: all 300ms ease-in-out;
 
       &:hover {
         background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
       }
 
       .user-initial {
-        width: 32px;
-        height: 32px;
-        background: rgba(255, 255, 255, 0.2);
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #37474f 0%, #78909c 100%);
+        border: 2px solid rgba(255, 255, 255, 0.3);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
-        font-size: 14px;
+        font-weight: 700;
+        font-size: 1rem;
+        text-transform: uppercase;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
 
       .user-name {
         font-weight: 500;
+        margin-right: 0.25rem;
       }
 
       .dropdown-arrow {
-        font-size: 12px;
-        transition: transform 0.3s ease;
+        font-size: 0.875rem;
+        transition: transform 300ms ease-in-out;
 
         &.open {
           transform: rotate(180deg);
@@ -115,92 +212,134 @@
     }
 
     .user-dropdown {
-      position: fixed;
-      top: 72px;
-      right: 20px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      min-width: 200px;
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      min-width: 220px;
       overflow: hidden;
-      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 300ms ease-in-out;
+
+      &.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      // Mountain decoration at top
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(135deg, #1b5e20 0%, #4caf50 100%);
+      }
 
       a,
       .logout-btn {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        color: #2e5d32;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: #212121;
         text-decoration: none;
-        font-size: 14px;
-        font-weight: 500;
-        transition: background-color 0.2s ease;
+        font-size: 1rem;
         border: none;
         background: none;
         width: 100%;
         text-align: left;
         cursor: pointer;
+        transition: all 150ms ease-in-out;
+        position: relative;
 
         &:hover {
-          background-color: #f8f9fa;
+          background-color: #e8f5e9;
+          color: #2e7d32;
+
+          .icon {
+            transform: translateX(2px);
+          }
         }
 
-        .menu-icon {
-          font-size: 16px;
+        .icon {
+          font-size: 1.125rem;
+          transition: transform 150ms ease-in-out;
+        }
+
+        &:not(:last-child) {
+          border-bottom: 1px solid #eeeeee;
+        }
+
+        &.logout-btn {
+          color: #f44336;
+
+          &:hover {
+            background-color: #ffebee;
+            color: #f44336;
+          }
         }
       }
+    }
+  }
+}
 
-      .logout-btn {
-        color: #e53e3e;
-
-        &:hover {
-          background-color: #fff5f5;
-        }
-      }
-
-      .dropdown-divider {
-        height: 1px;
-        background-color: #e2e8f0;
-        margin: 4px 0;
-      }
+// Mobile responsiveness
+@media (max-width: 1024px) {
+  .nav-center {
+    .nav-links {
+      gap: 1rem;
     }
   }
 }
 
 @media (max-width: 768px) {
+  .main-navbar,
   .auth-navbar {
-    padding: 0 16px;
     height: 56px;
+    padding: 0 1rem;
+  }
 
-    .logo-container .logo-text {
-      font-size: 18px;
-    }
+  .logo-container {
+    .logo-icon {
+      width: 28px;
+      height: 28px;
 
-    .nav-center .nav-links {
-      gap: 16px;
-
-      a {
-        padding: 6px 12px;
-        font-size: 14px;
+      &::before {
+        font-size: 20px;
       }
     }
 
-    .nav-right .user-menu .user-btn {
-      .user-name {
-        display: none;
-      }
+    .logo-text {
+      font-size: 1.125rem;
     }
   }
-}
 
-@media (max-width: 640px) {
-  .nav-center .nav-links {
-    gap: 8px;
+  .nav-center {
+    display: none; // Hide center navigation on mobile
+  }
 
-    a {
-      padding: 4px 8px;
-      font-size: 13px;
+  .nav-right {
+    .user-menu {
+      .user-btn {
+        padding: 0.25rem 0.5rem;
+
+        .user-initial {
+          width: 32px;
+          height: 32px;
+          font-size: 0.875rem;
+        }
+
+        .user-name {
+          display: none; // Hide username on mobile
+        }
+      }
     }
   }
 }

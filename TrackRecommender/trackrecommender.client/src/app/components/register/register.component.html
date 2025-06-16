@@ -19,14 +19,12 @@
             id="username"
             type="text"
             formControlName="username"
+            placeholder="Choose a username"
             [ngClass]="{
-              invalid: f['username'].invalid && f['username'].touched,
+              invalid: hasError('username'),
             }"
           />
-          <span
-            class="error-message"
-            *ngIf="f['username'].invalid && f['username'].touched"
-          >
+          <span class="error-message" *ngIf="hasError('username')" @slideIn>
             <span *ngIf="f['username'].errors?.['required']"
               >Username is required</span
             >
@@ -42,12 +40,10 @@
             id="email"
             type="email"
             formControlName="email"
-            [ngClass]="{ invalid: f['email'].invalid && f['email'].touched }"
+            placeholder="Enter your email"
+            [ngClass]="{ invalid: hasError('email') }"
           />
-          <span
-            class="error-message"
-            *ngIf="f['email'].invalid && f['email'].touched"
-          >
+          <span class="error-message" *ngIf="hasError('email')" @slideIn>
             <span *ngIf="f['email'].errors?.['required']"
               >Email is required</span
             >
@@ -63,19 +59,44 @@
             id="password"
             type="password"
             formControlName="password"
+            placeholder="Create a strong password"
             [ngClass]="{
-              invalid: f['password'].invalid && f['password'].touched,
+              invalid: hasError('password'),
             }"
           />
-          <div class="password-requirements" *ngIf="f['password'].touched">
+          <div
+            class="password-requirements"
+            *ngIf="f['password'].touched"
+            @fadeIn
+          >
             <ul>
-              <li [ngClass]="{ valid: hasMinLength() }">
+              <li
+                [ngClass]="{ valid: hasMinLength() }"
+                [@checkmark]="hasMinLength()"
+              >
                 At least 8 characters
               </li>
-              <li [ngClass]="{ valid: hasUpperCase() }">Uppercase letter</li>
-              <li [ngClass]="{ valid: hasLowerCase() }">Lowercase letter</li>
-              <li [ngClass]="{ valid: hasDigit() }">Number</li>
-              <li [ngClass]="{ valid: hasSpecialChar() }">Special character</li>
+              <li
+                [ngClass]="{ valid: hasUpperCase() }"
+                [@checkmark]="hasUpperCase()"
+              >
+                Uppercase letter
+              </li>
+              <li
+                [ngClass]="{ valid: hasLowerCase() }"
+                [@checkmark]="hasLowerCase()"
+              >
+                Lowercase letter
+              </li>
+              <li [ngClass]="{ valid: hasDigit() }" [@checkmark]="hasDigit()">
+                Number
+              </li>
+              <li
+                [ngClass]="{ valid: hasSpecialChar() }"
+                [@checkmark]="hasSpecialChar()"
+              >
+                Special character
+              </li>
             </ul>
           </div>
         </div>
@@ -86,35 +107,30 @@
             id="confirmPassword"
             type="password"
             formControlName="confirmPassword"
+            placeholder="Confirm your password"
             [ngClass]="{
-              invalid:
-                f['confirmPassword'].invalid && f['confirmPassword'].touched,
+              invalid: hasError('confirmPassword') || 
+                (f['confirmPassword'].touched && registerForm.errors?.['mismatch']),
             }"
           />
           <span
             class="error-message"
-            *ngIf="
-              f['confirmPassword'].errors?.['mismatch'] &&
-              f['confirmPassword'].touched
-            "
+            *ngIf="f['confirmPassword'].touched && registerForm.errors?.['mismatch']"
+            @slideIn
           >
             Passwords do not match
           </span>
         </div>
 
-        <div class="auth-error" *ngIf="error">
+        <div class="auth-error" *ngIf="error && !success" @slideIn>
           {{ error }}
         </div>
 
-        <div class="auth-success" *ngIf="success">
-          Registration successful! You will be redirected to the login page.
+        <div class="auth-success" *ngIf="success" @slideIn>
+          {{ successMessage }}
         </div>
 
-        <button
-          type="submit"
-          class="btn-primary"
-          [disabled]="registerForm.invalid || isLoading"
-        >
+        <button type="submit" class="btn-primary" [disabled]="isLoading">
           <span *ngIf="!isLoading">Register</span>
           <span *ngIf="isLoading" class="loading-spinner"></span>
         </button>
