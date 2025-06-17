@@ -1,27 +1,22 @@
 @use "../../styles/variables.scss" as *;
 
-// Standalone main-navbar.component.scss - Same style as auth navbar
-
-// Use .main-navbar if your HTML has class="main-navbar"
-// Use .auth-navbar if your HTML has class="auth-navbar"
 .main-navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 2rem;
-  background: linear-gradient(135deg, #1b5e20 0%, #4caf50 100%);
-  color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0 var(--space-8);
+  background: var(--gradient-forest);
+  color: var(--color-white);
+  box-shadow: var(--shadow-navbar);
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-index-fixed);
   height: 64px;
   width: 100%;
   box-sizing: border-box;
 
-  // Subtle texture overlay
   &::after {
     content: "";
     position: absolute;
@@ -45,18 +40,17 @@
 
   a {
     text-decoration: none;
-    color: #ffffff;
+    color: var(--color-white);
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    transition: opacity 150ms ease-in-out;
+    gap: var(--space-3);
+    transition: opacity var(--transition-fast);
 
     &:hover {
       opacity: 0.9;
     }
   }
 
-  // Mountain icon
   .logo-icon {
     width: 32px;
     height: 32px;
@@ -71,14 +65,20 @@
   }
 
   .logo-text {
-    font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI",
-      sans-serif;
-    font-weight: 700;
-    font-size: 1.25rem;
+    font-family: var(--font-family-heading);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-xl);
     letter-spacing: -0.02em;
+    background: linear-gradient(
+      135deg,
+      var(--color-white) 0%,
+      rgba(255, 255, 255, 0.9) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
 
     span {
-      color: #a5d6a7;
+      color: var(--color-accent-300);
     }
   }
 }
@@ -92,19 +92,19 @@
 
   .nav-links {
     display: flex;
-    gap: 2rem;
+    align-items: center;
+    gap: var(--space-8);
 
     a {
-      color: #ffffff;
+      color: rgba(255, 255, 255, 0.9);
       text-decoration: none;
-      font-weight: 500;
-      font-size: 1rem;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
+      font-weight: var(--font-weight-medium);
+      font-size: var(--font-size-base);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-normal);
       position: relative;
-      transition: all 300ms ease-in-out;
 
-      // Hover background
       &::before {
         content: "";
         position: absolute;
@@ -113,12 +113,11 @@
         right: 0;
         bottom: 0;
         background: rgba(255, 255, 255, 0.1);
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         opacity: 0;
-        transition: opacity 300ms ease-in-out;
+        transition: opacity var(--transition-normal);
       }
 
-      // Active underline
       &::after {
         content: "";
         position: absolute;
@@ -127,26 +126,29 @@
         transform: translateX(-50%) scaleX(0);
         width: 80%;
         height: 3px;
-        background: #a5d6a7;
-        border-radius: 9999px;
-        transition: transform 300ms ease-in-out;
+        background: var(--color-accent-300);
+        border-radius: var(--radius-full);
+        transition: transform var(--transition-normal);
       }
 
       &:hover {
+        color: var(--color-white);
+
         &::before {
           opacity: 1;
         }
       }
 
       &.active {
-        font-weight: 600;
-
-        &::after {
-          transform: translateX(-50%) scaleX(1);
-        }
+        color: var(--color-white);
+        font-weight: var(--font-weight-semibold);
 
         &::before {
           opacity: 0.15;
+        }
+
+        &::after {
+          transform: translateX(-50%) scaleX(1);
         }
       }
     }
@@ -163,47 +165,45 @@
     .user-btn {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      color: #ffffff;
-      padding: 0.5rem 0.75rem;
-      padding-right: 1rem;
-      border-radius: 9999px;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-4);
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-full);
+      color: var(--color-white);
+      font-size: var(--font-size-sm-plus);
+      font-weight: var(--font-weight-medium);
       cursor: pointer;
-      font-size: 1rem;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      transition: all 300ms ease-in-out;
+      transition: all var(--transition-fast);
 
       &:hover {
-        background: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.2);
         border-color: rgba(255, 255, 255, 0.3);
-        transform: translateY(-1px);
       }
 
       .user-initial {
         width: 36px;
         height: 36px;
-        background: linear-gradient(135deg, #37474f 0%, #78909c 100%);
-        border: 2px solid rgba(255, 255, 255, 0.3);
+        background-color: rgba(255, 255, 255, 0.2);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 700;
-        font-size: 1rem;
-        text-transform: uppercase;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-base);
+        border: 2px solid rgba(255, 255, 255, 0.3);
       }
 
       .user-name {
-        font-weight: 500;
-        margin-right: 0.25rem;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .dropdown-arrow {
-        font-size: 0.875rem;
-        transition: transform 300ms ease-in-out;
+        font-size: var(--font-size-xs);
+        transition: transform var(--transition-fast);
 
         &.open {
           transform: rotate(180deg);
@@ -213,97 +213,68 @@
 
     .user-dropdown {
       position: absolute;
-      top: calc(100% + 0.5rem);
+      top: calc(100% + var(--space-2));
       right: 0;
-      background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-      min-width: 220px;
-      overflow: hidden;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: all 300ms ease-in-out;
-
-      &.show {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-      }
-
-      // Mountain decoration at top
-      &::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(135deg, #1b5e20 0%, #4caf50 100%);
-      }
+      min-width: 200px;
+      background-color: var(--color-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: var(--space-2);
+      z-index: var(--z-index-dropdown);
 
       a,
-      .logout-btn {
+      button {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
-        color: #212121;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        color: var(--color-text-primary);
         text-decoration: none;
-        font-size: 1rem;
+        font-size: var(--font-size-sm-plus);
         border: none;
         background: none;
         width: 100%;
         text-align: left;
         cursor: pointer;
-        transition: all 150ms ease-in-out;
-        position: relative;
+        transition: all var(--transition-fast);
+        border-radius: var(--radius-md);
 
         &:hover {
-          background-color: #e8f5e9;
-          color: #2e7d32;
-
-          .icon {
-            transform: translateX(2px);
-          }
+          background-color: var(--color-primary-50);
+          color: var(--color-primary-700);
         }
 
-        .icon {
-          font-size: 1.125rem;
-          transition: transform 150ms ease-in-out;
+        .menu-icon {
+          font-size: var(--font-size-base);
         }
+      }
 
-        &:not(:last-child) {
-          border-bottom: 1px solid #eeeeee;
-        }
+      .dropdown-divider {
+        height: 1px;
+        background-color: var(--color-gray-200);
+        margin: var(--space-2) 0;
+      }
 
-        &.logout-btn {
-          color: #f44336;
+      .logout-btn {
+        color: var(--color-error);
 
-          &:hover {
-            background-color: #ffebee;
-            color: #f44336;
-          }
+        &:hover {
+          background-color: var(--color-error-50, #ffebee);
+          color: var(--color-error);
         }
       }
     }
   }
 }
 
-// Mobile responsiveness
-@media (max-width: 1024px) {
-  .nav-center {
-    .nav-links {
-      gap: 1rem;
-    }
-  }
+:host + * {
+  padding-top: 64px;
 }
 
 @media (max-width: 768px) {
-  .main-navbar,
-  .auth-navbar {
-    height: 56px;
-    padding: 0 1rem;
+  .main-navbar {
+    height: var(--navbar-height-mobile);
+    padding: 0 var(--space-4);
   }
 
   .logo-container {
@@ -317,29 +288,33 @@
     }
 
     .logo-text {
-      font-size: 1.125rem;
+      font-size: var(--font-size-lg);
     }
   }
 
   .nav-center {
-    display: none; // Hide center navigation on mobile
+    display: none;
   }
 
   .nav-right {
     .user-menu {
       .user-btn {
-        padding: 0.25rem 0.5rem;
+        padding: var(--space-1) var(--space-2);
 
         .user-initial {
           width: 32px;
           height: 32px;
-          font-size: 0.875rem;
+          font-size: var(--font-size-sm);
         }
 
         .user-name {
-          display: none; // Hide username on mobile
+          display: none;
         }
       }
     }
+  }
+
+  :host + * {
+    padding-top: var(--navbar-height-mobile);
   }
 }

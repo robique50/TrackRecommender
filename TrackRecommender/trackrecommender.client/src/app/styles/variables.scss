@@ -42,6 +42,13 @@
   --color-warning: #ff9800;
   --color-error: #f44336;
   --color-info: #2196f3;
+  --forest-green: #2d5016;
+  --forest-light: #4a7c59;
+  --forest-pale: #8fbc8f;
+  --earth-brown: #8b4513;
+  --earth-light: #d2691e;
+  --sky-blue: #87ceeb;
+  --ocean-blue: #4682b4;
   // Neutral Colors
   --color-white: #ffffff;
   --color-gray-50: #fafafa;
@@ -255,6 +262,19 @@
   --color-white-alpha-30: rgba(255, 255, 255, 0.3);
   --password-req-line-height: var(--line-height-tight);
   --mountain-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%231b5e20' fill-opacity='0.1' d='M0,128L48,138.7C96,149,192,171,288,170.7C384,171,480,149,576,128C672,107,768,85,864,101.3C960,117,1056,171,1152,181.3C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  // Preferences Component Variables
+  --pref-card-padding: var(--space-4);
+  --pref-card-gap: var(--space-3);
+  --pref-option-card-height: 3.5rem;
+  --pref-carousel-arrow-size: 2.25rem;
+  --pref-carousel-arrow-bg: var(--color-primary-700);
+  --pref-carousel-arrow-hover-bg: var(--color-primary-800);
+  --pref-marking-tooltip-bg: rgba(0, 0, 0, 0.9);
+  --pref-marking-tooltip-z-index: var(--z-index-tooltip);
+  --pref-selection-border-width: 2px;
+  --pref-selection-bg: var(--color-primary-50);
+  --pref-selection-border: var(--color-primary-500);
+  --pref-animation-rating: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   // Animation Keyframes Names
   --animation-slide-in: slideIn;
   --animation-fade-in: fadeIn;

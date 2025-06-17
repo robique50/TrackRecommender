@@ -19,7 +19,7 @@
         You haven't set up your trail preferences yet. Let's customize your
         trail recommendations to match your hiking style!
       </p>
-      <button class="btn-primary btn-large" (click)="startConfiguration()">
+      <button class="btn btn-primary btn-large" (click)="startConfiguration()">
         <span class="btn-icon">⚙️</span>
         Configure Preferences
       </button>
@@ -33,41 +33,16 @@
     <div class="preferences-header">
       <h1>Your Trail Preferences</h1>
       <div class="header-actions">
-        <button class="btn-secondary" (click)="editPreferences()">
+        <button class="btn btn-secondary" (click)="editPreferences()">
           <span class="btn-icon">✏️</span>
-          Edit
         </button>
-        <button class="btn-danger" (click)="showResetConfirmation()">
+        <button class="btn btn-danger" (click)="showResetConfirmation()">
           <span class="btn-icon">🔄</span>
-          Reset
         </button>
       </div>
     </div>
 
     <div class="preferences-summary">
-      <div class="pref-card">
-        <div class="card-header">
-          <span class="card-icon">🥾</span>
-          <h3>Trail Types</h3>
-        </div>
-        <div class="card-content">
-          <div class="tag-list">
-            <span
-              class="tag"
-              *ngFor="let type of currentPreferences.preferredTrailTypes"
-            >
-              {{ type }}
-            </span>
-            <span
-              class="empty-message"
-              *ngIf="!currentPreferences.preferredTrailTypes?.length"
-            >
-              All trail types
-            </span>
-          </div>
-        </div>
-      </div>
-
       <div class="pref-card">
         <div class="card-header">
           <span class="card-icon">⛰️</span>
@@ -110,24 +85,20 @@
         </div>
       </div>
 
-      <div class="pref-card full-width">
+      <div class="pref-card">
         <div class="card-header">
-          <span class="card-icon">🗺️</span>
-          <h3>Preferred Regions</h3>
+          <span class="card-icon">⭐</span>
+          <h3>Minimum Rating</h3>
         </div>
         <div class="card-content">
-          <div class="regions-display">
-            <div
-              class="region-chip"
-              *ngFor="let region of currentPreferences.preferredRegionNames"
-            >
-              {{ region }}
-            </div>
-            <span
-              class="empty-message"
-              *ngIf="!currentPreferences.preferredRegionNames?.length"
-            >
-              All regions
+          <div class="rating-display">
+            <span class="stars">
+              <span
+                *ngFor="let star of [1, 2, 3, 4, 5]"
+                class="star"
+                [class.filled]="star <= (currentPreferences.minimumRating || 0)"
+                >★</span
+              >
             </span>
           </div>
         </div>
@@ -135,39 +106,22 @@
 
       <div class="pref-card">
         <div class="card-header">
-          <span class="card-icon">🎯</span>
-          <h3>Trail Markings</h3>
+          <span class="card-icon">🥾</span>
+          <h3>Trail Types</h3>
         </div>
         <div class="card-content">
-          <div
-            class="markings-preview"
-            *ngIf="currentPreferences.preferredMarkings?.length"
-          >
-            <app-marking-display
-              *ngFor="
-                let marking of currentPreferences.preferredMarkings
-                  | slice : 0 : 3
-              "
-              [marking]="marking"
-              class="marking-preview-item"
-            >
-            </app-marking-display>
+          <div class="tag-list">
             <span
-              class="markings-count"
-              *ngIf="
-                currentPreferences.preferredMarkings &&
-                currentPreferences.preferredMarkings.length > 3
-              "
+              class="tag"
+              *ngFor="let type of currentPreferences.preferredTrailTypes"
+              >{{ type }}</span
             >
-              +{{ currentPreferences.preferredMarkings.length - 3 }} more
-            </span>
+            <span
+              class="empty-message"
+              *ngIf="!currentPreferences.preferredTrailTypes?.length"
+              >All trail types</span
+            >
           </div>
-          <span
-            class="empty-message"
-            *ngIf="!currentPreferences.preferredMarkings?.length"
-          >
-            No marking preferences
-          </span>
         </div>
       </div>
 
@@ -181,39 +135,104 @@
             <span
               class="tag"
               *ngFor="let cat of currentPreferences.preferredCategories"
+              >{{ cat }}</span
             >
-              {{ cat }}
-            </span>
             <span
               class="empty-message"
               *ngIf="!currentPreferences.preferredCategories?.length"
+              >All categories</span
             >
-              All categories
-            </span>
           </div>
         </div>
       </div>
 
       <div class="pref-card">
         <div class="card-header">
-          <span class="card-icon">⭐</span>
-          <h3>Minimum Rating</h3>
+          <span class="card-icon">🗺️</span>
+          <h3>Preferred Regions</h3>
         </div>
         <div class="card-content">
-          <div class="rating-display">
-            <span class="stars">
-              <span
-                *ngFor="let star of [1, 2, 3, 4, 5]"
-                class="star"
-                [class.filled]="star <= (currentPreferences.minimumRating || 0)"
-              >
-                ★
-              </span>
-            </span>
-            <span class="rating-text">
-              {{ currentPreferences.minimumRating || 0 }}/5
-            </span>
+          <div
+            class="view-carousel"
+            *ngIf="
+              currentPreferences.preferredRegionNames?.length;
+              else noRegions
+            "
+          >
+            <button
+              type="button"
+              class="carousel-arrow"
+              (click)="scrollCarousel('left', viewRegionsContainer)"
+            >
+              ←
+            </button>
+            <div class="view-carousel-container" #viewRegionsContainer>
+              <div class="regions-preview">
+                <div
+                  class="region-preview-item"
+                  *ngFor="let region of currentPreferences.preferredRegionNames"
+                >
+                  {{ region }}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="carousel-arrow"
+              (click)="scrollCarousel('right', viewRegionsContainer)"
+            >
+              →
+            </button>
           </div>
+          <ng-template #noRegions>
+            <span class="empty-message">All regions</span>
+          </ng-template>
+        </div>
+      </div>
+
+      <div class="pref-card">
+        <div class="card-header">
+          <span class="card-icon">🎯</span>
+          <h3>Trail Markings</h3>
+        </div>
+        <div class="card-content">
+          <div
+            class="view-carousel"
+            *ngIf="
+              currentPreferences.preferredMarkings?.length;
+              else noMarkings
+            "
+          >
+            <button
+              type="button"
+              class="carousel-arrow"
+              (click)="scrollCarousel('left', viewMarkingsContainer)"
+            >
+              ←
+            </button>
+            <div class="view-carousel-container" #viewMarkingsContainer>
+              <div class="markings-preview">
+                <div
+                  *ngFor="let marking of currentPreferences.preferredMarkings"
+                  class="marking-preview-item"
+                >
+                  <app-marking-display
+                    [marking]="marking"
+                  ></app-marking-display>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="carousel-arrow"
+              (click)="scrollCarousel('right', viewMarkingsContainer)"
+            >
+              →
+            </button>
+          </div>
+          <ng-template #noMarkings>
+            <span class="empty-message">No marking preferences</span>
+          </ng-template>
         </div>
       </div>
     </div>
@@ -223,15 +242,12 @@
     <form [formGroup]="preferencesForm" (ngSubmit)="savePreferences()">
       <div class="edit-header">
         <h1>{{ hasPreferences ? "Edit" : "Configure" }} Your Preferences</h1>
-        <button type="button" class="btn-text" (click)="cancelEdit()">
-          Cancel
-        </button>
+        <p>Customize your recommendations to find the perfect trail</p>
       </div>
 
       <div class="preference-section">
         <div class="section-header">
           <h3>🥾 What type of trails do you enjoy?</h3>
-          <p class="section-description">Select all that apply</p>
         </div>
         <div class="option-grid">
           <label
@@ -255,15 +271,11 @@
       <div class="preference-section">
         <div class="section-header">
           <h3>⛰️ Preferred Difficulty Level</h3>
-          <p class="section-description">Choose your comfort zone</p>
         </div>
         <div class="difficulty-selector">
           <label
-            class="difficulty-option"
             *ngFor="let diff of availableDifficulties"
-            [class.selected]="
-              preferencesForm.get('preferredDifficulty')?.value === diff
-            "
+            class="difficulty-option"
           >
             <input
               type="radio"
@@ -272,12 +284,20 @@
             />
             <span
               class="difficulty-card"
-              [style.border-color]="getDifficultyColor(diff)"
+              [class.selected]="
+                preferencesForm.get('preferredDifficulty')?.value === diff
+              "
+              [style.background-color]="
+                preferencesForm.get('preferredDifficulty')?.value === diff
+                  ? getDifficultyColor(diff)
+                  : null
+              "
+              [style.border-color]="
+                preferencesForm.get('preferredDifficulty')?.value === diff
+                  ? getDifficultyColor(diff)
+                  : '#e0e0e0'
+              "
             >
-              <span
-                class="diff-indicator"
-                [style.background-color]="getDifficultyColor(diff)"
-              ></span>
               <span class="diff-label">{{ diff }}</span>
             </span>
           </label>
@@ -286,8 +306,7 @@
 
       <div class="preference-section">
         <div class="section-header">
-          <h3>📏 Trail Length Preferences</h3>
-          <p class="section-description">Set your limits</p>
+          <h3>📏 Distance & Duration Limits</h3>
         </div>
         <div class="sliders-container">
           <div class="slider-group">
@@ -296,9 +315,9 @@
               <input
                 type="range"
                 formControlName="maxDistance"
-                min="1"
-                max="100"
-                step="0.5"
+                [min]="minDistance"
+                [max]="maxDistance"
+                step="5"
                 class="modern-slider"
               />
               <span class="slider-value"
@@ -312,9 +331,9 @@
               <input
                 type="range"
                 formControlName="maxDuration"
-                min="0.5"
-                max="24"
-                step="0.5"
+                [min]="minDuration"
+                [max]="maxDuration"
+                step="30"
                 class="modern-slider"
               />
               <span class="slider-value">{{
@@ -328,9 +347,7 @@
       <div class="preference-section">
         <div class="section-header">
           <h3>🗺️ Preferred Regions</h3>
-          <p class="section-description">Where do you like to explore?</p>
         </div>
-
         <div class="region-search">
           <input
             type="text"
@@ -341,37 +358,34 @@
             class="search-input"
           />
         </div>
-
-        <div class="regions-carousel">
+        <div class="edit-carousel regions-carousel">
           <button
             type="button"
-            class="carousel-arrow left"
-            (click)="scrollRegions('left')"
-            [disabled]="regionScrollIndex === 0"
+            class="carousel-arrow"
+            (click)="scrollCarousel('left', editRegionsContainer)"
           >
             ←
           </button>
-
-          <div class="regions-container" #regionsContainer>
-            <div
-              class="region-card"
-              *ngFor="let region of visibleRegions"
-              [class.selected]="isRegionSelected(region.name)"
-              (click)="toggleRegion(region.name)"
-            >
-              <div class="region-name">{{ region.name }}</div>
-              <div class="region-trails">{{ region.trailCount }} trails</div>
-              <div class="region-check" *ngIf="isRegionSelected(region.name)">
-                ✓
+          <div class="edit-carousel-container" #editRegionsContainer>
+            <div class="region-card-list">
+              <div
+                class="region-card"
+                *ngFor="let region of filteredRegions"
+                [class.selected]="isRegionSelected(region.name)"
+                (click)="toggleRegion(region.name)"
+              >
+                <div class="region-name">{{ region.name }}</div>
+                <div class="region-trails">{{ region.trailCount }} trails</div>
+                <div class="region-check" *ngIf="isRegionSelected(region.name)">
+                  ✓
+                </div>
               </div>
             </div>
           </div>
-
           <button
             type="button"
-            class="carousel-arrow right"
-            (click)="scrollRegions('right')"
-            [disabled]="regionScrollIndex >= maxRegionScroll"
+            class="carousel-arrow"
+            (click)="scrollCarousel('right', editRegionsContainer)"
           >
             →
           </button>
@@ -381,11 +395,7 @@
       <div class="preference-section">
         <div class="section-header">
           <h3>🎯 Trail Markings</h3>
-          <p class="section-description">
-            Select your preferred trail markings
-          </p>
         </div>
-
         <div class="markings-controls">
           <input
             type="text"
@@ -414,50 +424,47 @@
           >
             <option value="">All shapes</option>
             <option *ngFor="let shape of uniqueShapes" [value]="shape">
-              {{ shape }}
+              {{ getShapeName(shape) }}
             </option>
           </select>
         </div>
-
-        <div class="markings-grid" *ngIf="!isLoadingMarkings">
-          <div
-            class="marking-item"
-            *ngFor="let marking of filteredMarkings"
-            [class.selected]="isMarkingSelected(marking)"
-            (click)="toggleMarking(marking)"
+        <div class="edit-carousel markings-carousel" *ngIf="!isLoadingMarkings">
+          <button
+            type="button"
+            class="carousel-arrow"
+            (click)="scrollCarousel('left', editMarkingsContainer)"
           >
-            <app-marking-display [marking]="marking"></app-marking-display>
-            <div class="marking-name">{{ marking.displayName }}</div>
-            <div class="marking-checkbox">
-              <input
-                type="checkbox"
-                [checked]="isMarkingSelected(marking)"
-                (click)="$event.stopPropagation()"
-              />
+            ←
+          </button>
+          <div class="edit-carousel-container" #editMarkingsContainer>
+            <div class="marking-card-list">
+              <div
+                class="marking-item"
+                *ngFor="let marking of filteredMarkings"
+                [class.selected]="isMarkingSelected(marking)"
+                (click)="toggleMarking(marking)"
+              >
+                <app-marking-display [marking]="marking"></app-marking-display>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div class="loading-markings" *ngIf="isLoadingMarkings">
-          <div class="spinner-small"></div>
-          <p>Loading trail markings...</p>
-        </div>
-
-        <div class="selected-count" *ngIf="selectedMarkings.size > 0">
-          {{ selectedMarkings.size }} marking(s) selected
+          <button
+            type="button"
+            class="carousel-arrow"
+            (click)="scrollCarousel('right', editMarkingsContainer)"
+          >
+            →
+          </button>
         </div>
       </div>
 
       <div class="preference-section">
         <div class="section-header">
           <h3>📊 Trail Categories</h3>
-          <p class="section-description">
-            Choose your preferred trail categories
-          </p>
         </div>
-        <div class="categories-grid">
+        <div class="option-grid">
           <label
-            class="category-option"
+            class="option-card"
             *ngFor="let category of availableCategories"
             [class.selected]="isCategorySelected(category)"
           >
@@ -466,9 +473,9 @@
               [checked]="isCategorySelected(category)"
               (change)="toggleCategory(category)"
             />
-            <span class="category-card">
-              <span class="category-icon">{{ getCategoryIcon(category) }}</span>
-              <span class="category-name">{{ category }}</span>
+            <span class="option-content">
+              <span class="option-icon">{{ getCategoryIcon(category) }}</span>
+              <span class="option-label">{{ category }}</span>
             </span>
           </label>
         </div>
@@ -477,22 +484,21 @@
       <div class="preference-section">
         <div class="section-header">
           <h3>⭐ Minimum Trail Rating</h3>
-          <p class="section-description">
-            Only show trails with this rating or higher
-          </p>
         </div>
-        <div class="rating-selector">
+        <div class="rating-selector-edit">
           <div class="stars-container">
             <span
               *ngFor="let star of [1, 2, 3, 4, 5]"
               class="star-selector"
               [class.filled]="
-                star <= preferencesForm.get('minimumRating')?.value
+                star <= (preferencesForm.get('minimumRating')?.value || 0)
               "
               (click)="setMinimumRating(star)"
+              (mouseover)="hoveredRating = star"
+              (mouseout)="hoveredRating = 0"
+              [class.hovered]="star <= hoveredRating"
+              >★</span
             >
-              ★
-            </span>
           </div>
           <div class="rating-text">
             {{ preferencesForm.get("minimumRating")?.value || 0 }} stars minimum
@@ -501,12 +507,12 @@
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn-secondary" (click)="cancelEdit()">
+        <button type="button" class="btn btn-secondary" (click)="cancelEdit()">
           Cancel
         </button>
-        <button type="submit" class="btn-primary" [disabled]="isSaving">
+        <button type="submit" class="btn btn-primary" [disabled]="isSaving">
           <span *ngIf="!isSaving">Save Preferences</span>
-          <span *ngIf="isSaving" class="saving-spinner">Saving...</span>
+          <span *ngIf="isSaving" class="saving-spinner"></span>
         </button>
       </div>
     </form>
@@ -520,15 +526,17 @@
         be undone.
       </p>
       <div class="modal-actions">
-        <button class="btn-secondary" (click)="closeResetModal()">
+        <button class="btn btn-secondary" (click)="closeResetModal()">
           Cancel
         </button>
-        <button class="btn-danger" (click)="confirmReset()">Yes, Reset</button>
+        <button class="btn btn-danger" (click)="confirmReset()">
+          Yes, Reset
+        </button>
       </div>
     </div>
   </div>
 
-  <div class="success-toast" *ngIf="showSuccessMessage" [@slideIn]>
+  <div class="success-toast" *ngIf="showSuccessMessage">
     <span class="toast-icon">✅</span>
     <span>{{ successMessage }}</span>
   </div>

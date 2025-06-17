@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -44,8 +44,6 @@ import { firstValueFrom } from 'rxjs';
   ],
 })
 export class PreferencesComponent implements OnInit {
-  @ViewChild('regionsContainer') regionsContainer!: ElementRef;
-
   protected isLoading = true;
   protected hasPreferences = false;
   protected isEditing = false;
@@ -53,6 +51,7 @@ export class PreferencesComponent implements OnInit {
   protected showResetModal = false;
   protected showSuccessMessage = false;
   protected successMessage = '';
+  protected hoveredRating = 0;
 
   protected preferencesForm!: FormGroup;
   protected currentPreferences: UserPreferences = {};
@@ -72,6 +71,7 @@ export class PreferencesComponent implements OnInit {
     'Local',
   ];
   protected availableRegions: RegionOption[] = [];
+  protected filteredRegions: RegionOption[] = [];
 
   protected allMarkings: TrailMarking[] = [];
   protected filteredMarkings: TrailMarking[] = [];
@@ -84,15 +84,14 @@ export class PreferencesComponent implements OnInit {
   protected isLoadingMarkings = false;
 
   protected regionSearchQuery = '';
-  protected visibleRegions: RegionOption[] = [];
-  protected regionScrollIndex = 0;
-  protected maxRegionScroll = 0;
-  private regionsPerPage = 4;
-  private filteredRegions: RegionOption[] = [];
 
   private selectedTrailTypes = new Set<string>();
   private selectedRegions = new Set<string>();
   private selectedCategories = new Set<string>();
+  protected minDistance: number = 0;
+  protected maxDistance: number = 96;
+  protected maxDuration: number = 32;
+  protected minDuration: number = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -103,9 +102,22 @@ export class PreferencesComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializeForm();
-    this.loadPreferences();
-    this.loadAvailableOptions();
-    this.loadMarkings();
+    this.loadInitialData();
+  }
+
+  private async loadInitialData(): Promise<void> {
+    this.isLoading = true;
+    try {
+      await Promise.all([
+        this.loadAvailableOptions(),
+        this.loadMarkings(),
+        this.loadPreferences(),
+      ]);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   initializeForm(): void {
@@ -123,7 +135,6 @@ export class PreferencesComponent implements OnInit {
 
   async loadPreferences(): Promise<void> {
     try {
-      this.isLoading = true;
       this.currentPreferences =
         (await firstValueFrom(this.preferencesService.getUserPreferences())) ||
         {};
@@ -135,8 +146,6 @@ export class PreferencesComponent implements OnInit {
     } catch (error) {
       console.error('Error loading preferences:', error);
       this.hasPreferences = false;
-    } finally {
-      this.isLoading = false;
     }
   }
 
@@ -148,8 +157,8 @@ export class PreferencesComponent implements OnInit {
       if (options) {
         this.availableTrailTypes = options.trailTypes || [];
         this.availableRegions = options.regions || [];
+        this.availableRegions.sort((a, b) => b.trailCount - a.trailCount);
         this.filteredRegions = [...this.availableRegions];
-        this.updateVisibleRegions();
       }
     } catch (error) {
       console.error('Error loading options:', error);
@@ -159,29 +168,18 @@ export class PreferencesComponent implements OnInit {
   private populateFormWithPreferences(): void {
     this.preferencesForm.patchValue(this.currentPreferences);
 
-    if (this.currentPreferences.preferredTrailTypes) {
-      this.selectedTrailTypes = new Set(
-        this.currentPreferences.preferredTrailTypes
-      );
-    }
-
-    if (this.currentPreferences.preferredRegionNames) {
-      this.selectedRegions = new Set(
-        this.currentPreferences.preferredRegionNames
-      );
-    }
-
-    if (this.currentPreferences.preferredCategories) {
-      this.selectedCategories = new Set(
-        this.currentPreferences.preferredCategories
-      );
-    }
-
-    if (this.currentPreferences.preferredMarkings) {
-      this.selectedMarkings = new Set(
-        this.currentPreferences.preferredMarkings.map((m) => m.symbol)
-      );
-    }
+    this.selectedTrailTypes = new Set(
+      this.currentPreferences.preferredTrailTypes
+    );
+    this.selectedRegions = new Set(
+      this.currentPreferences.preferredRegionNames
+    );
+    this.selectedCategories = new Set(
+      this.currentPreferences.preferredCategories
+    );
+    this.selectedMarkings = new Set(
+      this.currentPreferences.preferredMarkings?.map((m) => m.symbol)
+    );
   }
 
   async loadMarkings(): Promise<void> {
@@ -206,31 +204,17 @@ export class PreferencesComponent implements OnInit {
   }
 
   protected filterMarkings(): void {
-    let filtered = [...this.allMarkings];
-
-    if (this.markingSearchQuery) {
-      const query = this.markingSearchQuery.toLowerCase();
-      filtered = filtered.filter((m) =>
-        m.displayName.toLowerCase().includes(query)
-      );
-    }
-
-    if (this.markingFilterColor) {
-      filtered = filtered.filter(
-        (m) =>
+    const query = this.markingSearchQuery.toLowerCase();
+    this.filteredMarkings = this.allMarkings.filter(
+      (m) =>
+        m.displayName.toLowerCase().includes(query) &&
+        (!this.markingFilterColor ||
           m.foregroundColor === this.markingFilterColor ||
           m.backgroundColor === this.markingFilterColor ||
-          m.shapeColor === this.markingFilterColor
-      );
-    }
-
-    if (this.markingFilterShape) {
-      filtered = filtered.filter(
-        (m) => m.shape.toLowerCase() === this.markingFilterShape.toLowerCase()
-      );
-    }
-
-    this.filteredMarkings = filtered;
+          m.shapeColor === this.markingFilterColor) &&
+        (!this.markingFilterShape ||
+          m.shape.toLowerCase() === this.markingFilterShape.toLowerCase())
+    );
   }
 
   protected isMarkingSelected(marking: TrailMarking): boolean {
@@ -243,34 +227,16 @@ export class PreferencesComponent implements OnInit {
     } else {
       this.selectedMarkings.add(marking.symbol);
     }
-    this.updateMarkingsInForm();
-  }
-
-  private updateMarkingsInForm(): void {
-    const selectedMarkingObjects = this.allMarkings.filter((m) =>
-      this.selectedMarkings.has(m.symbol)
-    );
-    this.preferencesForm.patchValue({
-      preferredMarkings: selectedMarkingObjects,
-    });
   }
 
   protected getColorName(color: string): string {
-    const colorMap: { [key: string]: string } = {
-      '#FF0000': 'Red',
-      '#0000FF': 'Blue',
-      '#FFFF00': 'Yellow',
-      '#008000': 'Green',
-      '#FFFFFF': 'White',
-      '#000000': 'Black',
-      '#FFA500': 'Orange',
-      '#800080': 'Purple',
-      '#A52A2A': 'Brown',
-    };
-    return colorMap[color.toUpperCase()] || color;
+    return this.trailMarkingService.getColorNameRo(color);
   }
 
-  // Metode pentru categorii
+  protected getShapeName(shape: string): string {
+    return this.trailMarkingService.getShapeNameRo(shape);
+  }
+
   protected isCategorySelected(category: string): boolean {
     return this.selectedCategories.has(category);
   }
@@ -281,9 +247,6 @@ export class PreferencesComponent implements OnInit {
     } else {
       this.selectedCategories.add(category);
     }
-    this.preferencesForm.patchValue({
-      preferredCategories: Array.from(this.selectedCategories),
-    });
   }
 
   protected getCategoryIcon(category: string): string {
@@ -296,7 +259,6 @@ export class PreferencesComponent implements OnInit {
     return icons[category] || '📍';
   }
 
-  // Metodă pentru minimum rating
   protected setMinimumRating(rating: number): void {
     this.preferencesForm.patchValue({ minimumRating: rating });
   }
@@ -312,40 +274,34 @@ export class PreferencesComponent implements OnInit {
 
   protected cancelEdit(): void {
     this.isEditing = false;
-    if (!this.hasPreferences) {
-      this.router.navigate(['/dashboard']);
-    }
   }
 
   protected async savePreferences(): Promise<void> {
     if (this.isSaving) return;
+    this.isSaving = true;
+
+    const selectedMarkingObjects = this.allMarkings.filter((m) =>
+      this.selectedMarkings.has(m.symbol)
+    );
+
+    const preferences: UserPreferences = {
+      ...this.preferencesForm.value,
+      preferredTrailTypes: Array.from(this.selectedTrailTypes),
+      preferredRegionNames: Array.from(this.selectedRegions),
+      preferredCategories: Array.from(this.selectedCategories),
+      preferredMarkings: selectedMarkingObjects,
+    };
 
     try {
-      this.isSaving = true;
-
-      const selectedMarkingObjects = this.allMarkings.filter((m) =>
-        this.selectedMarkings.has(m.symbol)
-      );
-
-      const preferences: UserPreferences = {
-        ...this.preferencesForm.value,
-        preferredTrailTypes: Array.from(this.selectedTrailTypes),
-        preferredRegionNames: Array.from(this.selectedRegions),
-        preferredCategories: Array.from(this.selectedCategories),
-        preferredMarkings: selectedMarkingObjects,
-      };
-
       await firstValueFrom(
         this.preferencesService.saveUserPreferences(preferences)
       );
-
       this.currentPreferences = preferences;
       this.hasPreferences = true;
       this.isEditing = false;
       this.showSuccess('Preferences saved successfully!');
     } catch (error) {
       console.error('Error saving preferences:', error);
-      this.showSuccess('Error saving preferences. Please try again.');
     } finally {
       this.isSaving = false;
     }
@@ -360,27 +316,20 @@ export class PreferencesComponent implements OnInit {
   }
 
   protected async confirmReset(): Promise<void> {
+    this.closeResetModal();
     try {
-      this.preferencesService.resetUserPreferences().subscribe({
-        next: () => {
-          this.currentPreferences = {};
-          this.hasPreferences = false;
-          this.showResetModal = false;
-          this.selectedTrailTypes.clear();
-          this.selectedRegions.clear();
-          this.selectedCategories.clear();
-          this.selectedMarkings.clear();
-          this.initializeForm();
-          this.showSuccess('Preferences reset successfully!');
-        },
-        error: (error: any) => {
-          console.error('Error resetting preferences:', error);
-          this.showSuccess('Error resetting preferences. Please try again.');
-        },
-      });
+      await firstValueFrom(this.preferencesService.resetUserPreferences());
+      this.currentPreferences = {};
+      this.hasPreferences = false;
+      this.isEditing = false;
+      this.selectedTrailTypes.clear();
+      this.selectedRegions.clear();
+      this.selectedCategories.clear();
+      this.selectedMarkings.clear();
+      this.initializeForm();
+      this.showSuccess('Preferences reset successfully!');
     } catch (error) {
       console.error('Error resetting preferences:', error);
-      this.showSuccess('Error resetting preferences. Please try again.');
     }
   }
 
@@ -394,21 +343,18 @@ export class PreferencesComponent implements OnInit {
     } else {
       this.selectedTrailTypes.add(type);
     }
-    this.preferencesForm.patchValue({
-      preferredTrailTypes: Array.from(this.selectedTrailTypes),
-    });
   }
 
   protected getTrailTypeIcon(type: string): string {
     const icons: { [key: string]: string } = {
       Hiking: '🥾',
-      Walking: '🚶',
       Cycling: '🚴',
-      'Mountain Biking': '🚵',
       Running: '🏃',
-      'Horseback Riding': '🐎',
+      Walking: '🚶',
+      'Mountain Biking': '🚵',
+      Climbing: '🧗',
     };
-    return icons[type] || '🏃';
+    return icons[type] || '🏞️';
   }
 
   protected isRegionSelected(regionName: string): boolean {
@@ -421,9 +367,6 @@ export class PreferencesComponent implements OnInit {
     } else {
       this.selectedRegions.add(regionName);
     }
-    this.preferencesForm.patchValue({
-      preferredRegionNames: Array.from(this.selectedRegions),
-    });
   }
 
   protected filterRegions(): void {
@@ -431,30 +374,29 @@ export class PreferencesComponent implements OnInit {
     this.filteredRegions = this.availableRegions.filter((region) =>
       region.name.toLowerCase().includes(query)
     );
-    this.regionScrollIndex = 0;
-    this.updateVisibleRegions();
   }
 
-  private updateVisibleRegions(): void {
-    const start = this.regionScrollIndex;
-    const end = start + this.regionsPerPage;
-    this.visibleRegions = this.filteredRegions.slice(start, end);
-    this.maxRegionScroll = Math.max(
-      0,
-      this.filteredRegions.length - this.regionsPerPage
-    );
-  }
+  protected scrollCarousel(
+    direction: 'left' | 'right',
+    container: HTMLElement
+  ): void {
+    if (!container) return;
 
-  protected scrollRegions(direction: 'left' | 'right'): void {
-    if (direction === 'left' && this.regionScrollIndex > 0) {
-      this.regionScrollIndex--;
-    } else if (
-      direction === 'right' &&
-      this.regionScrollIndex < this.maxRegionScroll
-    ) {
-      this.regionScrollIndex++;
+    const scrollAmount = 200;
+    const currentScroll = container.scrollLeft;
+
+    if (direction === 'left') {
+      container.scrollTo({
+        left: Math.max(0, currentScroll - scrollAmount),
+        behavior: 'smooth',
+      });
+    } else {
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      container.scrollTo({
+        left: Math.min(maxScroll, currentScroll + scrollAmount),
+        behavior: 'smooth',
+      });
     }
-    this.updateVisibleRegions();
   }
 
   protected getDifficultyColor(difficulty?: string): string {
