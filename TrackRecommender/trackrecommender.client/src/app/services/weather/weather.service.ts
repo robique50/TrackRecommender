@@ -9,79 +9,103 @@ import { WeatherResponse } from '../../models/weather.model';
 export class WeatherService {
   constructor(private http: HttpClient) {}
 
-  getWeatherByCoordinates(
+  public getWeatherByCoordinates(
     latitude: number,
-    longitude: number,
+    longitude: number
   ): Observable<WeatherResponse> {
     return this.http.get<WeatherResponse>(
-      `/api/weather/coordinates?latitude=${latitude}&longitude=${longitude}`,
+      `/api/weather/coordinates?latitude=${latitude}&longitude=${longitude}`
     );
   }
 
-  getWeatherByLocation(query: string): Observable<WeatherResponse> {
+  public getWeatherByLocation(query: string): Observable<WeatherResponse> {
     return this.http.get<WeatherResponse>(
-      `/api/weather/location?query=${encodeURIComponent(query)}`,
+      `/api/weather/location?query=${encodeURIComponent(query)}`
     );
   }
 
-  getDeterminedWeatherIconCode(weatherData: any): string {
-    if (weatherData?.weather?.[0]?.icon) {
-      return weatherData.weather[0].icon;
+  public getDeterminedWeatherIconCode(weatherData: any): string {
+    if (
+      weatherData?.weather &&
+      Array.isArray(weatherData.weather) &&
+      weatherData.weather.length > 0
+    ) {
+      const icon = weatherData.weather[0]?.icon;
+      if (icon && icon.trim() !== '') {
+        return icon;
+      }
     }
 
     const clouds = weatherData?.clouds || 0;
     const temp = weatherData?.temp?.day || weatherData?.temp || 0;
     const humidity = weatherData?.humidity || 0;
+    const windSpeed = weatherData?.windSpeed || 0;
 
-    if (clouds > 80) {
+    if (humidity > 85 && temp > 10) {
+      return '09d';
+    } else if (humidity > 80 && temp > 15) {
+      return '10d';
+    } else if (temp < -5) {
+      return '13d';
+    } else if (temp < 0) {
+      return '13d';
+    } else if (windSpeed > 15 && clouds > 70) {
+      return '50d';
+    } else if (clouds > 85) {
       return '04d';
     } else if (clouds > 50) {
       return '03d';
     } else if (clouds > 20) {
       return '02d';
     } else {
-      if (humidity > 80 && temp > 15) {
-        return '10d';
-      } else if (temp < 0) {
-        return '13d';
-      } else {
-        return '01d';
-      }
+      return '01d';
     }
   }
 
-  getWeatherIconUrl(weatherData: any): string {
+  public getWeatherIconUrl(weatherData: any): string {
     const iconCode = this.getDeterminedWeatherIconCode(weatherData);
     return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
   }
 
-  getDeterminedWeatherDescription(weatherData: any): string {
-    if (weatherData?.weather?.[0]?.description) {
-      return weatherData.weather[0].description;
+  public getDeterminedWeatherDescription(weatherData: any): string {
+    if (
+      weatherData?.weather &&
+      Array.isArray(weatherData.weather) &&
+      weatherData.weather.length > 0
+    ) {
+      const description = weatherData.weather[0]?.description;
+      if (description && description.trim() !== '') {
+        return description;
+      }
     }
 
     const clouds = weatherData?.clouds || 0;
     const temp = weatherData?.temp?.day || weatherData?.temp || 0;
     const humidity = weatherData?.humidity || 0;
+    const windSpeed = weatherData?.windSpeed || 0;
 
-    if (clouds > 80) {
+    if (humidity > 85 && temp > 10) {
+      return 'Shower rain';
+    } else if (humidity > 80 && temp > 15) {
+      return 'Light rain';
+    } else if (temp < -5) {
+      return 'Heavy snow';
+    } else if (temp < 0) {
+      return 'Light snow';
+    } else if (windSpeed > 15 && clouds > 70) {
+      return 'Mist';
+    } else if (clouds > 85) {
       return 'Overcast clouds';
     } else if (clouds > 50) {
       return 'Broken clouds';
     } else if (clouds > 20) {
       return 'Few clouds';
     } else {
-      if (humidity > 80 && temp > 15) {
-        return 'Light rain';
-      } else if (temp < 0) {
-        return 'Snow';
-      } else {
-        return 'Clear sky';
-      }
+      return 'Clear sky';
     }
   }
 
-  formatDay(timestamp: number): string {
+  public formatDay(timestamp: number): string {
     const date = new Date(timestamp * 1000);
     const today = new Date();
     const tomorrow = new Date(today);

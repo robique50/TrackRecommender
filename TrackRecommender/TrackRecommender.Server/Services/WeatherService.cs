@@ -64,16 +64,7 @@ namespace TrackRecommender.Server.Services
                         Lat = roundedLat,
                         Lon = roundedLon
                     },
-                    Current = new WeatherCurrentDto
-                    {
-                        Temp = currentData.RootElement.GetProperty("main").GetProperty("temp").GetDouble(),
-                        FeelsLike = currentData.RootElement.GetProperty("main").GetProperty("feels_like").GetDouble(),
-                        Humidity = currentData.RootElement.GetProperty("main").GetProperty("humidity").GetInt32(),
-                        WindSpeed = currentData.RootElement.GetProperty("wind").GetProperty("speed").GetDouble(),
-                        Clouds = currentData.RootElement.GetProperty("clouds").GetProperty("all").GetInt32(),
-                        Weather = JsonSerializer.Deserialize<List<WeatherConditionDto>>(
-                            currentData.RootElement.GetProperty("weather").GetRawText()) ?? []
-                    },
+                    Current = ParseCurrentWeather(currentData.RootElement),
                     Daily = ProcessForecastToDaily(forecastData)
                 };
 
@@ -85,6 +76,35 @@ namespace TrackRecommender.Server.Services
                 Console.WriteLine($"Weather API error: {ex.Message}");
                 return null;
             }
+        }
+
+        private static WeatherCurrentDto ParseCurrentWeather(JsonElement root)
+        {
+            var current = new WeatherCurrentDto
+            {
+                Temp = root.GetProperty("main").GetProperty("temp").GetDouble(),
+                FeelsLike = root.GetProperty("main").GetProperty("feels_like").GetDouble(),
+                Humidity = root.GetProperty("main").GetProperty("humidity").GetInt32(),
+                WindSpeed = root.GetProperty("wind").GetProperty("speed").GetDouble(),
+                Clouds = root.GetProperty("clouds").GetProperty("all").GetInt32(),
+                Weather = []
+            };
+
+            if (root.TryGetProperty("weather", out var weatherArray) && weatherArray.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var weatherItem in weatherArray.EnumerateArray())
+                {
+                    current.Weather.Add(new WeatherConditionDto
+                    {
+                        Id = weatherItem.GetProperty("id").GetInt32(),
+                        Main = weatherItem.GetProperty("main").GetString() ?? "",
+                        Description = weatherItem.GetProperty("description").GetString() ?? "",
+                        Icon = weatherItem.GetProperty("icon").GetString() ?? ""
+                    });
+                }
+            }
+
+            return current;
         }
 
         private static List<WeatherDailyDto> ProcessForecastToDaily(JsonDocument forecastData)
@@ -116,13 +136,39 @@ namespace TrackRecommender.Server.Services
                 value.Humidities.Add(main.GetProperty("humidity").GetInt32());
                 value.WindSpeeds.Add(forecast.GetProperty("wind").GetProperty("speed").GetDouble());
 
-                if (value.WeatherConditions.Count == 0)
+                if (forecast.TryGetProperty("weather", out var weatherArray) &&
+                    weatherArray.ValueKind == JsonValueKind.Array &&
+                    weatherArray.GetArrayLength() > 0)
                 {
-                    var weather = JsonSerializer.Deserialize<List<WeatherConditionDto>>(
-                        forecast.GetProperty("weather").GetRawText());
-                    if (weather != null && weather.Count > 0)
+                    var firstWeather = weatherArray.EnumerateArray().First();
+                    var weatherCondition = new WeatherConditionDto
                     {
-                        dailyForecasts[dateKey].WeatherConditions.Add(weather[0]);
+                        Id = firstWeather.GetProperty("id").GetInt32(),
+                        Main = firstWeather.GetProperty("main").GetString() ?? "",
+                        Description = firstWeather.GetProperty("description").GetString() ?? "",
+                        Icon = firstWeather.GetProperty("icon").GetString() ?? ""
+                    };
+
+                    if (weatherCondition.Icon.EndsWith('n'))
+                    {
+                        weatherCondition.Icon = weatherCondition.Icon.Replace("n", "d");
+                    }
+
+                    var hour = dateTime.Hour;
+                    if (hour >= 6 && hour <= 18)
+                    {
+                        if (value.WeatherConditions.Count > 0 && value.WeatherConditions[0].Icon.EndsWith('n'))
+                        {
+                            value.WeatherConditions[0] = weatherCondition;
+                        }
+                        else if (value.WeatherConditions.Count == 0)
+                        {
+                            value.WeatherConditions.Add(weatherCondition);
+                        }
+                    }
+                    else if (value.WeatherConditions.Count == 0)
+                    {
+                        value.WeatherConditions.Add(weatherCondition);
                     }
                 }
             }
@@ -142,7 +188,12 @@ namespace TrackRecommender.Server.Services
                     },
                     Humidity = (int)daily.Humidities.Average(),
                     WindSpeed = daily.WindSpeeds.Average(),
-                    Weather = daily.WeatherConditions
+                    Weather = daily.WeatherConditions.Count != 0
+                        ? daily.WeatherConditions
+                        :
+                        [
+                            new() { Id = 0, Main = "", Description = "", Icon = "" }
+                        ]
                 });
             }
 
@@ -169,39 +220,37 @@ namespace TrackRecommender.Server.Services
                     return cachedResponse;
                 }
 
-                var geoUrl = $"https://api.openweathermap.org/geo/1.0/direct?q={Uri.EscapeDataString(locationName)}&limit=1&appid={_apiKey}";
-                var geoResponse = await _httpClient.GetAsync(geoUrl);
+                var geocodingUrl = $"http://api.openweathermap.org/geo/1.0/direct?q={locationName}&limit=1&appid={_apiKey}";
+                var geoResponse = await _httpClient.GetAsync(geocodingUrl);
                 geoResponse.EnsureSuccessStatusCode();
 
                 var geoData = await JsonDocument.ParseAsync(await geoResponse.Content.ReadAsStreamAsync());
-                if (geoData.RootElement.GetArrayLength() == 0)
+                var geoArray = geoData.RootElement.EnumerateArray().ToList();
+
+                if (geoArray.Count == 0)
                 {
                     throw new InvalidOperationException($"Location '{locationName}' not found");
                 }
 
-                var firstLocation = geoData.RootElement[0];
-                double lat = firstLocation.GetProperty("lat").GetDouble();
-                double lon = firstLocation.GetProperty("lon").GetDouble();
+                var location = geoArray.First();
+                var lat = location.GetProperty("lat").GetDouble();
+                var lon = location.GetProperty("lon").GetDouble();
 
-                var response = await GetWeatherByCoordinatesAsync(lat, lon);
-                if (response == null)
+                var weatherData = await GetWeatherByCoordinatesAsync(lat, lon);
+
+                if (weatherData != null)
                 {
-                    return null;
+                    weatherData.Location.Name = location.GetProperty("name").GetString() ?? locationName;
+                    weatherData.Location.Country = location.GetProperty("country").GetString() ?? "Unknown";
+
+                    _memoryCache.Set(cacheKey, weatherData, _cacheDuration);
                 }
 
-                response.Location.Name = firstLocation.GetProperty("name").GetString() ?? locationName;
-                if (firstLocation.TryGetProperty("country", out var countryElement))
-                {
-                    response.Location.Country = countryElement.GetString() ?? response.Location.Country;
-                }
-
-                _memoryCache.Set(cacheKey, response, _cacheDuration);
-
-                return response;
+                return weatherData;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Weather location error: {ex.Message}");
+                Console.WriteLine($"Weather API error: {ex.Message}");
                 return null;
             }
         }
