@@ -144,5 +144,15 @@ namespace TrackRecommender.Server.Mappers.Implementations
 
             return trailEntity;
         }
+
+        public async Task<TrailDto> ToDtoAsync(Trail entity)
+        {
+            return await Task.FromResult(ToDto(entity));
+        }
+
+        public async Task<Trail> ToEntityAsync(TrailDto dto)
+        {
+            return await Task.FromResult(ToEntity(dto));
+        }
     }
 }

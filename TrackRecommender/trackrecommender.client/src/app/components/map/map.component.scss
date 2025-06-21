@@ -390,6 +390,30 @@
   }
 }
 
+::ng-deep .custom-trail-marker {
+  background: none !important;
+  border: none !important;
+
+  > div {
+    transform: translateX(-50%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+
+    &:after {
+      content: "";
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #2e5d32;
+    }
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

@@ -11,6 +11,8 @@ import { Trail } from '../../models/trail.model';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { TrailReviewComponent } from '../trail-review/trail-review.component';
 import { MapMode } from '../../helpers/map-mode';
+import { ActivatedRoute } from '@angular/router';
+import { MapService } from '../../services/map/map.service';
 
 @Component({
   selector: 'app-map',
@@ -50,12 +52,27 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private regionService: RegionService,
-    private trailService: TrailService
+    private trailService: TrailService,
+    private mapService: MapService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.loadRegions();
     this.setupDebounce();
+
+    this.route.queryParams.subscribe((params) => {
+      if (params['trailId'] && params['mode'] === 'trail-focus') {
+        const trailId = parseInt(params['trailId']);
+        this.focusOnTrailFromRecommendation(trailId);
+      }
+    });
+
+    this.mapService.selectedTrail$.subscribe((trail) => {
+      if (trail) {
+        this.focusOnTrail(trail);
+      }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -919,5 +936,72 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     );
 
     return otherRegions.join(', ');
+  }
+
+  private focusOnTrailFromRecommendation(trailId: number): void {
+    this.loading = true;
+
+    this.trailService.getTrailById(trailId).subscribe({
+      next: (trail) => {
+        this.selectedTrail = trail;
+        this.focusOnTrail(trail);
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading trail:', error);
+        this.loading = false;
+      },
+    });
+  }
+
+  private focusOnTrail(trail: any): void {
+    if (!trail.geoJsonData) return;
+
+    try {
+      this.currentTrailPathLayer.clearLayers();
+
+      const geoJsonData = JSON.parse(trail.geoJsonData);
+      const geoJsonLayer = L.geoJSON(geoJsonData, {
+        style: {
+          color: '#2e5d32',
+          weight: 5,
+          opacity: 0.8,
+        },
+      });
+
+      this.currentTrailPathLayer.addLayer(geoJsonLayer);
+
+      const bounds = geoJsonLayer.getBounds();
+      this.map.fitBounds(bounds, { padding: [50, 50] });
+
+      const coordinates =
+        geoJsonData.coordinates || geoJsonData.geometry?.coordinates;
+      if (coordinates && coordinates.length > 0) {
+        const startPoint = Array.isArray(coordinates[0][0])
+          ? coordinates[0][0]
+          : coordinates[0];
+
+        const marker = L.marker([startPoint[1], startPoint[0]], {
+          icon: L.divIcon({
+            html: `<div style="background: #2e5d32; color: white; padding: 8px 12px; 
+                 border-radius: 20px; font-weight: bold; white-space: nowrap;">
+                 ${trail.name}</div>`,
+            className: 'custom-trail-marker',
+            iconSize: L.point(0, 0, true),
+          }),
+        });
+
+        this.currentTrailPathLayer.addLayer(marker);
+      }
+
+      this.selectedTrail = trail;
+      this.showReviewPanel = false;
+
+      setTimeout(() => {
+        this.scrollToTrailInSidebar(trail);
+      }, 100);
+    } catch (error) {
+      console.error('Error displaying trail:', error);
+    }
   }
 }

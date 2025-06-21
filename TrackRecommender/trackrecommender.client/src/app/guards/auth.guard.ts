@@ -9,7 +9,7 @@ import { TokenStorageService } from '../services/token-storage/token-storage.ser
 export class AuthGuard implements CanActivate {
   constructor(
     private tokenService: TokenStorageService,
-    private router: Router,
+    private router: Router
   ) {}
 
   canActivate(): Observable<boolean | UrlTree> {
