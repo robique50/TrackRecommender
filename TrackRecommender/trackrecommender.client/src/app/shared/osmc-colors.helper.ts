@@ -14,32 +14,32 @@ export class OsmcColorsHelper {
     none: 'transparent',
   };
 
-  private static readonly COLOR_NAMES_RO: { [key: string]: string } = {
-    '#FF0000': 'Roșu',
-    '#0000FF': 'Albastru',
-    '#FFFF00': 'Galben',
-    '#008000': 'Verde',
-    '#FFFFFF': 'Alb',
-    '#000000': 'Negru',
-    '#FFA500': 'Portocaliu',
-    '#800080': 'Mov',
-    '#A52A2A': 'Maro',
-    '#808080': 'Gri',
+  private static readonly COLOR_NAMES: { [key: string]: string } = {
+    '#FF0000': 'Red',
+    '#0000FF': 'Blue',
+    '#FFFF00': 'Yellow',
+    '#008000': 'Green',
+    '#FFFFFF': 'White',
+    '#000000': 'Black',
+    '#FFA500': 'Orange',
+    '#800080': 'Purple',
+    '#A52A2A': 'Brown',
+    '#808080': 'Gray',
     transparent: 'Transparent',
   };
 
-  private static readonly SHAPE_NAMES_RO: { [key: string]: string } = {
-    stripe: 'Bandă',
-    dot: 'Punct',
-    circle: 'Cerc',
-    cross: 'Cruce',
-    triangle: 'Triunghi',
-    bar: 'Bară',
-    frame: 'Cadru',
-    diamond: 'Romb',
-    fork: 'Furcă',
-    corner: 'Colț',
-    backslash: 'Slash invers',
+  private static readonly SHAPE_NAMES: { [key: string]: string } = {
+    stripe: 'Stripe',
+    dot: 'Dot',
+    circle: 'Circle',
+    cross: 'Cross',
+    triangle: 'Triangle',
+    bar: 'Bar',
+    frame: 'Frame',
+    diamond: 'Diamond',
+    fork: 'Fork',
+    corner: 'Corner',
+    backslash: 'Backslash',
     slash: 'Slash',
   };
 
@@ -50,12 +50,12 @@ export class OsmcColorsHelper {
 
   static getColorNameRo(colorHex: string): string {
     const upperHex = colorHex.toUpperCase();
-    return this.COLOR_NAMES_RO[upperHex] || colorHex;
+    return this.COLOR_NAMES[upperHex] || colorHex;
   }
 
   static getShapeNameRo(shape: string): string {
     const lowerShape = shape.toLowerCase();
-    return this.SHAPE_NAMES_RO[lowerShape] || shape;
+    return this.SHAPE_NAMES[lowerShape] || shape;
   }
 
   static needsBorder(backgroundColor: string): boolean {

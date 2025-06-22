@@ -2,20 +2,202 @@
 
 <div class="trails-page">
   <div class="trails-container">
+    <div class="trails-header">
+      <h1>Romanian Trails</h1>
+      <p>Explore the best hiking trails across Romania</p>
+    </div>
+
+    <!-- Statistics -->
+    <div class="trails-stats" *ngIf="!isLoading && trails.length > 0">
+      <div class="stat-item">
+        <span class="stat-number">{{ totalTrails | number }}</span>
+        <span class="stat-label">Total Trails</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ averageRating | number : "1.1-1" }}</span>
+        <span class="stat-label">Average Rating</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ totalReviews | number }}</span>
+        <span class="stat-label">Total Reviews</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ filteredTrails.length | number }}</span>
+        <span class="stat-label">Filtered Results</span>
+      </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="filter-controls" *ngIf="!isLoading">
+      <div class="filter-header">
+        <button class="filter-toggle" (click)="toggleFilters()">
+          <i class="fas fa-filter"></i>
+          {{ showFilters ? "Hide" : "Show" }} Filters
+          <span
+            class="filter-count"
+            *ngIf="
+              filters.difficulty ||
+              filters.minRating ||
+              filters.maxDistance ||
+              filters.maxDuration ||
+              filters.trailType ||
+              filters.hasReviews !== null ||
+              filters.searchTerm
+            "
+          >
+            (Active)
+          </span>
+        </button>
+
+        <div class="sort-control">
+          <label>Sort by:</label>
+          <select [(ngModel)]="sortBy" (change)="onSortChange(sortBy)">
+            <option value="name">Name</option>
+            <option value="distance">Distance</option>
+            <option value="duration">Duration</option>
+            <option value="rating">Rating</option>
+            <option value="reviews">Reviews</option>
+          </select>
+          <button
+            class="sort-order-btn"
+            (click)="
+              sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; applyFilters()
+            "
+            [title]="sortOrder === 'asc' ? 'Ascending' : 'Descending'"
+          >
+            <span *ngIf="sortOrder === 'asc'">📈</span>
+            <span *ngIf="sortOrder === 'desc'">📉</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-panel" *ngIf="showFilters" [@slideDown]>
+        <div class="filter-grid">
+          <!-- Search -->
+          <div class="filter-group">
+            <label>Search</label>
+            <input
+              type="text"
+              [(ngModel)]="filters.searchTerm"
+              (ngModelChange)="applyFilters()"
+              placeholder="Trail name or region..."
+              class="filter-input"
+            />
+          </div>
+
+          <!-- Difficulty -->
+          <div class="filter-group">
+            <label>Difficulty</label>
+            <select
+              [(ngModel)]="filters.difficulty"
+              (ngModelChange)="applyFilters()"
+              class="filter-select"
+            >
+              <option [value]="null">All Difficulties</option>
+              <option *ngFor="let diff of difficulties" [value]="diff">
+                {{ diff }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Minimum Rating -->
+          <div class="filter-group">
+            <label>Minimum Rating</label>
+            <select
+              [(ngModel)]="filters.minRating"
+              (ngModelChange)="applyFilters()"
+              class="filter-select"
+            >
+              <option [value]="null">Any Rating</option>
+              <option [value]="1">⭐ 1+</option>
+              <option [value]="2">⭐⭐ 2+</option>
+              <option [value]="3">⭐⭐⭐ 3+</option>
+              <option [value]="4">⭐⭐⭐⭐ 4+</option>
+              <option [value]="5">⭐⭐⭐⭐⭐ 5</option>
+            </select>
+          </div>
+
+          <!-- Max Distance -->
+          <div class="filter-group">
+            <label>Max Distance (km)</label>
+            <input
+              type="number"
+              [(ngModel)]="filters.maxDistance"
+              (ngModelChange)="applyFilters()"
+              placeholder="e.g. 20"
+              min="0"
+              step="1"
+              class="filter-input"
+            />
+          </div>
+
+          <!-- Max Duration -->
+          <div class="filter-group">
+            <label>Max Duration (hours)</label>
+            <input
+              type="number"
+              [(ngModel)]="filters.maxDuration"
+              (ngModelChange)="applyFilters()"
+              placeholder="e.g. 5"
+              min="0"
+              step="0.5"
+              class="filter-input"
+            />
+          </div>
+
+          <!-- Trail Type -->
+          <div class="filter-group">
+            <label>Trail Type</label>
+            <select
+              [(ngModel)]="filters.trailType"
+              (ngModelChange)="applyFilters()"
+              class="filter-select"
+            >
+              <option [value]="null">All Types</option>
+              <option *ngFor="let type of trailTypes" [value]="type">
+                {{ type }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Has Reviews -->
+          <div class="filter-group">
+            <label>Reviews</label>
+            <select
+              [(ngModel)]="filters.hasReviews"
+              (ngModelChange)="applyFilters()"
+              class="filter-select"
+            >
+              <option [value]="null">All Trails</option>
+              <option [value]="true">With Reviews</option>
+              <option [value]="false">Without Reviews</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="reset-filters btn-danger" (click)="resetFilters()">
+          <i class="fas fa-redo"></i> Reset Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
     <div *ngIf="isLoading && trails.length === 0" class="loading-state">
       <p>Loading trails...</p>
       <div class="loading-spinner"></div>
     </div>
 
+    <!-- Error State -->
     <div *ngIf="error && !isLoading" class="error-state">
       <h3>Error at loading trails</h3>
       <p>{{ error }}</p>
-      <button class="retry-button" (click)="refreshTrails()">Try again</button>
+      <button class="retry-button" (click)="loadTrails()">Try again</button>
     </div>
 
-    <div *ngIf="!error" class="trails-grid">
+    <!-- Trails Grid -->
+    <div *ngIf="!error && !isLoading" class="trails-grid">
       <div
-        *ngFor="let trail of trails; trackBy: trackByTrailId"
+        *ngFor="let trail of filteredTrails; trackBy: trackByTrailId"
         class="trail-card"
       >
         <div class="card-header" [ngClass]="getGradientClass(trail.difficulty)">
@@ -129,7 +311,7 @@
                   d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                 ></path>
               </svg>
-              <span>{{ trail.duration }}h</span>
+              <span>{{ formatDuration(trail.duration) }}</span>
             </div>
 
             <div class="stat-row">

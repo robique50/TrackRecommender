@@ -11,7 +11,7 @@
         <span class="stat-label">Total Reviews</span>
       </div>
       <div class="stat-item">
-        <span class="stat-number">{{ averageRating | number: "1.1-1" }}</span>
+        <span class="stat-number">{{ averageRating | number : "1.1-1" }}</span>
         <span class="stat-label">Average Rating</span>
       </div>
       <div class="stat-item">
@@ -41,12 +41,15 @@
                 <span class="rating-text">{{ review.rating }}/5</span>
               </div>
               <span class="review-date">{{
-                review.ratedAt | date: "MMM d, yyyy"
+                review.ratedAt | date : "MMM d, yyyy"
               }}</span>
             </div>
           </div>
           <div class="review-actions">
-            <button class="btn-secondary" (click)="viewTrail(review.trailId)">
+            <button
+              class="btn-secondary"
+              (click)="viewTrailOnMap(review.trailId)"
+            >
               View Trail
             </button>
             <button
@@ -75,7 +78,7 @@
             <span class="detail-icon">✅</span>
             <span class="detail-text">Completed</span>
             <span class="detail-value" *ngIf="review.completedAt">
-              on {{ review.completedAt | date: "MMM d, yyyy" }}
+              on {{ review.completedAt | date : "MMM d, yyyy" }}
             </span>
           </div>
           <div class="detail-item" *ngIf="review.actualDuration">

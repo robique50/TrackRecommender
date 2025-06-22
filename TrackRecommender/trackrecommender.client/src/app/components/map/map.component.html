@@ -225,4 +225,9 @@
     (closePanel)="closeReviewPanel()"
     (reviewSubmitted)="onReviewSubmitted($event)"
   ></app-trail-review>
+
+  <div class="success-toast" *ngIf="showSuccessMessage" [@fadeInOut]>
+    <span class="toast-icon">✅</span>
+    <span>{{ successMessage }}</span>
+  </div>
 </div>

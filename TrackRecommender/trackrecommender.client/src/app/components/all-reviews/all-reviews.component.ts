@@ -7,6 +7,7 @@ import { ReviewService } from '../../services/review/review.service';
 import { MapService } from '../../services/map/map.service';
 import { TrailService } from '../../services/trail/trail.service';
 import { TrailReview } from '../../models/review.model';
+import { animate, style, transition, trigger } from '@angular/animations';
 
 interface ReviewFilters {
   rating: number | null;
@@ -22,6 +23,17 @@ interface ReviewFilters {
   imports: [CommonModule, FormsModule, MainNavbarComponent],
   templateUrl: './all-reviews.component.html',
   styleUrls: ['./all-reviews.component.scss'],
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-20px)' }),
+        animate(
+          '300ms ease-out',
+          style({ opacity: 1, transform: 'translateY(0)' })
+        ),
+      ]),
+    ]),
+  ],
 })
 export class AllReviewsComponent implements OnInit {
   protected reviews: TrailReview[] = [];

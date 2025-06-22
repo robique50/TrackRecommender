@@ -89,8 +89,8 @@ export class PreferencesComponent implements OnInit {
   private selectedRegions = new Set<string>();
   private selectedCategories = new Set<string>();
   protected minDistance: number = 0;
-  protected maxDistance: number = 96;
-  protected maxDuration: number = 32;
+  protected maxDistance: number = 1500;
+  protected maxDuration: number = 500;
   protected minDuration: number = 0;
 
   constructor(

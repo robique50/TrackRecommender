@@ -1,180 +1,183 @@
+<app-main-navbar></app-main-navbar>
+
 <div class="recommendations-container">
-  <app-main-navbar></app-main-navbar>
-
-  <div class="content">
-    <div class="header-section">
+  <div class="recommendations-header">
+    <div class="header-content">
       <h1>Trail Recommendations</h1>
-      <p class="subtitle">Personalized trails based on your preferences</p>
-
-      <div class="controls">
-        <button class="settings-btn" (click)="toggleSettings()">
-          <i class="fas fa-cog"></i> Settings
-        </button>
-        <button
-          class="refresh-btn"
-          (click)="refreshRecommendations()"
-          [disabled]="isLoading"
-        >
-          <i class="fas fa-sync" [class.fa-spin]="isLoading"></i> Refresh
-        </button>
-      </div>
+      <p>Get personalized trail suggestions based on your preferences</p>
     </div>
-
-    <div class="settings-panel" *ngIf="showSettings">
-      <div class="settings-content">
-        <h3>Recommendation Settings</h3>
-
-        <div class="setting-group">
-          <label for="trailCount">Number of trails to show:</label>
-          <select
-            id="trailCount"
-            [(ngModel)]="numberOfTrails"
-            class="form-control"
-          >
-            <option *ngFor="let count of trailCountOptions" [value]="count">
-              {{ count }} trails
-            </option>
-          </select>
-        </div>
-
-        <div class="setting-group">
-          <label class="toggle-label">
-            <input
-              type="checkbox"
-              [(ngModel)]="includeWeather"
-              class="toggle-input"
-            />
-            <span class="toggle-switch"></span>
-            Include weather conditions in recommendations
-          </label>
-          <p class="setting-hint">
-            Weather data adds real-time conditions but may slow down loading
-          </p>
-        </div>
-
-        <div class="settings-actions">
-          <button class="btn-primary" (click)="applySettings()">
-            Apply Changes
-          </button>
-          <button class="btn-secondary" (click)="cancelSettings()">
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="loading-container" *ngIf="isLoading">
-      <div class="spinner"></div>
-      <p>Generating personalized recommendations...</p>
-    </div>
-
-    <div class="error-container" *ngIf="error && !isLoading">
-      <i class="fas fa-exclamation-triangle"></i>
-      <p>{{ error }}</p>
-      <button (click)="refreshRecommendations()">Try Again</button>
-    </div>
-
-    <div class="recommendations-list" *ngIf="!isLoading && !error">
-      <div
-        class="recommendation-card"
-        *ngFor="let recommendation of recommendations; let i = index"
-        [class.expanded]="expandedRecommendation === i"
+    <div class="header-actions">
+      <button
+        class="settings-btn"
+        (click)="toggleSettings()"
+        [class.active]="showSettings"
       >
-        <div class="card-header" (click)="toggleDetails(i)">
-          <div class="trail-info">
-            <h3>{{ recommendation.trail.name }}</h3>
-            <div class="trail-meta">
-              <span
-                class="difficulty"
-                [style.color]="
-                  getDifficultyColor(recommendation.trail.difficulty)
-                "
-              >
-                {{ recommendation.trail.difficulty }}
-              </span>
-              <span class="separator">•</span>
-              <span>{{ recommendation.trail.distance }} km</span>
-              <span class="separator">•</span>
-              <span>{{ formatDuration(recommendation.trail.duration) }}</span>
-            </div>
-          </div>
+        <i class="fas fa-cog"></i>
+        Settings
+      </button>
+      <button
+        class="refresh-btn"
+        (click)="refreshRecommendations()"
+        [disabled]="isLoading || !hasLoadedOnce"
+      >
+        <i class="fas fa-sync-alt"></i>
+        Refresh
+      </button>
+    </div>
+  </div>
 
-          <div class="score-section">
-            <div
-              class="score-circle"
-              [style.background-color]="
-                getScoreColor(recommendation.recommendationScore)
+  <div class="settings-panel" *ngIf="showSettings">
+    <div class="settings-content">
+      <div class="setting-item">
+        <label>Number of recommendations:</label>
+        <select [(ngModel)]="numberOfTrails">
+          <option *ngFor="let count of trailCountOptions" [value]="count">
+            {{ count }} trails
+          </option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <label>
+          <input type="checkbox" [(ngModel)]="includeWeather" />
+          Include weather conditions
+        </label>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-secondary" (click)="toggleSettings()">Cancel</button>
+        <button class="btn-primary" (click)="applySettings()">
+          Apply & Reload
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Initial State - Show Get Recommendations Button -->
+  <div class="initial-state" *ngIf="!hasLoadedOnce && !isLoading">
+    <div class="initial-content">
+      <i class="fas fa-route fa-4x"></i>
+      <h2>Ready to discover your perfect trails?</h2>
+      <p>
+        Click below to get personalized recommendations based on your
+        preferences
+      </p>
+      <button class="btn-get-recommendations" (click)="getRecommendations()">
+        <i class="fas fa-magic"></i>
+        Get Recommendations
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Generating personalized recommendations...</p>
+  </div>
+
+  <div class="error-container" *ngIf="error && !isLoading">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button (click)="refreshRecommendations()">Try Again</button>
+  </div>
+
+  <div
+    class="recommendations-list"
+    *ngIf="!isLoading && !error && hasLoadedOnce"
+  >
+    <div
+      class="recommendation-card"
+      *ngFor="let recommendation of recommendations; let i = index"
+      [class.expanded]="expandedRecommendation === i"
+    >
+      <div class="card-header" (click)="toggleDetails(i)">
+        <div class="trail-info">
+          <h3>{{ recommendation.trail.name }}</h3>
+          <div class="trail-meta">
+            <span
+              class="difficulty"
+              [style.color]="
+                getDifficultyColor(recommendation.trail.difficulty)
               "
             >
-              <span class="score-value"
-                >{{
-                  recommendation.recommendationScore | number : "1.0-0"
-                }}%</span
-              >
-            </div>
-            <i
-              class="fas fa-chevron-down expand-icon"
-              [class.rotated]="expandedRecommendation === i"
-            ></i>
+              {{ recommendation.trail.difficulty }}
+            </span>
+            <span class="separator">•</span>
+            <span>{{ recommendation.trail.distance }} km</span>
+            <span class="separator">•</span>
+            <span>{{ formatDuration(recommendation.trail.duration) }}</span>
           </div>
         </div>
 
-        <div class="card-details" *ngIf="expandedRecommendation === i">
-          <div class="match-reasons">
-            <h4>Why this trail?</h4>
-            <ul>
-              <li *ngFor="let reason of recommendation.matchReasons">
-                <i class="fas fa-check-circle"></i> {{ reason }}
-              </li>
-            </ul>
-          </div>
-
-          <div class="score-breakdown">
-            <h4>Score Breakdown</h4>
-            <div
-              class="score-item"
-              *ngFor="let score of recommendation.scoreBreakdown | keyvalue"
-            >
-              <span class="score-label">
-                <span class="score-icon">{{ getScoreIcon(score.key) }}</span>
-                {{ score.key | titlecase }}
-              </span>
-              <div class="score-bar-container">
-                <div
-                  class="score-bar"
-                  [style.width.%]="score.value"
-                  [style.background-color]="getScoreColor(score.value)"
-                ></div>
-                <span class="score-percentage"
-                  >{{ score.value | number : "1.0-0" }}%</span
-                >
-              </div>
-            </div>
-          </div>
-
+        <div class="score-section">
           <div
-            class="trail-description"
-            *ngIf="recommendation.trail.description"
+            class="score-circle"
+            [style.background-color]="
+              getScoreColor(recommendation.recommendationScore)
+            "
           >
-            <h4>Description</h4>
-            <p>{{ recommendation.trail.description }}</p>
+            <span class="score-value"
+              >{{
+                recommendation.recommendationScore | number : "1.0-0"
+              }}%</span
+            >
           </div>
+          <i
+            class="fas fa-chevron-down expand-icon"
+            [class.rotated]="expandedRecommendation === i"
+          ></i>
+        </div>
+      </div>
 
+      <div class="card-details" *ngIf="expandedRecommendation === i">
+        <div class="match-reasons">
+          <h4>Why we recommend this trail:</h4>
+          <ul>
+            <li *ngFor="let reason of recommendation.matchReasons">
+              {{ reason }}
+            </li>
+          </ul>
+        </div>
+
+        <div class="score-breakdown">
+          <h4>Score Breakdown:</h4>
+          <div
+            class="score-item"
+            *ngFor="let item of recommendation.scoreBreakdown | keyvalue"
+          >
+            <span class="score-label">
+              {{ getScoreIcon(item.key) }} {{ item.key }}:
+            </span>
+            <div class="score-bar">
+              <div
+                class="score-fill"
+                [style.width.%]="item.value"
+                [style.background-color]="getScoreColor(item.value)"
+              ></div>
+            </div>
+            <span class="score-percent"
+              >{{ item.value | number : "1.0-0" }}%</span
+            >
+          </div>
+        </div>
+
+        <div class="weather-info" *ngIf="recommendation.weather">
+          <h4>Current Weather:</h4>
+          <div class="weather-content">
+            <span class="weather-temp"
+              >{{ recommendation.weather.temperature }}°C</span
+            >
+            <span class="weather-condition">{{
+              recommendation.weather.condition
+            }}</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
           <button
-            class="view-map-btn"
-            (click)="viewOnMap(recommendation.trail)"
+            class="btn-primary"
+            (click)="viewTrailOnMap(recommendation.trail)"
           >
             <i class="fas fa-map-marked-alt"></i> View on Map
           </button>
         </div>
-      </div>
-
-      <div class="no-recommendations" *ngIf="recommendations.length === 0">
-        <i class="fas fa-info-circle"></i>
-        <p>
-          No recommendations available. Try adjusting your preferences or
-          settings.
-        </p>
       </div>
     </div>
   </div>

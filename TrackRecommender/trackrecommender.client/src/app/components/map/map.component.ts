@@ -11,17 +11,38 @@ import { Trail } from '../../models/trail.model';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { TrailReviewComponent } from '../trail-review/trail-review.component';
 import { MapMode } from '../../helpers/map-mode';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MapService } from '../../services/map/map.service';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-map',
   standalone: true,
   imports: [CommonModule, MainNavbarComponent, TrailReviewComponent],
   templateUrl: './map.component.html',
-  styleUrls: ['./map.component.scss'],
+  styleUrl: './map.component.scss',
+  animations: [
+    trigger('fadeInOut', [
+      transition(':enter', [
+        style({ transform: 'translateX(100%)', opacity: 0 }),
+        animate(
+          '300ms ease-out',
+          style({ transform: 'translateX(0)', opacity: 1 })
+        ),
+      ]),
+      transition(':leave', [
+        animate(
+          '300ms ease-in',
+          style({ opacity: 0, transform: 'translateY(20px)' })
+        ),
+      ]),
+    ]),
+  ],
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
+  protected showSuccessMessage = false;
+  protected successMessage = '';
+
   private map!: L.Map;
   protected MapMode = MapMode;
   protected currentMode: MapMode = MapMode.ALL_TRAILS;
@@ -57,7 +78,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     private regionService: RegionService,
     private trailService: TrailService,
     private mapService: MapService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -965,9 +987,21 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected onReviewSubmitted(review: any): void {
     this.closeReviewPanel();
+    console.log('Review submitted:', review);
+    this.showSuccessToast('Review submitted successfully!');
     if (this.currentMode === MapMode.ALL_TRAILS) {
       this.loadAllTrails();
     }
+  }
+
+  protected showSuccessToast(message: string): void {
+    console.log('Showing toast:', message);
+    this.successMessage = message;
+    this.showSuccessMessage = true;
+
+    setTimeout(() => {
+      this.showSuccessMessage = false;
+    }, 3000);
   }
 
   private clearAllLayers(): void {
@@ -1034,6 +1068,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected clearSelection(): void {
     this.clearTrailSelection();
     this.selectedTrail = null;
+    this.router.navigate(['/map'], {
+      replaceUrl: true,
+    });
   }
 
   protected getSortedRegions(): Region[] {

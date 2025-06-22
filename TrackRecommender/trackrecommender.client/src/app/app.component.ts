@@ -10,7 +10,7 @@ import { AuthService } from './services/auth/auth.service';
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
-  title = 'trackrecommender.client';
+  title = 'Track Recommender';
 
   constructor(private authService: AuthService) {}
 }

@@ -24,7 +24,7 @@ export class TrailReviewComponent implements OnInit {
   @Input() difficulty: string = '';
 
   @Output() reviewSubmitted = new EventEmitter<any>();
-  @Output() cancelled = new EventEmitter<void>();
+  @Output() closePanel = new EventEmitter<void>();
 
   protected reviewForm: FormGroup;
   protected isSubmitting = false;
@@ -118,7 +118,7 @@ export class TrailReviewComponent implements OnInit {
   }
 
   protected cancel() {
-    this.cancelled.emit();
+    this.closePanel.emit();
   }
 
   protected getStarArray(): number[] {

@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { ReviewService } from '../../services/review/review.service';
 import { TrailReview } from '../../models/review.model';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
+import { MapService } from '../../services/map/map.service';
 
 @Component({
   selector: 'app-my-reviews',
@@ -75,8 +76,13 @@ export class MyReviewsComponent implements OnInit {
     });
   }
 
-  protected viewTrail(trailId: number): void {
-    this.router.navigate(['/trails', trailId]);
+  protected viewTrailOnMap(trailId: number): void {
+    this.router.navigate(['/map'], {
+      queryParams: {
+        trailId: trailId,
+        mode: 'trail-focus',
+      },
+    });
   }
 
   protected getStarArray(rating: number): boolean[] {

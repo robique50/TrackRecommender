@@ -6,6 +6,7 @@ import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { TrailService } from '../../services/trail/trail.service';
 import { MapService } from '../../services/map/map.service';
 import { Trail } from '../../models/trail.model';
+import { animate, style, transition, trigger } from '@angular/animations';
 
 interface TrailFilters {
   difficulty: string | null;
@@ -22,7 +23,18 @@ interface TrailFilters {
   standalone: true,
   imports: [CommonModule, FormsModule, MainNavbarComponent],
   templateUrl: './trails.component.html',
-  styleUrls: ['./trails.component.scss'],
+  styleUrl: './trails.component.scss',
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-10px)' }),
+        animate(
+          '300ms ease-out',
+          style({ opacity: 1, transform: 'translateY(0)' })
+        ),
+      ]),
+    ]),
+  ],
 })
 export class TrailsComponent implements OnInit {
   protected trails: Trail[] = [];
@@ -224,7 +236,7 @@ export class TrailsComponent implements OnInit {
 
   protected viewTrailOnMap(trail: Trail): void {
     this.mapService.setSelectedTrail(trail);
-
+    console.log('Navigating to map with trail:', trail);
     this.router.navigate(['/map'], {
       queryParams: {
         trailId: trail.id,
@@ -303,33 +315,29 @@ export class TrailsComponent implements OnInit {
     return m > 0 ? `${h}h ${m}min` : `${h}h`;
   }
 
-  public trackByTrailId(index: number, trail: Trail): number {
-    return trail.id;
-  }
-
-  public refreshTrails(): void {
-    this.loadTrails();
-  }
-
   protected getGradientClass(difficulty: string): string {
-    const map: { [key: string]: string } = {
+    const classes: { [key: string]: string } = {
       Easy: 'easy-gradient',
       Moderate: 'moderate-gradient',
       Difficult: 'difficult-gradient',
       'Very Difficult': 'very-difficult-gradient',
       Expert: 'expert-gradient',
     };
-    return map[difficulty] || 'easy-gradient';
+    return classes[difficulty] || '';
   }
 
   protected getDifficultyClass(difficulty: string): string {
-    const difficultyMap: { [key: string]: string } = {
+    const classes: { [key: string]: string } = {
       Easy: 'easy',
       Moderate: 'moderate',
       Difficult: 'difficult',
       'Very Difficult': 'very-difficult',
       Expert: 'expert',
     };
-    return difficultyMap[difficulty] || 'easy';
+    return classes[difficulty] || '';
+  }
+
+  protected trackByTrailId(index: number, trail: Trail): number {
+    return trail.id;
   }
 }

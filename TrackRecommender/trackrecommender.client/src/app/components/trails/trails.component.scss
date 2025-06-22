@@ -9,6 +9,220 @@
   margin: 3rem auto;
 }
 
+.trails-header {
+  text-align: center;
+  margin-bottom: 32px;
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2e5d32;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 16px;
+    color: #666;
+    margin: 0;
+  }
+}
+
+.trails-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+
+  .stat-item {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 2px solid #cad9c5;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-number {
+      display: block;
+      font-size: 24px;
+      font-weight: bold;
+      color: #2e5d32;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #666;
+    }
+  }
+}
+
+.filter-controls {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filter-toggle {
+  background: #2e5d32;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background: darken(#2e5d32, 10%);
+  }
+
+  .filter-count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+  }
+}
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  label {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+  }
+
+  select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+      border-color: #2e5d32;
+    }
+  }
+
+  .sort-order-btn {
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+
+    &:hover {
+      background: #e9ecef;
+      border-color: #aaa;
+    }
+  }
+}
+
+.filter-panel {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .filter-input,
+  .filter-select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+
+    &:focus {
+      outline: none;
+      border-color: #2e5d32;
+      box-shadow: 0 0 0 3px rgba(46, 93, 50, 0.1);
+    }
+  }
+}
+
+.reset-filters {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: darken(#dc3545, 10%);
+  }
+}
+
+.btn-danger {
+  background-color: #dc3545 !important;
+  color: white !important;
+
+  &:hover {
+    background-color: #c82333 !important;
+  }
+}
+
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -280,5 +494,21 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sort-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
   }
 }

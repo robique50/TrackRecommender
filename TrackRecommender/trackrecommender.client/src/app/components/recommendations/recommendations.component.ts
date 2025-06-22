@@ -23,6 +23,7 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
   protected isLoading = false;
   protected error: string | null = null;
   protected expandedRecommendation: number | null = null;
+  protected hasLoadedOnce = false;
 
   protected numberOfTrails: number = 10;
   protected includeWeather: boolean = true;
@@ -45,8 +46,7 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
     const cached = this.recommendationService.getCachedRecommendations();
     if (cached && cached.length > 0) {
       this.recommendations = cached;
-    } else {
-      this.loadRecommendations();
+      this.hasLoadedOnce = true;
     }
   }
 
@@ -69,6 +69,7 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.recommendations = response.recommendations;
+          this.hasLoadedOnce = true;
           this.isLoading = false;
         },
         error: (error) => {
@@ -79,14 +80,11 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
       });
   }
 
-  protected viewOnMap(trail: any): void {
-    const trailData = trail.trail || trail;
-
-    this.mapService.setSelectedTrail(trailData);
-
+  protected viewTrailOnMap(trail: any): void {
+    this.mapService.setSelectedTrail(trail);
     this.router.navigate(['/map'], {
       queryParams: {
-        trailId: trailData.id,
+        trailId: trail.id,
         mode: 'trail-focus',
       },
     });
@@ -106,7 +104,6 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
       count: this.numberOfTrails,
       includeWeather: this.includeWeather,
     });
-
     this.showSettings = false;
     this.loadRecommendations(true);
   }
@@ -135,6 +132,10 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
 
   protected getScoreColor(score: number): string {
     return this.recommendationService.getScoreColor(score);
+  }
+
+  protected getRecommendations(): void {
+    this.loadRecommendations(false);
   }
 
   protected formatDuration(hours: number): string {

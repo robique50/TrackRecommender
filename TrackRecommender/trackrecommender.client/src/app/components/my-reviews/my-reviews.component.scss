@@ -70,9 +70,7 @@
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-left: 4px solid #2e5d32;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
