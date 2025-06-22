@@ -1,16 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { RecommendationService } from '../../services/recommendation/recommendation.service';
 import { TrailRecommendation } from '../../models/trail-recommendation.model';
 import { MapService } from '../../services/map/map.service';
+import { RecommendationSettingsService } from '../../services/recommendation-settings/recommendation-settings.service';
 
 @Component({
   selector: 'app-recommendations',
   standalone: true,
-  imports: [CommonModule, MainNavbarComponent],
+  imports: [CommonModule, MainNavbarComponent, FormsModule],
   templateUrl: './recommendations.component.html',
   styleUrls: ['./recommendations.component.scss'],
 })
@@ -22,14 +24,30 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
   protected error: string | null = null;
   protected expandedRecommendation: number | null = null;
 
+  protected numberOfTrails: number = 10;
+  protected includeWeather: boolean = true;
+  protected showSettings: boolean = false;
+
+  protected trailCountOptions = [5, 10, 15, 20, 25, 30];
+
   constructor(
     private recommendationService: RecommendationService,
+    private recommendationSettingsService: RecommendationSettingsService,
     private mapService: MapService,
     private router: Router
-  ) {}
+  ) {
+    const settings = this.recommendationSettingsService.getSettings();
+    this.numberOfTrails = settings.count;
+    this.includeWeather = settings.includeWeather;
+  }
 
   ngOnInit(): void {
-    this.loadRecommendations();
+    const cached = this.recommendationService.getCachedRecommendations();
+    if (cached && cached.length > 0) {
+      this.recommendations = cached;
+    } else {
+      this.loadRecommendations();
+    }
   }
 
   ngOnDestroy(): void {
@@ -37,12 +55,16 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  protected loadRecommendations(): void {
+  protected loadRecommendations(forceRefresh: boolean = false): void {
     this.isLoading = true;
     this.error = null;
 
     this.recommendationService
-      .getRecommendations(10, true)
+      .getRecommendations(
+        this.numberOfTrails,
+        this.includeWeather,
+        forceRefresh
+      )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
@@ -58,11 +80,13 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
   }
 
   protected viewOnMap(trail: any): void {
-    this.mapService.setSelectedTrail(trail);
+    const trailData = trail.trail || trail;
+
+    this.mapService.setSelectedTrail(trailData);
 
     this.router.navigate(['/map'], {
       queryParams: {
-        trailId: trail.id,
+        trailId: trailData.id,
         mode: 'trail-focus',
       },
     });
@@ -71,6 +95,27 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
   protected toggleDetails(index: number): void {
     this.expandedRecommendation =
       this.expandedRecommendation === index ? null : index;
+  }
+
+  protected toggleSettings(): void {
+    this.showSettings = !this.showSettings;
+  }
+
+  protected applySettings(): void {
+    this.recommendationSettingsService.updateSettings({
+      count: this.numberOfTrails,
+      includeWeather: this.includeWeather,
+    });
+
+    this.showSettings = false;
+    this.loadRecommendations(true);
+  }
+
+  protected cancelSettings(): void {
+    const settings = this.recommendationSettingsService.getSettings();
+    this.numberOfTrails = settings.count;
+    this.includeWeather = settings.includeWeather;
+    this.showSettings = false;
   }
 
   protected getDifficultyColor(difficulty: string): string {
@@ -102,6 +147,13 @@ export class RecommendationsComponent implements OnInit, OnDestroy {
   }
 
   protected refreshRecommendations(): void {
-    this.loadRecommendations();
+    this.loadRecommendations(true);
+  }
+
+  protected hasWeatherScore(recommendation: TrailRecommendation): boolean {
+    return (
+      recommendation.scoreBreakdown &&
+      'weather' in recommendation.scoreBreakdown
+    );
   }
 }

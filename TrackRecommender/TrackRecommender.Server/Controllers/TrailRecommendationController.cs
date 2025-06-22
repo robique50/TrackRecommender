@@ -34,7 +34,7 @@ namespace TrackRecommender.Server.Controllers
                     return BadRequest(new { message = "Count must be between 1 and 50" });
                 }
 
-                var recommendations = await _recommendationService.GetRecommendationsAsync(userId, count);
+                var recommendations = await _recommendationService.GetRecommendationsAsync(userId, count, includeWeather);
 
                 var response = new RecommendationResponseDto
                 {
@@ -52,6 +52,5 @@ namespace TrackRecommender.Server.Controllers
                 return StatusCode(500, new { message = "An error occurred while generating recommendations" });
             }
         }
-
     }
 }

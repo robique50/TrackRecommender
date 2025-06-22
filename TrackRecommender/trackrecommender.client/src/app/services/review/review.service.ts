@@ -6,6 +6,8 @@ import {
   CreateReviewRequest,
   TrailRatingStats,
   CanReviewResponse,
+  ReviewFilters,
+  ReviewsResponse,
 } from '../../models/review.model';
 
 @Injectable({
@@ -31,23 +33,73 @@ export class ReviewService {
 
   public getTrailRatingStats(trailId: number): Observable<TrailRatingStats> {
     return this.http.get<TrailRatingStats>(
-      `${this.baseUrl}/trail/${trailId}/stats`,
+      `${this.baseUrl}/trail/${trailId}/stats`
     );
+  }
+
+  public getAllReviews(
+    filters?: ReviewFilters,
+    page: number = 1,
+    pageSize: number = 10,
+    sortBy: string = 'date',
+    sortOrder: 'asc' | 'desc' = 'desc'
+  ): Observable<ReviewsResponse> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString())
+      .set('sortBy', sortBy)
+      .set('sortOrder', sortOrder);
+
+    if (filters) {
+      if (filters.rating !== undefined && filters.rating !== null) {
+        params = params.set('rating', filters.rating.toString());
+      }
+      if (filters.hasCompleted !== undefined && filters.hasCompleted !== null) {
+        params = params.set('hasCompleted', filters.hasCompleted.toString());
+      }
+      if (filters.perceivedDifficulty) {
+        params = params.set('perceivedDifficulty', filters.perceivedDifficulty);
+      }
+      if (filters.startDate) {
+        params = params.set('startDate', filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        params = params.set('endDate', filters.endDate.toISOString());
+      }
+      if (filters.trailId) {
+        params = params.set('trailId', filters.trailId.toString());
+      }
+      if (filters.userId) {
+        params = params.set('userId', filters.userId.toString());
+      }
+    }
+
+    return this.http.get<ReviewsResponse>(`${this.baseUrl}/all`, { params });
+  }
+
+  public getReviewStatistics(): Observable<{
+    totalReviews: number;
+    averageRating: number;
+    completionRate: number;
+    difficultyDistribution: { [key: string]: number };
+    ratingDistribution: { [rating: number]: number };
+  }> {
+    return this.http.get<any>(`${this.baseUrl}/statistics`);
   }
 
   public createReview(
     trailId: number,
-    review: CreateReviewRequest,
+    review: CreateReviewRequest
   ): Observable<TrailReview> {
     return this.http.post<TrailReview>(
       `${this.baseUrl}/trail/${trailId}`,
-      review,
+      review
     );
   }
 
   public getMyTrailReview(trailId: number): Observable<TrailReview> {
     return this.http.get<TrailReview>(
-      `${this.baseUrl}/trail/${trailId}/my-review`,
+      `${this.baseUrl}/trail/${trailId}/my-review`
     );
   }
 
@@ -57,7 +109,7 @@ export class ReviewService {
 
   public canReviewTrail(trailId: number): Observable<CanReviewResponse> {
     return this.http.get<CanReviewResponse>(
-      `${this.baseUrl}/trail/${trailId}/can-review`,
+      `${this.baseUrl}/trail/${trailId}/can-review`
     );
   }
 
@@ -97,5 +149,29 @@ export class ReviewService {
     } else {
       return `${wholeHours}h ${minutes}m`;
     }
+  }
+
+  public getDateRangePresets(): { [key: string]: { start: Date; end: Date } } {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    return {
+      today: {
+        start: today,
+        end: now,
+      },
+      week: {
+        start: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000),
+        end: now,
+      },
+      month: {
+        start: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000),
+        end: now,
+      },
+      year: {
+        start: new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000),
+        end: now,
+      },
+    };
   }
 }

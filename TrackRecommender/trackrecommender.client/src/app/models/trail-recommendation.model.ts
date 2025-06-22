@@ -18,3 +18,9 @@ export interface RecommendationResponse {
   generatedAt: Date;
   weatherDataAvailable: boolean;
 }
+
+export interface RecommendationCache {
+  data: RecommendationResponse;
+  timestamp: number;
+  params: { count: number; includeWeather: boolean };
+}

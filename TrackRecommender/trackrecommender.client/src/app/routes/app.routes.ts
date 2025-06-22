@@ -9,6 +9,7 @@ import { MyReviewsComponent } from '../components/my-reviews/my-reviews.componen
 import { TrailsComponent } from '../components/trails/trails.component';
 import { PreferencesComponent } from '../components/preferences/preferences.component';
 import { RecommendationsComponent } from '../components/recommendations/recommendations.component';
+import { AllReviewsComponent } from '../components/all-reviews/all-reviews.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'register', pathMatch: 'full' },
@@ -37,4 +38,5 @@ export const routes: Routes = [
     component: RecommendationsComponent,
     canActivate: [AuthGuard],
   },
+  { path: 'reviews', component: AllReviewsComponent, canActivate: [AuthGuard] },
 ];

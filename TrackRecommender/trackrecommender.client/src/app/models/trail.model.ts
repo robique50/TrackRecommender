@@ -33,8 +33,8 @@ export interface Trail {
   regionIds: number[];
   tags: string[];
   matchScore: number;
-  averageRating: number;
-  reviewsCount: number;
+  averageRating?: number;
+  reviewsCount?: number;
   lastUpdated: Date;
   hasReview?: boolean;
 }

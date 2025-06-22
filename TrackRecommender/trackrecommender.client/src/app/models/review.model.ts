@@ -33,3 +33,20 @@ export interface CanReviewResponse {
   hasReviewed: boolean;
   trailId: number;
 }
+
+export interface ReviewFilters {
+  rating?: number | null;
+  hasCompleted?: boolean | null;
+  perceivedDifficulty?: string | null;
+  startDate?: Date;
+  endDate?: Date;
+  trailId?: number;
+  userId?: number;
+}
+
+export interface ReviewsResponse {
+  reviews: TrailReview[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}

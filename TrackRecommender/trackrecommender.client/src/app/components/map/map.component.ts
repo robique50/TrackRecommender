@@ -5,7 +5,7 @@ import 'leaflet.markercluster';
 import { RegionService } from '../../services/region/region.service';
 import { TrailService } from '../../services/trail/trail.service';
 import { Subject } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { Region } from '../../models/region.model';
 import { Trail } from '../../models/trail.model';
 import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
@@ -38,6 +38,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   protected showReviewPanel = false;
 
   private updateSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
 
   private markerClusterGroup!: L.MarkerClusterGroup;
   private regionBoundariesLayer = new L.LayerGroup();
@@ -45,6 +46,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private regionTrailsLayer = new L.LayerGroup();
   private currentTrailPathLayer = new L.LayerGroup();
   private regionClustersLayer!: L.MarkerClusterGroup;
+
+  private trailMarkersLayer = new L.LayerGroup();
 
   protected loading = false;
   protected error: string | null = null;
@@ -61,18 +64,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadRegions();
     this.setupDebounce();
 
-    this.route.queryParams.subscribe((params) => {
-      if (params['trailId'] && params['mode'] === 'trail-focus') {
-        const trailId = parseInt(params['trailId']);
-        this.focusOnTrailFromRecommendation(trailId);
-      }
-    });
-
-    this.mapService.selectedTrail$.subscribe((trail) => {
-      if (trail) {
-        this.focusOnTrail(trail);
-      }
-    });
+    this.mapService.selectedTrail$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((trail) => {
+        if (trail) {
+          this.selectedTrail = trail;
+          setTimeout(() => {
+            if (this.map) {
+              this.displayTrailWithMarkers(trail);
+              this.scrollToTrailInSidebar(trail);
+            }
+          }, 500);
+        }
+      });
   }
 
   ngAfterViewInit(): void {
@@ -81,12 +85,131 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.setupMarkerCluster();
       this.setupRegionClusters();
 
-      this.setMapMode(MapMode.ALL_TRAILS);
+      this.route.queryParams
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((params) => {
+          if (params['trailId'] && params['mode'] === 'trail-focus') {
+            const trailId = +params['trailId'];
+            this.loadTrailById(trailId);
+          } else {
+            this.setMapMode(MapMode.ALL_TRAILS);
+          }
+        });
     }, 100);
   }
 
   ngOnDestroy(): void {
     this.updateSubject.complete();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private loadTrailById(trailId: number): void {
+    this.trailService.getTrailById(trailId).subscribe({
+      next: (trail) => {
+        this.selectedTrail = trail;
+        this.setMapMode(MapMode.ALL_TRAILS);
+        setTimeout(() => {
+          this.displayTrailWithMarkers(trail);
+          this.scrollToTrailInSidebar(trail);
+        }, 500);
+      },
+      error: (error) => {
+        console.error('Error loading trail:', error);
+      },
+    });
+  }
+
+  private displayTrailWithMarkers(trail: Trail): void {
+    if (!trail.geoJsonData) return;
+
+    try {
+      this.currentTrailPathLayer.clearLayers();
+      this.trailMarkersLayer.clearLayers();
+      this.clearTrailSelection();
+
+      const geoJson = JSON.parse(trail.geoJsonData);
+
+      const geoJsonLayer = L.geoJSON(geoJson, {
+        style: {
+          color: '#ff4444',
+          weight: 4,
+          opacity: 0.9,
+        },
+      });
+
+      this.currentTrailPathLayer.addLayer(geoJsonLayer);
+
+      const coordinates = this.extractCoordinatesFromGeoJson(geoJson);
+      if (coordinates && coordinates.length > 0) {
+        const startCoord = coordinates[0];
+        const endCoord = coordinates[coordinates.length - 1];
+
+        const startIcon = L.divIcon({
+          className: 'trail-start-marker',
+          html: `
+            <div style="
+              background: #4CAF50;
+              width: 36px;
+              height: 36px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: 3px solid white;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              font-size: 20px;
+              color: white;
+            ">▶</div>
+          `,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        });
+
+        const startMarker = L.marker([startCoord[1], startCoord[0]], {
+          icon: startIcon,
+        }).bindPopup(`<strong>Start:</strong> ${trail.name}`);
+        this.trailMarkersLayer.addLayer(startMarker);
+
+        const finishIcon = L.divIcon({
+          className: 'trail-finish-marker',
+          html: `
+            <div style="
+              background: #F44336;
+              width: 36px;
+              height: 36px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: 3px solid white;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              font-size: 20px;
+              color: white;
+            ">🏁</div>
+          `,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        });
+
+        const finishMarker = L.marker([endCoord[1], endCoord[0]], {
+          icon: finishIcon,
+        }).bindPopup(`<strong>Finish:</strong> ${trail.name}`);
+        this.trailMarkersLayer.addLayer(finishMarker);
+      }
+
+      const bounds = geoJsonLayer.getBounds();
+      if (bounds.isValid()) {
+        this.map.fitBounds(bounds, {
+          padding: [50, 50],
+          maxZoom: 14,
+        });
+      }
+
+      this.selectedTrail = trail;
+    } catch (error) {
+      console.error('Error displaying trail:', error);
+    }
   }
 
   private initializeMap(): void {
@@ -120,6 +243,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.clearTrailSelection();
       }
     });
+  }
+
+  private extractCoordinatesFromGeoJson(geoJson: any): number[][] | null {
+    if (geoJson.type === 'LineString') {
+      return geoJson.coordinates;
+    } else if (geoJson.type === 'MultiLineString') {
+      return geoJson.coordinates[0];
+    } else if (geoJson.type === 'Feature') {
+      return this.extractCoordinatesFromGeoJson(geoJson.geometry);
+    }
+    return null;
   }
 
   private setupMarkerCluster(): void {
@@ -602,26 +736,36 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private scrollToTrailInSidebar(trail: Trail): void {
     setTimeout(() => {
-      const trailElements = document.querySelectorAll('.trail-item');
-      trailElements.forEach((element) => {
-        const nameElement = element.querySelector('.trail-name');
-        if (nameElement && nameElement.textContent?.trim() === trail.name) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      });
-    }, 100);
+      const trailElement = document.querySelector(
+        `[data-trail-id="${trail.id}"]`
+      );
+
+      if (trailElement) {
+        trailElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.querySelectorAll('.trail-item').forEach((el) => {
+          el.classList.remove('selected');
+        });
+        trailElement.classList.add('selected');
+      } else {
+        const trailElements = document.querySelectorAll('.trail-item');
+        trailElements.forEach((element) => {
+          const nameElement = element.querySelector('.trail-name');
+          if (nameElement && nameElement.textContent?.trim() === trail.name) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('selected');
+          }
+        });
+      }
+    }, 300);
   }
 
   protected selectTrailFromSidebar(trail: Trail): void {
+    this.displayTrailWithMarkers(trail);
+
     this.markerClusterGroup.eachLayer((layer) => {
       if ((layer as any).trailData?.id === trail.id) {
-        this.onTrailClickFromMarker(trail);
-
-        const marker = layer as L.Marker;
-        const markerLatLng = marker.getLatLng();
-        if (!this.map.getBounds().contains(markerLatLng)) {
-          this.map.setView(markerLatLng, Math.max(this.map.getZoom(), 12));
-        }
+        const latLng = (layer as L.Marker).getLatLng();
+        this.map.setView(latLng, 14);
       }
     });
   }
@@ -775,7 +919,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected onTrailClick(trail: Trail): void {
     this.selectedTrail = trail;
-    this.highlightTrailPath(trail);
+    this.displayTrailWithMarkers(trail);
     this.scrollToTrailInSidebar(trail);
   }
 
@@ -952,6 +1096,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.loading = false;
       },
     });
+  }
+
+  protected hasMultipleRegions(trail: Trail | null | undefined): boolean {
+    return !!trail?.regionNames && trail.regionNames.length > 1;
   }
 
   private focusOnTrail(trail: any): void {

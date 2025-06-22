@@ -25,7 +25,7 @@ namespace TrackRecommender.Server.Services
         private const double WEIGHT_RATING = 0.25;
         private const double WEIGHT_WEATHER = 0.15;
 
-        public async Task<List<TrailRecommendationDto>> GetRecommendationsAsync(int userId, int count = 10)
+        public async Task<List<TrailRecommendationDto>> GetRecommendationsAsync(int userId, int count = 10, bool includeWeather = true)
         {
             var userPreferences = await _userRepository.GetUserPreferencesAsync(userId);
             if (userPreferences == null)
@@ -39,7 +39,7 @@ namespace TrackRecommender.Server.Services
 
             foreach (var trail in allTrails)
             {
-                var scoreBreakdown = await CalculateTrailScoreAsync(trail, userPreferences);
+                var scoreBreakdown = await CalculateTrailScoresAsync(trail, userPreferences, includeWeather);
                 var totalScore = scoreBreakdown.Values.Sum();
 
                 scoredTrails.Add((trail, totalScore, scoreBreakdown));
@@ -52,18 +52,18 @@ namespace TrackRecommender.Server.Services
 
             var recommendations = new List<TrailRecommendationDto>();
 
-            foreach (var (trail, score, breakdown) in topTrails)
+            foreach (var (trail, score, scoreBreakdown) in topTrails)
             {
                 var dto = await _trailMapper.ToDtoAsync(trail);
                 var recommendation = new TrailRecommendationDto
                 {
                     Trail = dto,
-                    RecommendationScore = Math.Round(score * 100, 2),
-                    ScoreBreakdown = breakdown.ToDictionary(
+                    RecommendationScore = score * 100,
+                    ScoreBreakdown = scoreBreakdown.ToDictionary(
                         kvp => kvp.Key,
-                        kvp => Math.Round(kvp.Value * 100, 2)
+                        kvp => kvp.Value * 100
                     ),
-                    MatchReasons = GenerateMatchReasons(userPreferences, breakdown)
+                    MatchReasons = GenerateMatchReasons(userPreferences, scoreBreakdown)
                 };
 
                 recommendations.Add(recommendation);
@@ -72,14 +72,15 @@ namespace TrackRecommender.Server.Services
             return recommendations;
         }
 
-        private async Task<Dictionary<string, double>> CalculateTrailScoreAsync(
+        private async Task<Dictionary<string, double>> CalculateTrailScoresAsync(
             Trail trail,
-            UserPreferences preferences)
+            UserPreferences preferences,
+            bool includeWeather)
         {
             var scores = new Dictionary<string, double>
             {
                 ["difficulty"] = CalculateDifficultyScore(trail.Difficulty, preferences.PreferredDifficulty)
-                                  * WEIGHT_DIFFICULTY,
+                                 * WEIGHT_DIFFICULTY,
 
                 ["trailType"] = CalculateTrailTypeScore(trail.TrailType, preferences.PreferredTrailTypes)
                                  * WEIGHT_TRAIL_TYPE,
@@ -95,7 +96,19 @@ namespace TrackRecommender.Server.Services
             scores["rating"] = CalculateRatingScore(averageRating, reviewCount, preferences.MinimumRating)
                              * WEIGHT_RATING;
 
-            scores["weather"] = await CalculateWeatherScoreAsync(trail) * WEIGHT_WEATHER;
+            if (includeWeather)
+            {
+                scores["weather"] = await CalculateWeatherScoreAsync(trail) * WEIGHT_WEATHER;
+            }
+            else
+            {
+                var redistribution = WEIGHT_WEATHER / 5;
+                scores["difficulty"] += scores["difficulty"] * (redistribution / WEIGHT_DIFFICULTY);
+                scores["trailType"] += scores["trailType"] * (redistribution / WEIGHT_TRAIL_TYPE);
+                scores["distance"] += scores["distance"] * (redistribution / WEIGHT_DISTANCE);
+                scores["duration"] += scores["duration"] * (redistribution / WEIGHT_DURATION);
+                scores["rating"] += scores["rating"] * (redistribution / WEIGHT_RATING);
+            }
 
             return scores;
         }
@@ -112,10 +125,10 @@ namespace TrackRecommender.Server.Services
 
             return difference switch
             {
-                0 => 1.0,    
-                1 => 0.7,    
-                2 => 0.4,    
-                _ => 0.2     
+                0 => 1.0,
+                1 => 0.7,
+                2 => 0.4,
+                _ => 0.2
             };
         }
 
@@ -181,8 +194,8 @@ namespace TrackRecommender.Server.Services
                 var centroid = trail.Coordinates.Centroid;
 
                 var weather = await _weatherService.GetWeatherByCoordinatesAsync(
-                    centroid.Y, 
-                    centroid.X 
+                    centroid.Y,
+                    centroid.X
                 );
 
                 if (weather == null) return 0.5;

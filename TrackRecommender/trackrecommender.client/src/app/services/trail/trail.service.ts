@@ -9,7 +9,7 @@ import { TrailCache } from '../../helpers/trail-cache';
   providedIn: 'root',
 })
 export class TrailService {
-  private readonly CACHE_DURATION = 5 * 60 * 1000;
+  private readonly CACHE_DURATION = 60 * 60 * 1000;
   private trailsCache = new Map<string, TrailCache<Trail>>();
   private ongoingRequests = new Map<string, Observable<Trail[]>>();
 
@@ -87,7 +87,12 @@ export class TrailService {
 
     return this.http.get<Trail>(`/api/mapdata/trails/${id}`).pipe(
       tap((trail) => {
-        // Optionally cache individual trail
+        this.trailsCache.set(cacheKey, {
+          data: [trail],
+          timestamp: Date.now(),
+          filters: cacheKey,
+        });
+        this.trailsUpdated$.next(true);
       }),
       catchError((error) => {
         console.error('Error loading trail:', error);
@@ -96,7 +101,9 @@ export class TrailService {
     );
   }
 
-  getRecommendedTrails(forceRefresh: boolean = false): Observable<Trail[]> {
+  public getRecommendedTrails(
+    forceRefresh: boolean = false
+  ): Observable<Trail[]> {
     const cacheKey = 'recommended_trails';
 
     if (!forceRefresh && this.isCacheValid(cacheKey)) {
@@ -118,7 +125,7 @@ export class TrailService {
     );
   }
 
-  invalidateCache(specificKey?: string): void {
+  public invalidateCache(specificKey?: string): void {
     if (specificKey) {
       this.trailsCache.delete(specificKey);
     } else {
@@ -127,7 +134,7 @@ export class TrailService {
     this.ongoingRequests.clear();
   }
 
-  updateTrailInCache(trailId: number, updates: Partial<Trail>): void {
+  public updateTrailInCache(trailId: number, updates: Partial<Trail>): void {
     for (const [key, cache] of this.trailsCache.entries()) {
       const trailIndex = cache.data.findIndex((t) => t.id === trailId);
       if (trailIndex !== -1) {
@@ -137,7 +144,7 @@ export class TrailService {
     this.trailsUpdated$.next(true);
   }
 
-  getCacheStats(): { size: number; entries: string[] } {
+  public getCacheStats(): { size: number; entries: string[] } {
     return {
       size: this.trailsCache.size,
       entries: Array.from(this.trailsCache.keys()),
