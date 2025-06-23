@@ -56,9 +56,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    color: white;
 
-    &::before {
-      content: "⛰️";
+    i {
       font-size: 1.5rem;
     }
   }

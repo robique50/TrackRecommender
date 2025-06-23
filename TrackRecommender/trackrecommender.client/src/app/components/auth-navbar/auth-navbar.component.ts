@@ -7,8 +7,6 @@ import { RouterModule } from '@angular/router';
   templateUrl: './auth-navbar.component.html',
   styleUrl: './auth-navbar.component.scss',
   standalone: true,
-  imports: [CommonModule, RouterModule]
+  imports: [CommonModule, RouterModule],
 })
-export class AuthNavbarComponent {
-
-}
+export class AuthNavbarComponent {}

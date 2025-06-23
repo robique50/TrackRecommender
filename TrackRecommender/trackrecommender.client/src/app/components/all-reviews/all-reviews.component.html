@@ -3,53 +3,42 @@
 <div class="reviews-container">
   <div class="reviews-content-wrapper">
     <div class="reviews-header">
-      <h1>Trail Reviews</h1>
-      <p>Discover what hikers are saying about trails in Romania</p>
+      <h1>Trail Reviews Community</h1>
+      <p>Discover what hikers are saying about Romanian trails</p>
     </div>
 
-    <div class="reviews-stats" *ngIf="!isLoading && reviews.length > 0">
-      <div class="stat-item">
-        <span class="stat-number">{{ totalReviews | number }}</span>
+    <div class="stats-grid" *ngIf="!isLoading">
+      <div class="stat-card">
+        <span class="stat-number">{{ totalCount }}</span>
         <span class="stat-label">Total Reviews</span>
       </div>
-      <div class="stat-item">
-        <span class="stat-number">{{ averageRating | number : "1.1-1" }}</span>
+      <div class="stat-card">
+        <span class="stat-number">{{ averageRating.toFixed(1) }}</span>
         <span class="stat-label">Average Rating</span>
       </div>
-      <div class="stat-item">
-        <span class="stat-number"
-          >{{ completionRate | number : "1.0-0" }}%</span
-        >
+      <div class="stat-card">
+        <span class="stat-number">{{ completionRate.toFixed(0) }}%</span>
         <span class="stat-label">Completion Rate</span>
       </div>
-      <div class="stat-item">
-        <span class="stat-number">{{ filteredReviews.length | number }}</span>
-        <span class="stat-label">Filtered Results</span>
+      <div class="stat-card">
+        <span class="stat-number">{{ reviews.length }}</span>
+        <span class="stat-label">On This Page</span>
       </div>
     </div>
 
-    <div class="filter-controls" *ngIf="!isLoading">
+    <div class="filter-controls">
       <div class="filter-header">
-        <button class="filter-toggle" (click)="toggleFilters()">
+        <button class="filter-toggle" (click)="showFilters = !showFilters">
           <i class="fas fa-filter"></i>
-          {{ showFilters ? "Hide" : "Show" }} Filters
-          <span
-            class="filter-count"
-            *ngIf="
-              filters.rating ||
-              filters.hasCompleted !== null ||
-              filters.perceivedDifficulty ||
-              filters.dateRange !== 'all' ||
-              filters.searchTerm
-            "
-          >
-            (Active)
-          </span>
+          <span>Filters</span>
+          <span class="filter-count" *ngIf="activeFiltersCount > 0">{{
+            activeFiltersCount
+          }}</span>
         </button>
 
         <div class="sort-control">
-          <label>Sort by:</label>
-          <select [(ngModel)]="sortBy" (change)="onSortChange()">
+          <label for="sortBy">Sort by:</label>
+          <select id="sortBy" [(ngModel)]="sortBy" (change)="onSortChange()">
             <option value="date-desc">Newest First</option>
             <option value="date-asc">Oldest First</option>
             <option value="rating-desc">Highest Rating</option>
@@ -58,148 +47,153 @@
         </div>
       </div>
 
-      <div class="filter-panel" *ngIf="showFilters" [@slideDown]>
-        <div class="filter-grid">
+      <div class="filters-panel" *ngIf="showFilters" @slideDown>
+        <div class="filters-grid">
           <div class="filter-group">
-            <label>Search</label>
+            <label for="search">Search</label>
             <input
               type="text"
-              [(ngModel)]="filters.searchTerm"
-              (ngModelChange)="applyFilters()"
-              placeholder="Trail name or username..."
+              id="search"
+              placeholder="Search in reviews..."
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
               class="filter-input"
             />
           </div>
 
           <div class="filter-group">
-            <label>Rating</label>
+            <label for="rating">Rating</label>
             <select
+              id="rating"
               [(ngModel)]="filters.rating"
-              (ngModelChange)="applyFilters()"
-              class="filter-select"
+              (change)="onFiltersChange()"
+              class="filter-input"
             >
               <option [value]="null">All Ratings</option>
-              <option [value]="5">⭐⭐⭐⭐⭐ (5)</option>
-              <option [value]="4">⭐⭐⭐⭐ (4)</option>
-              <option [value]="3">⭐⭐⭐ (3)</option>
-              <option [value]="2">⭐⭐ (2)</option>
-              <option [value]="1">⭐ (1)</option>
+              <option [value]="5">⭐⭐⭐⭐⭐</option>
+              <option [value]="4">⭐⭐⭐⭐</option>
+              <option [value]="3">⭐⭐⭐</option>
+              <option [value]="2">⭐⭐</option>
+              <option [value]="1">⭐</option>
             </select>
           </div>
 
           <div class="filter-group">
-            <label>Completion Status</label>
+            <label for="completed">Completion Status</label>
             <select
+              id="completed"
               [(ngModel)]="filters.hasCompleted"
-              (ngModelChange)="applyFilters()"
-              class="filter-select"
+              (change)="onFiltersChange()"
+              class="filter-input"
             >
-              <option [value]="null">All Reviews</option>
-              <option [value]="true">Completed Only</option>
+              <option [value]="null">All</option>
+              <option [value]="true">Completed</option>
               <option [value]="false">Not Completed</option>
             </select>
           </div>
 
           <div class="filter-group">
-            <label>Perceived Difficulty</label>
+            <label for="difficulty">Perceived Difficulty</label>
             <select
+              id="difficulty"
               [(ngModel)]="filters.perceivedDifficulty"
-              (ngModelChange)="applyFilters()"
-              class="filter-select"
+              (change)="onFiltersChange()"
+              class="filter-input"
             >
               <option [value]="null">All Difficulties</option>
               <option value="Easy">Easy</option>
               <option value="Moderate">Moderate</option>
               <option value="Difficult">Difficult</option>
-              <option value="Very Difficult">Very Difficult</option>
               <option value="Expert">Expert</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label>Date Range</label>
-            <select
-              [(ngModel)]="filters.dateRange"
-              (ngModelChange)="applyFilters()"
-              class="filter-select"
-            >
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">Last Month</option>
-              <option value="year">Last Year</option>
             </select>
           </div>
         </div>
 
-        <button class="reset-filters" (click)="resetFilters()">
-          <i class="fas fa-redo"></i> Reset Filters
+        <button
+          class="clear-filters-btn"
+          (click)="clearFilters()"
+          *ngIf="activeFiltersCount > 0"
+        >
+          <i class="fas fa-times"></i> Clear All Filters
         </button>
       </div>
     </div>
 
-    <div class="reviews-list" *ngIf="!isLoading && paginatedReviews.length > 0">
-      <div
-        class="review-card"
-        *ngFor="let review of paginatedReviews; trackBy: trackByReviewId"
-      >
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loading-spinner"></div>
+      <p>Loading reviews...</p>
+    </div>
+
+    <div class="error-state" *ngIf="error && !isLoading">
+      <i class="fas fa-exclamation-triangle"></i>
+      <p>{{ error }}</p>
+      <button class="btn-primary" (click)="loadReviews()">Try Again</button>
+    </div>
+
+    <div class="reviews-list" *ngIf="!isLoading && !error">
+      <div class="review-count-info" *ngIf="filteredReviews.length > 0">
+        Showing {{ filteredReviews.length }} review{{
+          filteredReviews.length !== 1 ? "s" : ""
+        }}
+        <span *ngIf="searchTerm"> matching "{{ searchTerm }}"</span>
+      </div>
+
+      <div class="review-card" *ngFor="let review of filteredReviews">
         <div class="review-header">
           <div class="trail-info">
             <h3 class="trail-name">{{ review.trailName }}</h3>
             <div class="review-meta">
               <div class="user-info">
-                <i class="fas fa-user-circle"></i>
-                <span
-                  class="username"
-                  (click)="viewUserProfile(review.userId)"
-                  >{{ review.username }}</span
-                >
+                <i class="fas fa-user"></i>
+                <span class="username">{{ review.username }}</span>
               </div>
               <span class="separator">•</span>
-              <div class="rating-display">
-                <span
-                  class="star"
-                  *ngFor="let star of getStarArray(review.rating)"
-                  [class.filled]="star"
-                  >★</span
-                >
-                <span class="rating-text">{{ review.rating }}/5</span>
-              </div>
-              <span class="separator">•</span>
-              <span class="review-date">{{
-                review.ratedAt | date : "MMM d, yyyy"
-              }}</span>
+              <span class="review-date">{{ formatDate(review.ratedAt) }}</span>
             </div>
           </div>
           <div class="review-actions">
-            <button class="btn-primary" (click)="viewTrailOnMap(review)">
-              <i class="fas fa-map-marked-alt"></i> View Trail
+            <button
+              class="btn-secondary"
+              (click)="viewTrailOnMap(review.trailId)"
+              title="View on map"
+            >
+              <i class="fas fa-map-marked-alt"></i>
+              <span> View On Map →</span>
             </button>
           </div>
+        </div>
+
+        <div class="rating-display">
+          <span class="star" *ngFor="let i of [0, 1, 2, 3, 4]">
+            <i
+              class="fas fa-star"
+              [style.color]="i < review.rating ? '#facc15' : '#ddd'"
+            ></i>
+          </span>
+          <span class="rating-text">{{ review.rating }}/5</span>
         </div>
 
         <div class="review-content" *ngIf="review.comment">
           <p class="review-comment">{{ review.comment }}</p>
         </div>
 
-        <div class="review-details">
+        <div
+          class="review-details"
+          *ngIf="review.hasCompleted || review.perceivedDifficulty"
+        >
           <div class="detail-item" [class.not-completed]="!review.hasCompleted">
-            <span class="detail-icon">{{
-              review.hasCompleted ? "✅" : "❌"
-            }}</span>
+            <i
+              class="fas"
+              [class.fa-check-circle]="review.hasCompleted"
+              [class.fa-times-circle]="!review.hasCompleted"
+            ></i>
             <span class="detail-text">{{
-              review.hasCompleted ? "Completed" : "Not Completed"
+              review.hasCompleted ? "Completed" : "Not completed"
             }}</span>
-            <span
-              class="detail-value"
-              *ngIf="review.hasCompleted && review.completedAt"
-            >
-              on {{ review.completedAt | date : "MMM d, yyyy" }}
-            </span>
           </div>
 
           <div class="detail-item" *ngIf="review.actualDuration">
-            <span class="detail-icon">⏱️</span>
+            <i class="fas fa-clock"></i>
             <span class="detail-text">Duration:</span>
             <span class="detail-value">{{
               formatDuration(review.actualDuration)
@@ -207,8 +201,8 @@
           </div>
 
           <div class="detail-item" *ngIf="review.perceivedDifficulty">
-            <span class="detail-icon">🏔️</span>
-            <span class="detail-text">Felt:</span>
+            <i class="fas fa-mountain"></i>
+            <span class="detail-text">Difficulty:</span>
             <span
               class="detail-value"
               [style.color]="getDifficultyColor(review.perceivedDifficulty)"
@@ -218,63 +212,68 @@
           </div>
         </div>
       </div>
+
+      <div class="empty-state" *ngIf="filteredReviews.length === 0">
+        <i class="fas fa-search empty-icon"></i>
+        <h3>No reviews found</h3>
+        <p *ngIf="activeFiltersCount > 0 || searchTerm">
+          Try adjusting your filters or search term
+        </p>
+        <p *ngIf="activeFiltersCount === 0 && !searchTerm">
+          Be the first to review a trail!
+        </p>
+      </div>
     </div>
 
-    <div class="pagination" *ngIf="!isLoading && totalPages > 1">
+    <div class="pagination" *ngIf="!isLoading && !error && totalPages > 1">
       <button
-        class="page-btn"
-        (click)="onPageChange(currentPage - 1)"
+        class="page-btn prev-btn"
+        (click)="previousPage()"
         [disabled]="currentPage === 1"
       >
         <i class="fas fa-chevron-left"></i>
+        <span>Previous</span>
       </button>
+
+      <button class="page-btn" (click)="goToPage(1)" *ngIf="currentPage > 3">
+        1
+      </button>
+
+      <span class="page-dots" *ngIf="currentPage > 4">...</span>
 
       <button
         class="page-btn"
         *ngFor="let page of getPageNumbers()"
         [class.active]="page === currentPage"
-        (click)="onPageChange(page)"
+        (click)="goToPage(page)"
       >
         {{ page }}
       </button>
 
+      <span class="page-dots" *ngIf="currentPage < totalPages - 3">...</span>
+
       <button
         class="page-btn"
-        (click)="onPageChange(currentPage + 1)"
+        (click)="goToPage(totalPages)"
+        *ngIf="currentPage < totalPages - 2"
+      >
+        {{ totalPages }}
+      </button>
+
+      <button
+        class="page-btn next-btn"
+        (click)="nextPage()"
         [disabled]="currentPage === totalPages"
       >
+        <span>Next</span>
         <i class="fas fa-chevron-right"></i>
       </button>
     </div>
 
-    <div
-      class="empty-state"
-      *ngIf="!isLoading && filteredReviews.length === 0 && reviews.length > 0"
-    >
-      <div class="empty-icon">🔍</div>
-      <h3>No Reviews Found</h3>
-      <p>Try adjusting your filters to see more results.</p>
-      <button class="btn-primary" (click)="resetFilters()">
-        Reset Filters
-      </button>
-    </div>
-
-    <div class="empty-state" *ngIf="!isLoading && reviews.length === 0">
-      <div class="empty-icon">⭐</div>
-      <h3>No Reviews Yet</h3>
-      <p>Be the first to review a trail!</p>
-      <button class="btn-primary" routerLink="/trails">Explore Trails</button>
-    </div>
-
-    <div class="loading-state" *ngIf="isLoading">
-      <div class="loading-spinner"></div>
-      <p>Loading reviews...</p>
-    </div>
-
-    <div class="error-state" *ngIf="error && !isLoading">
-      <div class="error-icon">⚠️</div>
-      <p>{{ error }}</p>
-      <button class="btn-primary" (click)="loadAllReviews()">Try Again</button>
+    <div class="page-info" *ngIf="!isLoading && !error && totalCount > 0">
+      Showing {{ (currentPage - 1) * pageSize + 1 }} -
+      {{ getDisplayCount(currentPage, pageSize, totalCount) }} of
+      {{ totalCount }} reviews
     </div>
   </div>
 </div>

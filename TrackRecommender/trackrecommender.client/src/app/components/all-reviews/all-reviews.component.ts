@@ -6,16 +6,12 @@ import { MainNavbarComponent } from '../main-navbar/main-navbar.component';
 import { ReviewService } from '../../services/review/review.service';
 import { MapService } from '../../services/map/map.service';
 import { TrailService } from '../../services/trail/trail.service';
-import { TrailReview } from '../../models/review.model';
+import {
+  TrailReview,
+  ReviewFilters,
+  ReviewsResponse,
+} from '../../models/review.model';
 import { animate, style, transition, trigger } from '@angular/animations';
-
-interface ReviewFilters {
-  rating: number | null;
-  hasCompleted: boolean | null;
-  perceivedDifficulty: string | null;
-  dateRange: string;
-  searchTerm: string;
-}
 
 @Component({
   selector: 'app-all-reviews',
@@ -37,30 +33,34 @@ interface ReviewFilters {
 })
 export class AllReviewsComponent implements OnInit {
   protected reviews: TrailReview[] = [];
-  protected filteredReviews: TrailReview[] = [];
   protected isLoading = true;
   protected error: string | null = null;
 
+  protected currentPage = 1;
+  protected pageSize = 20;
+  protected totalCount = 0;
+  protected totalPages = 0;
+
   protected showFilters = false;
+  protected activeFiltersCount = 0;
   protected filters: ReviewFilters = {
     rating: null,
     hasCompleted: null,
     perceivedDifficulty: null,
-    dateRange: 'all',
-    searchTerm: '',
+    startDate: undefined,
+    endDate: undefined,
+    trailId: undefined,
+    userId: undefined,
   };
 
   protected sortBy: 'date-desc' | 'date-asc' | 'rating-desc' | 'rating-asc' =
     'date-desc';
 
-  protected currentPage = 1;
-  protected reviewsPerPage = 10;
-  protected totalPages = 0;
+  protected searchTerm = '';
+  protected filteredReviews: TrailReview[] = [];
 
-  protected totalReviews = 0;
   protected averageRating = 0;
   protected completionRate = 0;
-  protected difficultyDistribution: { [key: string]: number } = {};
 
   constructor(
     private reviewService: ReviewService,
@@ -70,211 +70,231 @@ export class AllReviewsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadAllReviews();
+    this.loadReviews();
   }
 
-  protected loadAllReviews(): void {
+  protected loadReviews(): void {
     this.isLoading = true;
     this.error = null;
 
-    this.reviewService.getRecentReviews(1000).subscribe({
-      next: (reviews) => {
-        this.reviews = reviews;
-        this.calculateStats();
-        this.applyFilters();
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading reviews:', error);
-        this.error = 'Failed to load reviews. Please try again.';
-        this.isLoading = false;
-      },
-    });
-  }
-
-  private calculateStats(): void {
-    this.totalReviews = this.reviews.length;
-
-    if (this.totalReviews > 0) {
-      const sum = this.reviews.reduce((acc, review) => acc + review.rating, 0);
-      this.averageRating = sum / this.totalReviews;
-
-      const completed = this.reviews.filter((r) => r.hasCompleted).length;
-      this.completionRate = (completed / this.totalReviews) * 100;
-
-      this.difficultyDistribution = {};
-      this.reviews.forEach((review) => {
-        if (review.perceivedDifficulty) {
-          this.difficultyDistribution[review.perceivedDifficulty] =
-            (this.difficultyDistribution[review.perceivedDifficulty] || 0) + 1;
-        }
+    this.reviewService
+      .getAllReviews(this.filters, this.currentPage, this.pageSize)
+      .subscribe({
+        next: (response: ReviewsResponse) => {
+          this.reviews = response.reviews;
+          this.totalCount = response.totalCount;
+          this.totalPages = Math.ceil(response.totalCount / this.pageSize);
+          this.calculateStats();
+          this.applyLocalFilters();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading reviews:', error);
+          this.error = 'Failed to load reviews. Please try again.';
+          this.isLoading = false;
+        },
       });
-    }
   }
 
-  protected applyFilters(): void {
+  protected calculateStats(): void {
+    if (this.reviews.length === 0) {
+      this.averageRating = 0;
+      this.completionRate = 0;
+      return;
+    }
+
+    const totalRating = this.reviews.reduce(
+      (sum, review) => sum + review.rating,
+      0
+    );
+    this.averageRating = totalRating / this.reviews.length;
+
+    const completedCount = this.reviews.filter((r) => r.hasCompleted).length;
+    this.completionRate = (completedCount / this.reviews.length) * 100;
+  }
+
+  protected applyLocalFilters(): void {
     let filtered = [...this.reviews];
 
-    if (this.filters.rating !== null) {
-      filtered = filtered.filter((r) => r.rating === this.filters.rating);
-    }
-
-    if (this.filters.hasCompleted !== null) {
+    if (this.searchTerm.trim()) {
+      const search = this.searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (r) => r.hasCompleted === this.filters.hasCompleted
+        (review) =>
+          review.trailName.toLowerCase().includes(search) ||
+          review.username.toLowerCase().includes(search) ||
+          (review.comment && review.comment.toLowerCase().includes(search))
       );
     }
 
-    if (this.filters.perceivedDifficulty) {
-      filtered = filtered.filter(
-        (r) => r.perceivedDifficulty === this.filters.perceivedDifficulty
-      );
-    }
-
-    if (this.filters.dateRange !== 'all') {
-      const now = new Date();
-      const cutoffDate = new Date();
-
-      switch (this.filters.dateRange) {
-        case 'today':
-          cutoffDate.setHours(0, 0, 0, 0);
-          break;
-        case 'week':
-          cutoffDate.setDate(now.getDate() - 7);
-          break;
-        case 'month':
-          cutoffDate.setMonth(now.getMonth() - 1);
-          break;
-        case 'year':
-          cutoffDate.setFullYear(now.getFullYear() - 1);
-          break;
+    filtered.sort((a, b) => {
+      switch (this.sortBy) {
+        case 'date-asc':
+          return new Date(a.ratedAt).getTime() - new Date(b.ratedAt).getTime();
+        case 'date-desc':
+          return new Date(b.ratedAt).getTime() - new Date(a.ratedAt).getTime();
+        case 'rating-asc':
+          return a.rating - b.rating;
+        case 'rating-desc':
+          return b.rating - a.rating;
+        default:
+          return 0;
       }
-
-      filtered = filtered.filter((r) => new Date(r.ratedAt) >= cutoffDate);
-    }
-
-    if (this.filters.searchTerm) {
-      const term = this.filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (r) =>
-          r.trailName.toLowerCase().includes(term) ||
-          r.username.toLowerCase().includes(term)
-      );
-    }
-
-    this.sortReviews(filtered);
+    });
 
     this.filteredReviews = filtered;
-    this.totalPages = Math.ceil(filtered.length / this.reviewsPerPage);
+  }
+
+  protected onFiltersChange(): void {
+    this.activeFiltersCount = 0;
+    if (this.filters.rating !== null) this.activeFiltersCount++;
+    if (this.filters.hasCompleted !== null) this.activeFiltersCount++;
+    if (this.filters.perceivedDifficulty) this.activeFiltersCount++;
+    if (this.filters.startDate) this.activeFiltersCount++;
+    if (this.filters.endDate) this.activeFiltersCount++;
+
     this.currentPage = 1;
+    this.loadReviews();
   }
 
-  private sortReviews(reviews: TrailReview[]): void {
-    switch (this.sortBy) {
-      case 'date-desc':
-        reviews.sort(
-          (a, b) =>
-            new Date(b.ratedAt).getTime() - new Date(a.ratedAt).getTime()
-        );
-        break;
-      case 'date-asc':
-        reviews.sort(
-          (a, b) =>
-            new Date(a.ratedAt).getTime() - new Date(b.ratedAt).getTime()
-        );
-        break;
-      case 'rating-desc':
-        reviews.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'rating-asc':
-        reviews.sort((a, b) => a.rating - b.rating);
-        break;
-    }
+  protected onSearchChange(): void {
+    this.applyLocalFilters();
   }
 
-  protected get paginatedReviews(): TrailReview[] {
-    const start = (this.currentPage - 1) * this.reviewsPerPage;
-    const end = start + this.reviewsPerPage;
-    return this.filteredReviews.slice(start, end);
+  protected onSortChange(): void {
+    this.applyLocalFilters();
   }
 
-  protected toggleFilters(): void {
-    this.showFilters = !this.showFilters;
-  }
-
-  protected resetFilters(): void {
+  protected clearFilters(): void {
     this.filters = {
       rating: null,
       hasCompleted: null,
       perceivedDifficulty: null,
-      dateRange: 'all',
-      searchTerm: '',
+      startDate: undefined,
+      endDate: undefined,
+      trailId: undefined,
+      userId: undefined,
     };
-    this.applyFilters();
+    this.searchTerm = '';
+    this.onFiltersChange();
   }
 
-  protected onSortChange(): void {
-    this.applyFilters();
-  }
-
-  protected onPageChange(page: number): void {
+  protected goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
+      this.loadReviews();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
-  protected viewTrailOnMap(review: TrailReview): void {
-    this.trailService.getTrailById(review.trailId).subscribe({
-      next: (trail) => {
-        this.mapService.setSelectedTrail(trail);
-        this.router.navigate(['/map'], {
-          queryParams: {
-            trailId: trail.id,
-            mode: 'trail-focus',
-          },
-        });
-      },
-      error: (error) => {
-        console.error('Error loading trail:', error);
-      },
-    });
+  protected nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.goToPage(this.currentPage + 1);
+    }
   }
 
-  protected viewUserProfile(userId: number): void {
-    console.log('View user profile:', userId);
-  }
-
-  protected getStarArray(rating: number): boolean[] {
-    return this.reviewService.getStarArray(rating);
-  }
-
-  protected getDifficultyColor(difficulty?: string): string {
-    return this.reviewService.getDifficultyColor(difficulty);
-  }
-
-  protected formatDuration(hours?: number): string {
-    return this.reviewService.formatDuration(hours);
+  protected previousPage(): void {
+    if (this.currentPage > 1) {
+      this.goToPage(this.currentPage - 1);
+    }
   }
 
   protected getPageNumbers(): number[] {
     const pages: number[] = [];
-    const maxVisible = 5;
+    const maxPagesToShow = 7;
+    const halfRange = Math.floor(maxPagesToShow / 2);
 
-    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(this.totalPages, start + maxVisible - 1);
+    let startPage = Math.max(1, this.currentPage - halfRange);
+    let endPage = Math.min(this.totalPages, this.currentPage + halfRange);
 
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
+    if (this.currentPage <= halfRange) {
+      endPage = Math.min(maxPagesToShow, this.totalPages);
+    } else if (this.currentPage + halfRange >= this.totalPages) {
+      startPage = Math.max(1, this.totalPages - maxPagesToShow + 1);
     }
 
-    for (let i = start; i <= end; i++) {
+    for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
 
     return pages;
   }
 
-  protected trackByReviewId(index: number, review: TrailReview): number {
-    return review.id;
+  protected viewTrailOnMap(trailId: number): void {
+    this.router.navigate(['/map'], {
+      queryParams: {
+        trailId: trailId,
+        mode: 'trail-focus',
+      },
+    });
+  }
+
+  protected getStarArray(rating: number): boolean[] {
+    return Array(5)
+      .fill(false)
+      .map((_, i) => i < rating);
+  }
+
+  protected getDifficultyColor(difficulty?: string): string {
+    if (!difficulty) return '#666';
+
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+        return '#28a745';
+      case 'moderate':
+        return '#ffc107';
+      case 'hard':
+        return '#fd7e14';
+      case 'very hard':
+        return '#dc3545';
+      default:
+        return '#666';
+    }
+  }
+
+  protected formatDuration(hours?: number): string {
+    if (!hours) return '';
+
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+
+    if (h === 0) {
+      return `${m}min`;
+    } else if (m === 0) {
+      return `${h}h`;
+    } else {
+      return `${h}h ${m}min`;
+    }
+  }
+
+  protected formatDate(date: Date | string): string {
+    const d = new Date(date);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `${months} month${months > 1 ? 's' : ''} ago`;
+    } else {
+      const years = Math.floor(diffDays / 365);
+      return `${years} year${years > 1 ? 's' : ''} ago`;
+    }
+  }
+
+  protected getDisplayCount(
+    page: number,
+    pageSize: number,
+    total: number
+  ): number {
+    return Math.min(page * pageSize, total);
   }
 }

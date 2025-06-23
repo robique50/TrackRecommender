@@ -7,27 +7,25 @@
       <p>Explore the best hiking trails across Romania</p>
     </div>
 
-    <!-- Statistics -->
-    <div class="trails-stats" *ngIf="!isLoading && trails.length > 0">
-      <div class="stat-item">
+    <div class="stats-grid" *ngIf="!isLoading && trails.length > 0">
+      <div class="stat-card">
         <span class="stat-number">{{ totalTrails | number }}</span>
         <span class="stat-label">Total Trails</span>
       </div>
-      <div class="stat-item">
+      <div class="stat-card">
         <span class="stat-number">{{ averageRating | number : "1.1-1" }}</span>
         <span class="stat-label">Average Rating</span>
       </div>
-      <div class="stat-item">
+      <div class="stat-card">
         <span class="stat-number">{{ totalReviews | number }}</span>
         <span class="stat-label">Total Reviews</span>
       </div>
-      <div class="stat-item">
+      <div class="stat-card">
         <span class="stat-number">{{ filteredTrails.length | number }}</span>
         <span class="stat-label">Filtered Results</span>
       </div>
     </div>
 
-    <!-- Filter Controls -->
     <div class="filter-controls" *ngIf="!isLoading">
       <div class="filter-header">
         <button class="filter-toggle" (click)="toggleFilters()">
@@ -65,15 +63,18 @@
             "
             [title]="sortOrder === 'asc' ? 'Ascending' : 'Descending'"
           >
-            <span *ngIf="sortOrder === 'asc'">📈</span>
-            <span *ngIf="sortOrder === 'desc'">📉</span>
+            <span *ngIf="sortOrder === 'asc'"
+              ><i class="fas fa-sort-amount-up"></i
+            ></span>
+            <span *ngIf="sortOrder === 'desc'"
+              ><i class="fas fa-sort-amount-down"></i
+            ></span>
           </button>
         </div>
       </div>
 
       <div class="filter-panel" *ngIf="showFilters" [@slideDown]>
         <div class="filter-grid">
-          <!-- Search -->
           <div class="filter-group">
             <label>Search</label>
             <input
@@ -85,7 +86,6 @@
             />
           </div>
 
-          <!-- Difficulty -->
           <div class="filter-group">
             <label>Difficulty</label>
             <select
@@ -100,7 +100,6 @@
             </select>
           </div>
 
-          <!-- Minimum Rating -->
           <div class="filter-group">
             <label>Minimum Rating</label>
             <select
@@ -117,7 +116,6 @@
             </select>
           </div>
 
-          <!-- Max Distance -->
           <div class="filter-group">
             <label>Max Distance (km)</label>
             <input
@@ -131,7 +129,6 @@
             />
           </div>
 
-          <!-- Max Duration -->
           <div class="filter-group">
             <label>Max Duration (hours)</label>
             <input
@@ -145,7 +142,6 @@
             />
           </div>
 
-          <!-- Trail Type -->
           <div class="filter-group">
             <label>Trail Type</label>
             <select
@@ -160,7 +156,6 @@
             </select>
           </div>
 
-          <!-- Has Reviews -->
           <div class="filter-group">
             <label>Reviews</label>
             <select
@@ -181,20 +176,17 @@
       </div>
     </div>
 
-    <!-- Loading State -->
     <div *ngIf="isLoading && trails.length === 0" class="loading-state">
       <p>Loading trails...</p>
       <div class="loading-spinner"></div>
     </div>
 
-    <!-- Error State -->
     <div *ngIf="error && !isLoading" class="error-state">
       <h3>Error at loading trails</h3>
       <p>{{ error }}</p>
       <button class="retry-button" (click)="loadTrails()">Try again</button>
     </div>
 
-    <!-- Trails Grid -->
     <div *ngIf="!error && !isLoading" class="trails-grid">
       <div
         *ngFor="let trail of filteredTrails; trackBy: trackByTrailId"
@@ -353,7 +345,7 @@
               <span class="rating-count">({{ trail.reviewsCount || 0 }})</span>
             </div>
             <button class="details-btn" (click)="viewTrailOnMap(trail)">
-              View On Map →
+              View On Map <i class="fas fa-arrow-right"></i>
             </button>
           </div>
         </div>

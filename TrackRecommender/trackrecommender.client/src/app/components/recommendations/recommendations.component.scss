@@ -432,10 +432,10 @@
   gap: 1rem;
   margin-bottom: 0.75rem;
 
-  .score-label {
-    flex: 0 0 120px;
-    font-size: 0.9rem;
-    color: #666;
+  i {
+    margin-right: 6px;
+    color: #2e5d32;
+    font-size: 14px;
   }
 
   .score-bar {
@@ -539,6 +539,12 @@
     .score-label {
       flex: 0 0 100%;
       margin-bottom: 0.25rem;
+
+      i {
+        margin-right: 6px;
+        color: #2e5d32;
+        font-size: 14px;
+      }
     }
 
     .score-bar {

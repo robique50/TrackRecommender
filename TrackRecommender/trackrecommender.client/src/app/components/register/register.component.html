@@ -4,6 +4,7 @@
   <div class="auth-card-wrapper">
     <div class="auth-card">
       <div class="auth-header">
+        <i class="fas fa-hiking auth-header-icon"></i>
         <h2>Create a new account</h2>
         <p>Register to explore mountain trails</p>
       </div>
@@ -123,11 +124,11 @@
         </div>
 
         <div class="auth-error" *ngIf="error && !success" @slideIn>
-          {{ error }}
+          <i class="fas fa-exclamation-triangle"></i> {{ error }}
         </div>
 
         <div class="auth-success" *ngIf="success" @slideIn>
-          {{ successMessage }}
+          <i class="fas fa-check-circle"></i> {{ successMessage }}
         </div>
 
         <button type="submit" class="btn-primary" [disabled]="isLoading">

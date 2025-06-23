@@ -1,7 +1,9 @@
 <nav class="main-navbar">
   <div class="logo-container">
     <a [routerLink]="['/dashboard']">
-      <span class="logo-icon"></span>
+      <span class="logo-icon">
+        <i class="fas fa-mountain"></i>
+      </span>
       <span class="logo-text">Track<span>Recommender</span></span>
     </a>
   </div>
@@ -12,7 +14,6 @@
       <a [routerLink]="['/map']" routerLinkActive="active">Map</a>
       <a [routerLink]="['/trails']" routerLinkActive="active">Trails</a>
       <a [routerLink]="['/reviews']" routerLinkActive="active">
-        <i class="fas fa-star"></i>
         <span>All Reviews</span>
       </a>
       <a [routerLink]="['/recommendations']" routerLinkActive="active">
@@ -32,20 +33,20 @@
 
       <div class="user-dropdown" *ngIf="isUserMenuOpen">
         <a [routerLink]="['/profile']" (click)="closeUserMenu()">
-          <span class="menu-icon">👤</span>
+          <span class="menu-icon"><i class="fas fa-user"></i></span>
           My profile
         </a>
         <a [routerLink]="['/my-reviews']" (click)="closeUserMenu()">
-          <span class="menu-icon">⭐</span>
+          <span class="menu-icon"><i class="fas fa-star"></i></span>
           My reviews
         </a>
         <a [routerLink]="['/preferences']" (click)="closeUserMenu()">
-          <span class="menu-icon">⚙️</span>
+          <span class="menu-icon"><i class="fas fa-cog"></i></span>
           Preferences
         </a>
         <div class="dropdown-divider"></div>
         <button class="logout-btn" (click)="logout()">
-          <span class="menu-icon">🚪</span>
+          <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
           Logout
         </button>
       </div>

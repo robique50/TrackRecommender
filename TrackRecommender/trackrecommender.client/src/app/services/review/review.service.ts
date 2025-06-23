@@ -40,21 +40,17 @@ export class ReviewService {
   public getAllReviews(
     filters?: ReviewFilters,
     page: number = 1,
-    pageSize: number = 10,
-    sortBy: string = 'date',
-    sortOrder: 'asc' | 'desc' = 'desc'
+    pageSize: number = 20
   ): Observable<ReviewsResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
-      .set('pageSize', pageSize.toString())
-      .set('sortBy', sortBy)
-      .set('sortOrder', sortOrder);
+      .set('pageSize', pageSize.toString());
 
     if (filters) {
-      if (filters.rating !== undefined && filters.rating !== null) {
+      if (filters.rating !== null && filters.rating !== undefined) {
         params = params.set('rating', filters.rating.toString());
       }
-      if (filters.hasCompleted !== undefined && filters.hasCompleted !== null) {
+      if (filters.hasCompleted !== null && filters.hasCompleted !== undefined) {
         params = params.set('hasCompleted', filters.hasCompleted.toString());
       }
       if (filters.perceivedDifficulty) {

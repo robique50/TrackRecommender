@@ -14,7 +14,10 @@
 
     <div class="profile-content">
       <div class="profile-card">
-        <h2>👤 Profile Information</h2>
+        <h2>
+          <i class="fas fa-user" style="margin-right: 8px; color: #2e5d32"></i>
+          Profile Information
+        </h2>
         <div class="info-grid">
           <div class="info-item">
             <label>Username:</label>
@@ -26,12 +29,12 @@
           </div>
           <div class="info-item">
             <label>Member since:</label>
-            <span>{{ userProfile?.createdAt | date: "dd MMMM yyyy" }}</span>
+            <span>{{ userProfile?.createdAt | date : "dd MMMM yyyy" }}</span>
           </div>
           <div class="info-item">
             <label>Last login:</label>
             <span>{{
-              userProfile?.lastLoginAt | date: "dd MMMM yyyy, HH:mm"
+              userProfile?.lastLoginAt | date : "dd MMMM yyyy, HH:mm"
             }}</span>
           </div>
           <div class="info-item">
@@ -47,10 +50,13 @@
       </div>
 
       <div class="profile-actions">
-        <h2>⚡ Quick Actions</h2>
+        <h2>
+          <i class="fas fa-bolt" style="margin-right: 8px; color: #f39c12"></i>
+          Quick Actions
+        </h2>
         <div class="action-buttons">
           <button class="btn-primary" [routerLink]="['/preferences']">
-            <span class="btn-icon">⚙️</span>
+            <span class="btn-icon"><i class="fas fa-cog"></i></span>
             {{
               userProfile?.hasPreferences
                 ? "Edit Preferences"
@@ -58,18 +64,24 @@
             }}
           </button>
           <button class="btn-secondary" [routerLink]="['/my-reviews']">
-            <span class="btn-icon">⭐</span>
+            <span class="btn-icon"><i class="fas fa-star"></i></span>
             My Reviews
           </button>
           <button class="btn-secondary" [routerLink]="['/dashboard']">
-            <span class="btn-icon">🏠</span>
+            <span class="btn-icon"><i class="fas fa-home"></i></span>
             Back to Dashboard
           </button>
         </div>
       </div>
 
       <div class="profile-stats" *ngIf="false">
-        <h2>📊 Statistics</h2>
+        <h2>
+          <i
+            class="fas fa-chart-bar"
+            style="margin-right: 8px; color: #3498db"
+          ></i>
+          Statistics
+        </h2>
         <div class="stats-grid">
           <div class="stat-item">
             <span class="stat-number">0</span>

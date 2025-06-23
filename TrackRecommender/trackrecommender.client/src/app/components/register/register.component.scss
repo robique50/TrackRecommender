@@ -100,12 +100,13 @@
   position: relative;
   z-index: 1;
 
-  &::before {
-    content: "🥾";
-    font-size: var(--auth-header-icon-font-size);
+  .auth-header-icon {
+    font-size: var(--auth-header-icon-font-size, 48px);
     display: block;
     margin-bottom: var(--space-3);
-    animation: walk var(--animation-walk);
+    color: #1976d2;
+
+    animation: walk 3s ease-in-out infinite;
   }
 
   h2 {
@@ -290,47 +291,34 @@
   }
 }
 
-.auth-error {
-  margin-bottom: var(--space-3-5);
-  padding: var(--auth-feedback-padding-y) var(--auth-feedback-padding-x);
-  background-color: var(--auth-error-bg-light);
-  border: var(--input-border-width) solid var(--auth-error-border-light);
-  border-left-width: var(--auth-feedback-border-accent-width);
-  border-left-color: var(--color-error);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-xs-plus);
-  color: var(--auth-error-text-color-dark);
-  font-weight: var(--font-weight-medium);
+.auth-error,
+.auth-success {
+  padding: var(--space-2);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
   display: flex;
   align-items: center;
-  gap: var(--space-1-5);
-  animation: slideIn var(--animation-slidein-duration) ease-out;
+  gap: var(--space-2);
+}
 
-  &::before {
-    content: "❌";
-    font-size: var(--font-size-sm);
+.auth-error {
+  background-color: var(--color-error-light);
+  color: var(--color-error);
+
+  i {
+    color: var(--color-error);
+    font-size: var(--font-size-md);
   }
 }
 
 .auth-success {
-  margin-bottom: var(--space-3-5);
-  padding: var(--auth-feedback-padding-y) var(--auth-feedback-padding-x);
-  background-color: var(--auth-success-bg-light);
-  border: var(--input-border-width) solid var(--auth-success-border-light);
-  border-left-width: var(--auth-feedback-border-accent-width);
-  border-left-color: var(--color-success);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-xs-plus);
-  color: var(--auth-success-text-color-dark);
-  font-weight: var(--font-weight-medium);
-  display: flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  animation: slideIn var(--animation-slidein-duration) ease-out;
+  background-color: var(--color-success-light);
+  color: var(--color-success);
 
-  &::before {
-    content: "✅";
-    font-size: var(--font-size-sm);
+  i {
+    color: var(--color-success);
+    font-size: var(--font-size-md);
   }
 }
 

@@ -1,11 +1,178 @@
 <app-main-navbar></app-main-navbar>
 
 <div class="dashboard-container">
-  <div class="weather-section">
-    <div class="weather-info-header">
-      <h2>Check the weather before starting your next adventure</h2>
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="greeting">
+        {{ greeting }}, {{ userProfile?.username || "Explorer" }}!
+        <i
+          class="fas fa-hand-paper"
+          style="transform: rotate(-45deg); color: #f9b642"
+        ></i>
+      </h1>
+      <p class="subtitle">Ready for your next hiking adventure in Romania?</p>
     </div>
 
-    <app-weather-widget></app-weather-widget>
+    <div class="stats-grid" *ngIf="!isLoadingStats">
+      <div
+        class="stat-card"
+        *ngFor="let stat of quickStats; let i = index"
+        [routerLink]="stat.route"
+        [class.clickable]="stat.route"
+      >
+        <span class="stat-number">{{ stat.value }}</span>
+        <span class="stat-label">{{ stat.label }}</span>
+      </div>
+    </div>
+
+    <div class="stats-loading" *ngIf="isLoadingStats">
+      <div class="skeleton-stat" *ngFor="let i of [1, 2, 3, 4]"></div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="main-column">
+      <div class="welcome-card">
+        <h2>
+          Welcome to Track Recommender!
+          <i class="fas fa-mountain" style="color: #2e5d32"></i>
+        </h2>
+        <p>
+          Your personal guide to discovering the best hiking trails across
+          Romania. Here's what you can do:
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div
+          class="feature-card"
+          *ngFor="let feature of features"
+          [routerLink]="feature.route"
+          [style.border-left-color]="feature.color"
+        >
+          <div
+            class="feature-icon"
+            [style.background-color]="feature.color + '20'"
+          >
+            <i [class]="feature.icon" [style.color]="feature.color"></i>
+          </div>
+          <div class="feature-content">
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.description }}</p>
+          </div>
+          <div class="feature-arrow">
+            <i class="fas fa-arrow-right"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-card">
+        <h3>
+          <i class="fas fa-rocket" style="color: #ff6b35"></i> Getting Started
+        </h3>
+        <div class="guide-steps">
+          <div class="guide-step">
+            <span class="step-number">
+              <i class="fas fa-cog"></i>
+            </span>
+            <div class="step-content">
+              <h4>Set Your Preferences</h4>
+              <p>
+                Tell us about your hiking experience and what you're looking for
+              </p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-number">
+              <i class="fas fa-map-marked-alt"></i>
+            </span>
+            <div class="step-content">
+              <h4>Explore Trails</h4>
+              <p>
+                Browse our interactive map or get personalized recommendations
+              </p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-number">
+              <i class="fas fa-route"></i>
+            </span>
+            <div class="step-content">
+              <h4>Plan Your Hike</h4>
+              <p>
+                Check weather conditions and trail details before heading out
+              </p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <span class="step-number">
+              <i class="fas fa-comment-alt"></i>
+            </span>
+            <div class="step-content">
+              <h4>Share Your Experience</h4>
+              <p>Write reviews and help other hikers discover great trails</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-column">
+      <div class="weather-section">
+        <h3>
+          <i class="fas fa-cloud-sun"></i>
+          Trail Weather Forecast
+        </h3>
+        <p class="weather-description">Check conditions before you hike</p>
+        <app-weather-widget></app-weather-widget>
+      </div>
+
+      <div class="tips-card">
+        <h3>
+          <i class="fas fa-lightbulb"></i>
+          Hiking Tip
+        </h3>
+        <div class="tip-content">
+          <p>{{ currentTip }}</p>
+        </div>
+        <div class="tip-dots">
+          <span
+            class="dot"
+            *ngFor="let tip of hikingTips; let i = index"
+            [class.active]="i === currentTipIndex"
+          >
+          </span>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <h3>Quick Actions</h3>
+        <button class="action-btn" routerLink="/map">
+          <i class="fas fa-map"></i>
+          View Trail Map
+        </button>
+        <button class="action-btn" routerLink="/recommendations">
+          <i class="fas fa-star"></i>
+          Get Recommendations
+        </button>
+        <button class="action-btn" routerLink="/preferences">
+          <i class="fas fa-user-cog"></i>
+          Update Preferences
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-footer">
+    <div class="footer-content">
+      <div class="footer-icon">
+        <i class="fas fa-mountain"></i>
+      </div>
+      <p class="footer-message">
+        Ready to discover Romania's hidden trails?
+        <a routerLink="/map" class="footer-link">Explore the interactive map</a>
+        and start your adventure today!
+      </p>
+    </div>
   </div>
 </div>

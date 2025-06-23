@@ -178,6 +178,27 @@ namespace TrackRecommender.Server.Controllers
             }
         }
 
+        [HttpGet("all")]
+        [Authorize]
+        public async Task<IActionResult> GetAllReviews([FromQuery] ReviewFiltersDto filters)
+        {
+            try
+            {
+                if (filters.Page <= 0)
+                    filters.Page = 1;
+
+                if (filters.PageSize <= 0 || filters.PageSize > 100)
+                    filters.PageSize = 20;
+
+                var response = await _reviewService.GetAllReviewsAsync(filters);
+                return Ok(response);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving reviews" });
+            }
+        }
+
         private int? GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);

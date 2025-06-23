@@ -87,5 +87,28 @@ namespace TrackRecommender.Server.Services
             var review = await _reviewRepository.GetUserTrailReviewAsync(userId, trailId);
             return review != null;
         }
+
+        public async Task<ReviewsResponseDto> GetAllReviewsAsync(ReviewFiltersDto filters)
+        {
+            var (reviews, totalCount) = await _reviewRepository.GetAllReviewsAsync(
+                filters.Rating,
+                filters.HasCompleted,
+                filters.PerceivedDifficulty,
+                filters.StartDate,
+                filters.EndDate,
+                filters.TrailId,
+                filters.UserId,
+                filters.Page,
+                filters.PageSize
+            );
+
+            return new ReviewsResponseDto
+            {
+                Reviews = reviews.Select(_reviewMapper.ToDto).ToList(),
+                TotalCount = totalCount,
+                Page = filters.Page,
+                PageSize = filters.PageSize
+            };
+        }
     }
 }

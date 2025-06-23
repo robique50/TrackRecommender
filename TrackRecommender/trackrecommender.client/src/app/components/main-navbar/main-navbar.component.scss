@@ -58,8 +58,7 @@
     align-items: center;
     justify-content: center;
 
-    &::before {
-      content: "⛰️";
+    i {
       font-size: 24px;
     }
   }
@@ -245,7 +244,15 @@
         }
 
         .menu-icon {
-          font-size: var(--font-size-base);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+
+          i {
+            font-size: 16px;
+          }
         }
       }
 

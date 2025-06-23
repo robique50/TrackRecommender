@@ -51,7 +51,6 @@
     </div>
   </div>
 
-  <!-- Initial State - Show Get Recommendations Button -->
   <div class="initial-state" *ngIf="!hasLoadedOnce && !isLoading">
     <div class="initial-content">
       <i class="fas fa-route fa-4x"></i>
@@ -143,7 +142,8 @@
             *ngFor="let item of recommendation.scoreBreakdown | keyvalue"
           >
             <span class="score-label">
-              {{ getScoreIcon(item.key) }} {{ item.key }}:
+              <span [innerHTML]="getScoreIcon(item.key)"></span>
+              {{ item.key }}
             </span>
             <div class="score-bar">
               <div
@@ -175,7 +175,8 @@
             class="btn-primary"
             (click)="viewTrailOnMap(recommendation.trail)"
           >
-            <i class="fas fa-map-marked-alt"></i> View on Map
+            <i class="fas fa-map-marked-alt"></i> View On Map
+            <i class="fas fa-arrow-right"></i>
           </button>
         </div>
       </div>

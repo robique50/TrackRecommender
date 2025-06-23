@@ -37,6 +37,54 @@ namespace TrackRecommender.Server.Repositories.Implementations
                 .ToListAsync();
         }
 
+        public async Task<(List<UserTrailRating> reviews, int totalCount)> GetAllReviewsAsync(
+            int? rating = null,
+            bool? hasCompleted = null,
+            string? perceivedDifficulty = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            int? trailId = null,
+            int? userId = null,
+            int page = 1,
+            int pageSize = 20)
+        {
+            var query = _context.UserTrailRatings
+                .Include(r => r.User)
+                .Include(r => r.Trail)
+                .AsQueryable();
+
+            if (rating.HasValue)
+                query = query.Where(r => r.Rating == rating.Value);
+
+            if (hasCompleted.HasValue)
+                query = query.Where(r => r.HasCompleted == hasCompleted.Value);
+
+            if (!string.IsNullOrWhiteSpace(perceivedDifficulty))
+                query = query.Where(r => r.PerceivedDifficulty == perceivedDifficulty);
+
+            if (startDate.HasValue)
+                query = query.Where(r => r.RatedAt >= startDate.Value);
+
+            if (endDate.HasValue)
+                query = query.Where(r => r.RatedAt <= endDate.Value);
+
+            if (trailId.HasValue)
+                query = query.Where(r => r.TrailId == trailId.Value);
+
+            if (userId.HasValue)
+                query = query.Where(r => r.UserId == userId.Value);
+
+            var totalCount = await query.CountAsync();
+
+            var reviews = await query
+                .OrderByDescending(r => r.RatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (reviews, totalCount);
+        }
+
         public async Task<UserTrailRating?> GetUserTrailReviewAsync(int userId, int trailId)
         {
             return await _context.UserTrailRatings
